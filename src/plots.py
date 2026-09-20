@@ -57,7 +57,8 @@ def risk_curve():
     ax.axvspan(1, 2, color='0.9', lw=0); ax.set_xlabel('z$_P$'); ax.set_ylabel('Small-for-size syndrome (%)'); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60); ax.legend(loc='upper left', fontsize=6.5); save(fig, 'risk_curve')
 
 def _series(col, name, xlabel, marker_text):
-    d = series().dropna(subset=[col]); a = d[d.outcome_type == 'SFSS_or_dysfunction']; m = d[d.outcome_type != 'SFSS_or_dysfunction']
+    d0 = series().dropna(subset=[col]); d = d0[d0.in_main_analysis]; x = d0[~d0.in_main_analysis]
+    a = d[d.outcome_type == 'SFSS_or_dysfunction']; m = d[d.outcome_type != 'SFSS_or_dysfunction']
     fig, ax = plt.subplots(figsize=(4.6, 3.8))
     for st, g in d.groupby('study'):
         if len(g) == 2 and g.outcome.nunique() == 1: ax.plot(g[col], g.pct, '-', color='0.65', lw=0.7, zorder=1)
@@ -65,11 +66,15 @@ def _series(col, name, xlabel, marker_text):
     ax.scatter(m[col], m.pct, s=12 + m.n.clip(upper=160) / 2.2, color=C_IN, marker='s', edgecolor='k', lw=0.4, zorder=3, label='mortality / graft loss')
     try:
         from adjustText import adjust_text
-        texts = [ax.text(r[col], r.pct, f'{r.study}: {r.group}'[:38], fontsize=5) for _, r in d.iterrows()]
+        texts = [ax.text(r[col], r.pct, f'{r.study}: {r.group}'[:38], fontsize=5) for _, r in d0.iterrows()]
         adjust_text(texts, ax=ax, arrowprops=dict(arrowstyle='-', lw=0.3, color='0.5'), expand=(1.6, 2.2), lim=2000)
     except ImportError:
-        for _, r in d.iterrows(): ax.annotate(r.study, (r[col], r.pct), xytext=(4, 2), textcoords='offset points', fontsize=5)
-    rho, p = spearmanr(d[col], d.pct); ax.text(0.98, 0.96, f'Spearman ρ = {rho:.2f}, p = {p:.3f}\n{len(d)} groups', transform=ax.transAxes, ha='right', va='top', fontsize=7)
+        for _, r in d0.iterrows(): ax.annotate(r.study, (r[col], r.pct), xytext=(4, 2), textcoords='offset points', fontsize=5)
+    rho, p = spearmanr(d[col], d.pct); txt = f'Spearman ρ = {rho:.2f}, p = {p:.3f}\n{len(d)} groups'
+    if len(x):
+        ax.scatter(x[col], x.pct, s=12 + x.n.clip(upper=160) / 2.2, facecolor='none', edgecolor='0.4', lw=0.8, zorder=3, label='defined by a cut-off (not in ρ)')
+        rho2, p2 = spearmanr(d0[col], d0.pct); txt += f'\nwith cut-off groups: ρ = {rho2:.2f}, p = {p2:.3f}'
+    ax.text(0.98, 0.80, txt, transform=ax.transAxes, ha='right', va='top', fontsize=7)
     ax.axvline(2, color='k', ls='--', lw=0.6); ax.text(2.04, 60, marker_text, fontsize=6)
     if col == 'zP': ax.axvspan(1, 2, color='0.9', lw=0)
     ax.set_xlabel(xlabel); ax.set_ylabel('Outcome (%)'); ax.set_ylim(-3, 108); ax.legend(loc='upper left', fontsize=6.5); save(fig, name)
