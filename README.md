@@ -1,5 +1,5 @@
 # Liver pressure index
-## Portal pressure integrates haemodynamic risk after living donor liver transplantation
+### Portal pressure integrates haemodynamic risk after living donor liver transplantation
 
 Two dimensionless indices of haemodynamic load on a partial liver graft, the published series used to test them, the code that reproduces every plot as a separate file, and the calculator.
 
@@ -64,4 +64,4 @@ DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789.
 
 ## Licence
 
-MIT. Values in `data/` are transcribed from the cited publications and remain the property of their authors.
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0): free to use, modify and share for research, teaching, personal and non-profit purposes (universities, public research organisations and hospitals included, whatever their funding source); any commercial use requires a separate licence from the authors. Values in `data/` are transcribed from the cited publications and remain the property of their authors. The calculator is a research tool, not a medical device.
