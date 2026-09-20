@@ -12,7 +12,7 @@ def test_index_definitions():
     assert indices.zF(90, 90) == 1.0
 
 def test_pooled_fit_reproduces_published_coefficients():
-    indices.main(boot=50)                       # short bootstrap for speed; point estimate is deterministic
+    indices.main()                              # full run (seed 0), so results/logit_zP.json is byte-identical to the committed one
     L = json.load(open(os.path.join(ROOT, 'results', 'logit_zP.json')))
     assert abs(L['b0'] - (-6.41)) < 0.02 and abs(L['b1'] - 1.88) < 0.02
     assert L['groups'] == 5 and L['patients'] == 362 and L['events'] == 46
