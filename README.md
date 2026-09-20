@@ -44,7 +44,6 @@ The two coincide only when the graft keeps the donor's outflow resistance (`z_P/
 | pooled logistic (inline in `run_all.sh`) | `series_pdfs_z.tsv` | `results/logit_zP.json` | Binomial logistic fit of SFSS on `z_P` for the five groups with event counts; 2000 bootstrap resamples for the CIs and the risk band. |
 | `src/make_figs_jhep.py` | `series_pdfs_z.tsv`, `logit_zP.json`, `partB_states.pkl`, `liver_*.png` icons | `results/JHEP_Fig1-4.{pdf,png}` | Fig. 1 model (2D and 3D networks, four liver conditions, load curve); Fig. 2 nomogram, risk curve, effect of modulation; Fig. 3 outcome vs `z_P` and `z_F`; Fig. 4 flow–pressure plane with cirrhosis and resection. |
 | `src/make_supp_figs.py` | cached scaling, allometry and certificate tables | `results/JHEP_FigS1-S3.{pdf,png}` | Supplementary figures. |
-| `manuscript/make_manuscript.js`, `manuscript/make_supplement.js` | figures, `series_pdfs_z.tsv`, `closure_kruepunga.tsv` | `JHEP_manuscript.docx`, `JHEP_supplement.docx` | Word manuscript in the journal's structure (title page, structured abstract, Impact and implications, IMRaD, table, legends, figures). |
 | `app/sfss_calculator.html` | – | – | Stand-alone calculator: enter PVP, CVP, PVF, graft weight or GRWR; returns both indices, the pooled risk with its band, the outflow-resistance ratio and what each manoeuvre achieved in the series. Research tool, not a validated score. |
 
 ### Stage 1 — network model of the liver (2D)
@@ -79,13 +78,3 @@ Other files in `data/` are cached outputs of Stages 1–3 (see the script table)
 ## Citation
 
 Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Tovar H, Pérez-Calixto D. Portal pressure gradient, not portal flow, sets the risk of small-for-size syndrome: a perfusion-network model of the liver graft. 2026 (submitted).
-
-Companion physics papers: Vázquez-Victorio et al., *Metabolic cost sets the shear stress profile of optimal vascular trees* (2026); Tovar et al., *Cost convexity controls the architecture of resistance-optimal networks* (2026).
-
-## Funding
-
-DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789.
-
-## Note on AI assistance
-
-Claude (Anthropic) was used for code-script assistance and language editing. All values were verified by the authors against the source publications and the source code.
