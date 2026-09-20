@@ -2,7 +2,7 @@
 (inlet tree fixed + one feeding sinusoid per lobule -> 6^N candidates) and compare with the
 coordinate-descent optimum. Also: dispersion of the heuristic vs N."""
 import numpy as np, itertools, time, pandas as pd, warnings; warnings.filterwarnings('ignore')
-import liver_canopy as lc, liver3d as l3
+from model import network as lc, network3d as l3
 rows=[]
 for R in (1.2,):                      # 7 and 13-19 lobules in 2D
     G = lc.build_liver_graph(R=R); gin,_ = lc.split_liver(G)
