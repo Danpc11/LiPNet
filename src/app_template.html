@@ -31,13 +31,13 @@ small{color:var(--muted)}
 <body><main>
 <h1>Portal hemodynamic index for partial liver grafts</h1>
 <p class="sub">Computes the pressure index z<sub>P</sub> = (PVP − CVP)/5 and the flow index z<sub>F</sub> = graft PVF per 100 g ÷ donor PVF per 100 g, and reads the pooled risk of small-for-size syndrome from published living-donor series.</p>
-<div class="note"><b>Research tool.</b> The risk curve is a pooled logistic fit to five published groups (__PATIENTS__ recipients, __EVENTS__ events; __STUDIES__), calibrated on group means with central venous pressure assumed at 5 mmHg in two of them. It orders groups; it is not a validated individual predictor and must not replace clinical judgement or the ILTS-iLDLT-LTSI consensus thresholds (PVP &lt;15 mmHg and/or PVF &lt;250 mL/min/100 g).</div>
+<div class="note"><b>Research tool.</b> The risk curve is a pooled logistic fit to five published groups (__PATIENTS__ recipients, __EVENTS__ events; __STUDIES__), calibrated on group means; __ASSUMED__ of the __NGROUPS__ groups had no reported central venous pressure and 5 mmHg was assumed for them. It orders groups; it is not a validated individual predictor and must not replace clinical judgement or the ILTS-iLDLT-LTSI consensus thresholds (PVP &lt;15 mmHg and/or PVF &lt;250 mL/min/100 g).</div>
 
 <div class="grid" style="margin-top:14px">
  <div class="card"><h2 style="margin-top:0">Pressure (after reperfusion)</h2>
   <label>Portal venous pressure PVP, mmHg<input id="pvp" type="number" step="0.5" value="17"></label>
-  <label>Central venous pressure CVP, mmHg <small>(measured; 5 if unknown)</small><input id="cvp" type="number" step="0.5" value="5"></label>
-  <label>Normal portocaval gradient, mmHg<input id="gnorm" type="number" step="0.5" value="5"></label>
+  <label>Central venous pressure CVP, mmHg <small>(leave blank if not measured: 5 mmHg is assumed and flagged; 0 is taken as a measured zero)</small><input id="cvp" type="number" step="0.5" value="5"></label>
+  <p style="font-size:.8rem;color:var(--muted);margin:8px 0 0">Normal portocaval gradient fixed at __GN__ mmHg: the risk coefficients were fitted on z<sub>P</sub> = (PVP − CVP)/__GN__ and are not valid for another denominator.</p>
  </div>
  <div class="card"><h2 style="margin-top:0">Flow</h2>
   <label>Graft portal flow PVF, mL/min<input id="pvf" type="number" step="10" value="1800"></label>
@@ -72,29 +72,36 @@ small{color:var(--muted)}
 <script>
 const CURVE=__CURVE__;
 const GROUPS=__GROUPS__;
-const B0=__B0__,B1=__B1__;
+const B0=__B0__,B1=__B1__,GN=__GN__,DEFAULT_CVP=__CVP__,ZMIN=__ZMIN__,ZMAX=__ZMAX__;
 const $=id=>document.getElementById(id);
 function interp(x,xs,ys){if(x<=xs[0])return ys[0];if(x>=xs[xs.length-1])return ys[ys.length-1];for(let i=1;i<xs.length;i++){if(x<=xs[i]){const t=(x-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+t*(ys[i]-ys[i-1]);}}}
 function tag(z){if(isNaN(z))return['neutral','no data'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function calc(){
- const pvp=+$('pvp').value,cvp=+$('cvp').value,gn=+$('gnorm').value||5;
+ const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value;
+ const pvp=pvpRaw===''?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvp=cvpAssumed?DEFAULT_CVP:+cvpRaw; const gn=GN;
  const pvf=+$('pvf').value,dref=+$('dref').value||90;let gw=+$('gw').value;
  const grwr=+$('grwr').value,rw=+$('rw').value;if(!gw&&grwr&&rw)gw=grwr/100*rw*1000;
- const zP=(pvp&&!isNaN(cvp))?(pvp-cvp)/gn:NaN;const pvf100=(pvf&&gw)?pvf/gw*100:NaN;const zF=pvf100?pvf100/dref:NaN;
- $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tag(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg';
+ const zP=isNaN(pvp)?NaN:(pvp-cvp)/gn;const pvf100=(pvf&&gw)?pvf/gw*100:NaN;const zF=pvf100?pvf100/dref:NaN;
+ $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tag(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
+ $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'');
  $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tag(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
- if(!isNaN(zP)){const p=100/(1+Math.exp(-(B0+B1*zP)));const lo=100*interp(zP,CURVE.z,CURVE.lo),hi=100*interp(zP,CURVE.z,CURVE.hi);$('risk').textContent=p.toFixed(1)+'%';$('risksub').textContent='band '+lo.toFixed(1)+'–'+hi.toFixed(1)+'%'+(zP>4||zP<0.8?' (outside fitted range)':'');}else{$('risk').textContent='–';$('risksub').textContent='';}
+ const inRange=!isNaN(zP)&&zP>=ZMIN&&zP<=ZMAX, inGrid=!isNaN(zP)&&zP>=CURVE.z[0]&&zP<=CURVE.z[CURVE.z.length-1];
+ if(!isNaN(zP)){const p=100/(1+Math.exp(-(B0+B1*zP)));$('risk').textContent=p.toFixed(1)+'%';
+   if(inGrid){const lo=100*interp(zP,CURVE.z,CURVE.lo),hi=100*interp(zP,CURVE.z,CURVE.hi);$('risksub').textContent='band '+lo.toFixed(1)+'–'+hi.toFixed(1)+'%'+(inRange?'':' — outside the range of the fitted groups (z_P '+ZMIN.toFixed(2)+'–'+ZMAX.toFixed(2)+'): extrapolation');}
+   else{$('risksub').textContent='outside the fitted curve: no band shown, value is an extrapolation';}}
+ else{$('risk').textContent='–';$('risksub').textContent='';}
  let msg=[];
- if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (e.g. PVP '+ (pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–5 mmHg on average in the published series; a hemiportocaval shunt gives larger reductions and needs banding to stay above the floor.');}
+ if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (e.g. PVP '+ (pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
   else if(zP<1){msg.push('The gradient is below the normal value. The model predicts regression of graft vessels (portal steal) in this range; check for over-shunting or outflow problems.');}
-  else msg.push('Sinusoidal pressure is within the window in which published groups had SFSS of 0–3%.');}
+  else msg.push('Sinusoidal pressure is within the window in which published groups had SFSS of 0–3%.');
+  if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; in the published series CVP ranged 5–10 mmHg, and each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
  if(!isNaN(zP)&&!isNaN(zF)){const r=zP/zF;msg.push('Ratio z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': estimated graft outflow resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow. Injury tracked pressure, not flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor’s), so flow- and pressure-based thresholds agree.'));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available. In the published series flow per gram did not order outcomes once outflow was reconstructed; measure PVP and CVP.');
  $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';draw(zP);}
 function draw(zp){const W=640,H=300,ml=48,mr=16,mt=12,mb=40;const x=z=>ml+(z-0.8)/(4-0.8)*(W-ml-mr),y=p=>H-mb-(p/60)*(H-mt-mb);let s='';
  s+='<rect x="'+x(1)+'" y="'+mt+'" width="'+(x(2)-x(1))+'" height="'+(H-mt-mb)+'" fill="currentColor" opacity="0.08"/>';
- let band='M'+CURVE.z.map((z,i)=>x(z)+','+y(100*CURVE.hi[i])).join(' L')+' L'+CURVE.z.slice().reverse().map((z,i)=>x(z)+','+y(100*CURVE.lo[CURVE.z.length-1-i])).join(' L')+' Z';s+='<path d="'+band+'" fill="#c62828" opacity="0.15"/>';
- s+='<polyline fill="none" stroke="#c62828" stroke-width="2" points="'+CURVE.z.map((z,i)=>x(z)+','+y(100*CURVE.p[i])).join(' ')+'"/>';
+ const idx=CURVE.z.map((z,i)=>i).filter(i=>CURVE.z[i]>=0.8&&CURVE.z[i]<=4);let band='M'+idx.map(i=>x(CURVE.z[i])+','+y(Math.min(100*CURVE.hi[i],60))).join(' L')+' L'+idx.slice().reverse().map(i=>x(CURVE.z[i])+','+y(Math.min(100*CURVE.lo[i],60))).join(' L')+' Z';s+='<path d="'+band+'" fill="#c62828" opacity="0.15"/>';
+ s+='<polyline fill="none" stroke="#c62828" stroke-width="2" points="'+idx.map(i=>x(CURVE.z[i])+','+y(Math.min(100*CURVE.p[i],60))).join(' ')+'"/>';
  GROUPS.forEach(g=>{s+='<circle cx="'+x(g.z)+'" cy="'+y(g.p)+'" r="'+(3+Math.sqrt(g.n)/1.5)+'" fill="none" stroke="#c62828" stroke-width="1.5"/><text x="'+(x(g.z)+8)+'" y="'+(y(g.p)-4)+'" font-size="9" fill="currentColor">'+g.s+'</text>';});
  for(let p=0;p<=60;p+=10)s+='<text x="'+(ml-6)+'" y="'+(y(p)+3)+'" font-size="10" text-anchor="end" fill="currentColor">'+p+'%</text>';
  for(let z=1;z<=4;z+=0.5)s+='<text x="'+x(z)+'" y="'+(H-mb+14)+'" font-size="10" text-anchor="middle" fill="currentColor">'+z+'</text>';
