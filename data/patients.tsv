@@ -1,0 +1,25 @@
+study	patient	GRWR	PVF_per_100g_reperfusion	PVF_per_100g_after_modulation	PVP_final	CVP_final	modulation	outcome	source	note
+Ou 2010	1	1.13	251.0				none	SFSS	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	2	0.73	285.0				none	SFSS	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	3	1.04	296.0	186.0			SAL	none	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	4	1.16	416.0	147.0			SAL	none	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	5	0.97	554.0	236.0			SAL+splenectomy	none	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	6	0.86	257.0	87.0			SAL	none	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	7	1.38	413.0	165.0			SAL	none	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Ou 2010	8	0.93	495.0	296.0			SAL	none	Table 2, p.878	one of the six modulated patients had prolonged hyperbilirubinaemia; the row marks did not survive text extraction, so it is not assigned
+Yamada 2008	1	0.79			23.0	17.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	2	0.73			19.0	9.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	3	0.73			12.0	9.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	4	0.78			16.0	9.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	5	0.58			20.0	10.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	6	0.77			20.0	7.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	8	0.78			19.0	8.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	9	0.59			16.0	10.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	10	0.59			20.0	10.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Yamada 2008	11	0.58			20.0	12.0	HPCS	none	Table 4 column F, p.851	pressures before abdominal closure
+Alim 2016	1	0.72	240.0				SAL if PVF >250	SFSS	Table 1, p.1645	only the six patients with adverse outcome are tabulated in the paper
+Alim 2016	2	0.73	250.0				SAL if PVF >250	perioperative death	Table 1, p.1645	only the six patients with adverse outcome are tabulated in the paper
+Alim 2016	3	0.73	240.0				SAL if PVF >250	perioperative death	Table 1, p.1645	only the six patients with adverse outcome are tabulated in the paper
+Alim 2016	4	0.7	240.0				SAL if PVF >250	perioperative death	Table 1, p.1645	only the six patients with adverse outcome are tabulated in the paper
+Alim 2016	5	0.71	210.0				SAL if PVF >250	late death	Table 1, p.1645	only the six patients with adverse outcome are tabulated in the paper
+Alim 2016	6	0.74	250.0				SAL if PVF >250	late death	Table 1, p.1645	only the six patients with adverse outcome are tabulated in the paper
