@@ -93,11 +93,8 @@ Releases are tagged on GitHub (`git tag v1.0.0 && git push --tags`); the calcula
 
 ## Citation
 
-See `CITATION.cff` (GitHub shows a "Cite this repository" button). Until the preprint appears, cite the repository: Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Cervera A, Tovar H, Pérez-Calixto D. liver_pressure_index v1.0.0, 2026. https://github.com/Danpc11/liver_pressure_index
+See `CITATION.cff` (GitHub shows a "Cite this repository" button). Cite the repository: Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Cervera A, Tovar H, Pérez-Calixto D. liver_pressure_index v1.0.0, 2026. https://github.com/Danpc11/liver_pressure_index
 
-## Funding
-
-DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789.
 
 ## Licence
 
