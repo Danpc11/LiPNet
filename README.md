@@ -13,10 +13,6 @@ and, on acceptance:
 [![DOI](https://img.shields.io/badge/J%20Hepatol-10.1016%2Fj.jhep.XXXX-0f4c81)](https://doi.org/10.1016/j.jhep.XXXX)
 -->
 
-<p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="820">
-</p>
-
 Two dimensionless indices of haemodynamic load on a partial liver graft, the published series used to test them, the code that reproduces every plot as a separate file, and a calculator.
 
 ```
