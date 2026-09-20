@@ -18,7 +18,8 @@ sfss_calculator.html     the calculator (open in a browser; no server, no depend
 data/series.tsv          22 groups from 12 series, one row per group, source table/page for every value
 data/patients.tsv        individual patients where the papers tabulate them (Ou 2010, Yamada 2008, Alim 2016)
 data/cohort_template.tsv column layout for a future individual-patient cohort
-data/*.tsv (other)       cached outputs of the long model campaigns (scaling exponents, certificate)
+data/interventions.tsv   pressure and flow changes produced by each inflow-modulation manoeuvre, with source
+data/graph*.tsv, certificate_small.tsv   cached outputs of the long model campaigns
 src/indices.py           computes zF, zP, Spearman correlations and the pooled logistic fit
 src/plots.py             14 plots, each saved on its own as results/<name>.pdf and .png
 src/build_app.py         regenerates sfss_calculator.html from the fitted coefficients and the series
