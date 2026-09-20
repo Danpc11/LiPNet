@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 ROOT = os.path.join(os.path.dirname(__file__), '..'); DATA = f'{ROOT}/data'; OUT = f'{ROOT}/results'
 plt.rcParams.update({'font.family': ['Liberation Sans', 'Arial', 'DejaVu Sans'], 'font.size': 8, 'axes.spines.top': False, 'axes.spines.right': False, 'legend.frameon': False})
 C_IN, C_SIN, C_OUT = '#1f5fbf', '#c62828', '#2e7d32'
-series = lambda: pd.read_csv(f'{DATA}/series.tsv', sep='\t')
+import indices
+series = lambda: indices.compute(pd.read_csv(f'{DATA}/series.tsv', sep='\t'))   # indices always recomputed from the raw columns
 def save(fig, name):
     os.makedirs(OUT, exist_ok=True); fig.savefig(f'{OUT}/{name}.pdf', bbox_inches='tight'); fig.savefig(f'{OUT}/{name}.png', dpi=300, bbox_inches='tight'); plt.close(fig); print('saved', name)
 def logit():
