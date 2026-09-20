@@ -11,6 +11,22 @@ def test_series_indices_match_stored_results():
     assert d.zP.notna().sum() == 13 and d.zF.notna().sum() == 13
     assert set(d.CVP_basis.unique()) <= {'reported', 'derived', 'imputed', 'not applicable'}
 
+def test_incomplete_edit_is_caught():
+    import pandas as pd
+    d = pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'); i = d.index[d.study.eq('Yamada 2008')][0]
+    e = d.copy(); e.loc[i, 'CVP'] = float('nan')
+    try:
+        indices.compute(e); assert False, 'a blank CVP labelled as reported must raise'
+    except ValueError:
+        pass
+    e.loc[i, 'CVP_basis'] = 'imputed'; c = indices.compute(e)
+    assert bool(c.loc[i, 'CVP_filled']) and bool(c.loc[i, 'any_imputed'])
+
+def test_cut_off_groups_excluded_from_main_analysis():
+    import pandas as pd
+    d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
+    assert (~d.in_main_analysis).sum() == 2 and set(d[~d.in_main_analysis].study) == {'Vasavada 2014'}
+
 def test_index_definitions():
     assert indices.zP(15, 5) == 2.0            # consensus threshold: PVP 15 at CVP 5
     assert indices.zP(10, 5) == 1.0            # normal gradient
@@ -39,6 +55,7 @@ def test_app_builds():
     assert 'id="gnorm"' not in html            # the normal gradient is fixed by the fitted model, not user-editable
     assert 'cvpRaw===\'\'' in html or "cvpRaw===''" in html   # blank CVP is distinguished from an explicit zero
     assert 'of the 5 groups had no reported central venous pressure' in html
+    assert 'must be a positive number' in html         # flow and weight inputs are validated
 
 if __name__ == '__main__':
-    for t in (test_series_indices_match_stored_results, test_index_definitions, test_pooled_fit_reproduces_published_coefficients, test_fast_plots_render, test_app_builds): t(); print('ok', t.__name__)
+    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_pooled_fit_reproduces_published_coefficients, test_fast_plots_render, test_app_builds): t(); print('ok', t.__name__)
