@@ -4,7 +4,6 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live%20on%20GitHub%20Pages-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/liver_pressure_index/)
-![Preprint](https://img.shields.io/badge/preprint-coming%20soon-lightgrey)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 
 <!-- When the preprint is out, replace the grey badge with, e.g.:
@@ -12,10 +11,6 @@
 and, on acceptance:
 [![DOI](https://img.shields.io/badge/J%20Hepatol-10.1016%2Fj.jhep.XXXX-0f4c81)](https://doi.org/10.1016/j.jhep.XXXX)
 -->
-
-<p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="820">
-</p>
 
 Two dimensionless indices of haemodynamic load on a partial liver graft, the published series used to test them, the code that reproduces every plot as a separate file, and a calculator.
 
@@ -25,6 +20,10 @@ zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported;
 ```
 
 Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders small-for-size syndrome (SFSS) and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (ρ = 0.23, p = 0.46). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio. Pooled logistic fit on five SFSS groups (362 recipients, 46 events): logit(SFSS) = −6.41 + 1.88·zP, 5% risk at zP = 1.8 and 10% at 2.2.
+
+<p align="center">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="820">
+</p>
 
 ## Calculator
 
