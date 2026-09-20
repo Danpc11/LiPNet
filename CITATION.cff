@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "liver_pressure_index: indices of haemodynamic load on a partial liver graft"
+message: "If you use this code or data, please cite the repository and the associated article."
+authors:
+  - family-names: Vázquez-Victorio
+    given-names: Genaro
+  - family-names: Pérez-Calixto
+    given-names: Mitzi
+  - family-names: Escutia-Guadarrama
+    given-names: Lidia
+  - family-names: Cervera
+    given-names: Alejandra
+  - family-names: Tovar
+    given-names: Hugo
+  - family-names: Pérez-Calixto
+    given-names: Daniel
+repository-code: "https://github.com/Danpc11/liver_pressure_index"
+license: PolyForm-Noncommercial-1.0.0
+year: 2026
