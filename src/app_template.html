@@ -78,10 +78,17 @@ function interp(x,xs,ys){if(x<=xs[0])return ys[0];if(x>=xs[xs.length-1])return y
 function tag(z){if(isNaN(z))return['neutral','no data'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function calc(){
  const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value;
- const pvp=pvpRaw===''?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvp=cvpAssumed?DEFAULT_CVP:+cvpRaw; const gn=GN;
- const pvf=+$('pvf').value,dref=+$('dref').value||90;let gw=+$('gw').value;
- const grwr=+$('grwr').value,rw=+$('rw').value;if(!gw&&grwr&&rw)gw=grwr/100*rw*1000;
- const zP=isNaN(pvp)?NaN:(pvp-cvp)/gn;const pvf100=(pvf&&gw)?pvf/gw*100:NaN;const zF=pvf100?pvf100/dref:NaN;
+ const pvp=(pvpRaw===''||!isFinite(+pvpRaw)||+pvpRaw<0)?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvpOk=cvpAssumed||(isFinite(+cvpRaw)&&+cvpRaw>=0); const cvp=cvpAssumed?DEFAULT_CVP:(cvpOk?+cvpRaw:NaN); const gn=GN;
+ let pressMsg=[]; if(pvpRaw!==''&&isNaN(pvp))pressMsg.push('Portal pressure must be a non-negative number.'); if(!cvpOk)pressMsg.push('Central venous pressure must be a non-negative number (leave it blank if not measured).');
+ // flow inputs: distinguish blank, zero and invalid before computing anything
+ const num=id=>{const v=$(id).value; if(v==='')return {v:NaN,state:'blank'}; const x=+v; if(!isFinite(x))return {v:NaN,state:'invalid'}; return {v:x,state:x>0?'ok':(x===0?'zero':'negative')};};
+ const P=num('pvf'), G=num('gw'), R=num('grwr'), W=num('rw'), D=num('dref'); let flowMsg=[];
+ let dref=90; if(D.state==='ok')dref=D.v; else if(D.state!=='blank')flowMsg.push('Donor flow reference must be a positive number; '+(D.state==='zero'?'0':'the value entered')+' is not valid, so the healthy live-donor reference 90 mL/min/100 g was used.'); else flowMsg.push('No donor flow reference entered: 90 mL/min/100 g (healthy live donor) was used.');
+ let gw=NaN; if(G.state==='ok')gw=G.v; else if(G.state==='blank'){ if(R.state==='ok'&&W.state==='ok')gw=R.v/100*W.v*1000; else if(R.state!=='blank'||W.state!=='blank')flowMsg.push('GRWR and recipient weight must both be positive numbers to derive the graft weight.'); }
+ else flowMsg.push('Graft weight must be a positive number ('+$('gw').value+' is not valid); the flow index was not computed.');
+ let pvf=NaN; if(P.state==='ok')pvf=P.v; else if(P.state==='zero')flowMsg.push('A portal flow of 0 mL/min means no portal inflow (portal vein occlusion or complete steal), not a missing value; the flow index is not defined.'); else if(P.state!=='blank')flowMsg.push('Portal flow must be a positive number; the flow index was not computed.');
+ const pvf100=(isFinite(pvf)&&isFinite(gw))?pvf/gw*100:NaN; const zF=isFinite(pvf100)?pvf100/dref:NaN;
+ const zP=(isNaN(pvp)||isNaN(cvp))?NaN:(pvp-cvp)/gn;
  $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tag(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
  $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'');
  $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tag(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
@@ -90,7 +97,7 @@ function calc(){
    if(inGrid){const lo=100*interp(zP,CURVE.z,CURVE.lo),hi=100*interp(zP,CURVE.z,CURVE.hi);$('risksub').textContent='band '+lo.toFixed(1)+'–'+hi.toFixed(1)+'%'+(inRange?'':' — outside the range of the fitted groups (z_P '+ZMIN.toFixed(2)+'–'+ZMAX.toFixed(2)+'): extrapolation');}
    else{$('risksub').textContent='outside the fitted curve: no band shown, value is an extrapolation';}}
  else{$('risk').textContent='–';$('risksub').textContent='';}
- let msg=[];
+ let msg=pressMsg.concat(flowMsg);
  if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (e.g. PVP '+ (pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
   else if(zP<1){msg.push('The gradient is below the normal value. The model predicts regression of graft vessels (portal steal) in this range; check for over-shunting or outflow problems.');}
   else msg.push('Sinusoidal pressure is within the window in which published groups had SFSS of 0–3%.');
