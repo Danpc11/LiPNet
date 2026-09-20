@@ -4,10 +4,6 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live%20on%20GitHub%20Pages-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/liver_pressure_index/)
-![Version](https://img.shields.io/badge/version-1.0.0-1f6feb)
-![Series](https://img.shields.io/badge/LDLT%20series-12%20%7C%2022%20groups%20%7C%201026%20recipients-1f6feb)
-![Indices](https://img.shields.io/badge/indices-z_P%20pressure%20%7C%20z_F%20flow-1f6feb)
-![Dependencies](https://img.shields.io/badge/pipeline-NumPy%20%7C%20SciPy%20%7C%20pandas%20%7C%20matplotlib-success)
 ![Preprint](https://img.shields.io/badge/preprint-coming%20soon-lightgrey)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 
