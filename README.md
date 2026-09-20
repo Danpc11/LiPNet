@@ -19,11 +19,11 @@ Two dimensionless indices of haemodynamic load on a partial liver graft, the pub
 zF = graft PVF per 100 g / donor PVF per 100 g     (donor reference from the same series if measured, otherwise 90 mL/min/100 g)
 zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported; flagged in the data)
 ```
-<p align="center">
+Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders small-for-size syndrome (SFSS) and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (ρ = 0.23, p = 0.46). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio. Pooled logistic fit on five SFSS groups (362 recipients, 46 events): logit(SFSS) = −6.41 + 1.88·zP, 5% risk at zP = 1.8 and 10% at 2.2.
+
+<p align="left">
   <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="410">
 </p>
-
-Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders small-for-size syndrome (SFSS) and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (ρ = 0.23, p = 0.46). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio. Pooled logistic fit on five SFSS groups (362 recipients, 46 events): logit(SFSS) = −6.41 + 1.88·zP, 5% risk at zP = 1.8 and 10% at 2.2.
 
 ## Calculator
 
