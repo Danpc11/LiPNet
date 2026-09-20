@@ -77,20 +77,6 @@ Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes 
 
 `src/model/network.py` builds the liver as a graph (hilum → portal tree → hexagonal lobules → hepatic venous tree), solves flows and dissipation for prescribed lobule demand and finds the dissipation-optimal tree at fixed maintenance cost `Σ m_e^b`. `network3d.py` does the same on a hemisphere. `scaling.py` gives the closed form `D* ∝ F² C^(−2/b) N^((2−b)/b) L³`, the set-point `τ0 = √(D*/C)` and the allometric closure. `graph_scaling.py`, `network3d.py <R>` and `certify.py` are the campaigns whose outputs are cached in `data/`.
 
-## Publication
-
-- Preprint: *in preparation* (link will appear here and in the badge above).
-- Article: submitted to *Journal of Hepatology*.
-- Companion physics papers: Vázquez-Victorio et al., *Metabolic cost sets the shear stress profile of optimal vascular trees* (2026); Tovar et al., *Cost convexity controls the architecture of resistance-optimal networks* (2026).
-
-## Versions
-
-| version | date | changes |
-|---|---|---|
-| 1.0.0 | 2026-09-20 | Extraction table of 12 series, indices, pooled fit, 14 plots, calculator, GitHub Pages, tests, PolyForm Noncommercial licence |
-
-Releases are tagged on GitHub (`git tag v1.0.0 && git push --tags`); the calculator footer shows the repository URL so that a result can be traced to a version.
-
 ## Citation
 
 See `CITATION.cff` (GitHub shows a "Cite this repository" button). Cite the repository: Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Cervera A, Tovar H, Pérez-Calixto D. liver_pressure_index v1.0.0, 2026. https://github.com/Danpc11/liver_pressure_index
