@@ -103,8 +103,8 @@ def load_curve():
     ax.set_xlabel('Graft size (≈ GRWR, %)'); ax.set_ylabel('Load per lobule, z = h/g\n(at donor outflow resistance)'); ax.set_ylim(0, 7); ax.set_xlim(0.5, 2.4); ax.legend(fontsize=7); save(fig, 'load_curve')
 
 def interventions():
-    items = [('Hemiportocaval shunt (Yamada 2008, open vs clamped, n=10)', -8.8, 'PVF −65% (Troisi 2005)'), ('Splenectomy (Osman 2017, n=5, median)', -6.0, ''), ('Splenectomy (Wang 2014, n=154)', -4.8, ''),
-             ('Intentional pressure control, mainly splenectomy (Ogura 2010, n=77)', -4.4, ''), ('Splenic artery ligation (Troisi 2003, n=13)', np.nan, 'PVF −33%')]
+    iv = pd.read_csv(f'{DATA}/interventions.tsv', sep='\t')
+    items = [(f"{r.manoeuvre} ({r.study}, n={r.n})", r.delta_PVP_mmHg, f"PVF {r.delta_PVF_pct:+.0f}% ({r.flow_source})" if pd.notna(r.delta_PVF_pct) else '') for _, r in iv.iterrows()]
     fig, ax = plt.subplots(figsize=(5.2, 2.8)); y = np.arange(len(items))[::-1]
     for yi, (n, dp, note) in zip(y, items):
         if not np.isnan(dp): ax.barh(yi, dp, 0.55, color=C_SIN, alpha=0.85)
@@ -144,12 +144,15 @@ def network_3d(R=3.4, b=0.75):
     ax.set_title(f'Hemispheric liver, {G3["n_lob"]} lobules, b = {b:g}', fontsize=8); save(fig, 'network_3d')
 
 def scaling():
-    g3 = pd.read_csv(f'{DATA}/graph3d_all.tsv', sep='\t'); g2 = pd.read_csv(f'{DATA}/graph_scaling_all.tsv', sep='\t'); ex = pd.read_csv(f'{DATA}/graph3d_exponents.tsv', sep='\t')
+    g3 = pd.read_csv(f'{DATA}/graph3d_all.tsv', sep='\t'); g2 = pd.read_csv(f'{DATA}/graph_scaling_all.tsv', sep='\t'); from model import scaling as sc
     fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2)); ax = axs[0]
     for b, gr in g2.groupby('b'): Dt = gr.D_in_perF2 + gr.D_out / gr.N ** 2; e = np.polyfit(np.log(gr.N), np.log(Dt), 1)[0]; ax.loglog(gr.N, Dt / Dt.iloc[0], 'o-', label=f'b = {b:g}, exponent {e:.2f}')
     ax.set_xlabel('Number of lobules N (2D disc)'); ax.set_ylabel('D*/F² (normalised)'); ax.legend(fontsize=6.5); ax.set_title('2D graph', fontsize=8)
     ax = axs[1]
-    for b, gr in g3.groupby('b'): e = ex.iloc[(ex.b - b).abs().argmin()]; ax.loglog(gr.N, gr.D_tot_perF2 / gr.D_tot_perF2.iloc[0], 's-', label=f'b = {b:.3g}: graph {e.e_graph3D_last3:.2f}, closed form {e.e_sym3D_sameN:.2f}')
+    for b, gr in g3.groupby('b'):
+        eg = np.polyfit(np.log(gr.N.values[-3:]), np.log(gr.D_tot_perF2.values[-3:]), 1)[0]
+        ana = [sc.canopy_optimum(g, b, 3) for g in range(4, 9)]; Na = np.array([a['N'] for a in ana]); Da = np.array([a['D'] for a in ana]); ec = np.polyfit(np.log(Na[-3:]), np.log(Da[-3:]), 1)[0]
+        ax.loglog(gr.N, gr.D_tot_perF2 / gr.D_tot_perF2.iloc[0], 's-', label=f'b = {b:.3g}: graph {eg:.2f}, closed form {ec:.2f}')
     ax.set_xlabel('Number of lobules N (3D hemisphere)'); ax.set_ylabel('D*/F² (normalised)'); ax.legend(fontsize=6.5); ax.set_title('3D graph vs closed form', fontsize=8); fig.tight_layout(); save(fig, 'scaling')
 
 def allometry():
@@ -185,5 +188,6 @@ PLOTS = dict(nomogram=nomogram, risk_curve=risk_curve, series_pressure=series_pr
              interventions=interventions, network_2d=network_2d, network_3d=network_3d, scaling=scaling, allometry=allometry, shear_profile=shear_profile, certificate=certificate)
 
 if __name__ == '__main__':
-    names = sys.argv[1:] or ['all']
+    names = sys.argv[1:]
+    if not names: print(__doc__); sys.exit(0)
     for n in (PLOTS if names == ['all'] else names): PLOTS[n]()
