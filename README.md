@@ -23,6 +23,9 @@ Two dimensionless indices of haemodynamic load on a partial liver graft, the pub
 zF = graft PVF per 100 g / donor PVF per 100 g     (donor reference from the same series if measured, otherwise 90 mL/min/100 g)
 zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported; flagged in the data)
 ```
+<p align="center">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="410">
+</p>
 
 Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders small-for-size syndrome (SFSS) and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (ρ = 0.23, p = 0.46). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio. Pooled logistic fit on five SFSS groups (362 recipients, 46 events): logit(SFSS) = −6.41 + 1.88·zP, 5% risk at zP = 1.8 and 10% at 2.2.
 
@@ -30,7 +33,7 @@ Both equal 1 in a healthy donor. In 12 published living donor liver transplantat
 
 **Live:** https://danpc11.github.io/liver_pressure_index/ (served from this repository by GitHub Pages; the file is `sfss_calculator.html`, it runs entirely in the browser).
 
-Enter PVP, CVP, PVF, graft weight (or GRWR and recipient weight) and the donor flow reference. It returns both indices, the pooled SFSS risk with its bootstrap band, the position relative to the window 1–2, the outflow-resistance ratio `zP/zF`, and what each inflow-modulation manoeuvre achieved in the published series. It is a research tool calibrated on group means from published data, not a validated individual predictor and not a medical device.
+Enter PVP, CVP, PVF, graft weight (or GRWR and recipient weight) and the donor flow reference. It returns both indices, the pooled SFSS risk with its bootstrap band, the position relative to the window 1–2, the outflow-resistance ratio `zP/zF`, and what each inflow-modulation manoeuvre achieved in the published series. The normal gradient (5 mmHg) is fixed because the coefficients were fitted on it; a blank CVP is taken as 5 mmHg and flagged, an explicit 0 is a measured zero; outside the z_P range of the fitted groups (1.43–2.68) the risk is marked as extrapolation. It is a research tool calibrated on group means from published data, not a validated individual predictor and not a medical device.
 
 ## Contents
 
@@ -66,7 +69,19 @@ Plots: `nomogram`, `risk_curve`, `series_pressure`, `series_flow`, `plane`, `res
 
 ## Data
 
-`data/series.tsv` columns: `study`, `group`, `n`, `source` (table or section and page in the original PDF), `GRWR`, `PVF_per_100g`, `donor_PVF_per_100g_ref`, `PVP`, `CVP`, `CVP_measured`, `zF`, `zP`, `outcome`, `outcome_type` (`SFSS_or_dysfunction` or `mortality_or_graft_loss`), `events`, `pct`, `notes`. Every value is a transcription from the publication; nothing is estimated except CVP where flagged.
+`data/series.tsv` holds **raw values and their provenance only**; the indices are recomputed by `src/indices.py`, which is the single source used by the plots, the tests and the calculator. Columns: `study`, `group`, `n`, `source` (table or section and page in the original PDF), `GRWR`, `PVF_per_100g`, `PVF_basis`, `donor_PVF_per_100g_ref`, `PVP`, `PVP_basis`, `CVP`, `CVP_basis`, `CVP_measured`, `outcome`, `outcome_type`, `events`, `events_basis`, `pct`, `notes`.
+
+Each `*_basis` column states how the value was obtained:
+
+| basis | meaning | where it occurs |
+|---|---|---|
+| `reported` | copied from a table or the text | most values |
+| `derived` | computed from reported values (e.g. PVF divided by graft weight; PVP = gradient + CVP; deaths from a survival percentage) | Yagi 2006 PVF; Chan 2011 CVP; Ogura 2010 PVP and deaths; Yagi 2005 deaths |
+| `imputed` | not reported; a representative value was assumed | CVP = 5 mmHg in Wang 2014, Osman 2017, Yagi 2005; PVP 21 and 16 for the Wang 2014 groups defined by a 20 mmHg cut |
+| `threshold` / `group mean` | group defined by a cut-off; the cut-off or the mean of the complementary group is used | Vasavada 2014 |
+| `not applicable` | the series did not measure that variable | flow-only or pressure-only series |
+
+**Sensitivity to imputation** (`results/sensitivity.tsv`, produced by `indices.py`): with all 13 pressure groups, Spearman ρ = 0.79 (p = 0.001); restricted to the 5 groups with no imputed pressure value, ρ = 0.70 (p = 0.19), same direction but not significant with five points. The pooled logistic fit cannot be repeated without imputed values: of its five SFSS groups only Yamada 2008 has fully reported pressures (and no events), so **the fitted coefficients rest on groups whose CVP was assumed at 5 mmHg**. Each mmHg of CVP shifts z_P by 0.2. This is the main limitation of the analysis and the reason the calculator is a research tool.
 
 Series: Troisi 2003 (Liver Transpl 9:S36), Troisi 2005 (Am J Transplant 5:1397), Ou 2010 (Transplant Proc 42:876), Vasavada 2014 (Int J Surg 12:177), Alim 2016 (Liver Transpl 22:1643), Chan 2011 (Liver Transpl 17:115), Yagi 2005 (Liver Transpl 11:68), Yagi 2006 (Transplantation 81:373), Wang 2014 (Surg Today 45:979), Osman 2017 (Hepatol Res 47:293), Ogura 2010 (Liver Transpl 16:718), Yamada 2008 (Am J Transplant 8:847).
 
