@@ -1,31 +1,58 @@
 # Liver pressure index
 ### Portal pressure integrates haemodynamic risk after living donor liver transplantation
 
-Two dimensionless indices of haemodynamic load on a partial liver graft, the published series used to test them, the code that reproduces every plot as a separate file, and the calculator.
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+[![Tests](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml)
+[![Calculator](https://img.shields.io/badge/Calculator-live%20on%20GitHub%20Pages-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/liver_pressure_index/)
+![Version](https://img.shields.io/badge/version-1.0.0-1f6feb)
+![Series](https://img.shields.io/badge/LDLT%20series-12%20%7C%2022%20groups%20%7C%201026%20recipients-1f6feb)
+![Indices](https://img.shields.io/badge/indices-z_P%20pressure%20%7C%20z_F%20flow-1f6feb)
+![Dependencies](https://img.shields.io/badge/pipeline-NumPy%20%7C%20SciPy%20%7C%20pandas%20%7C%20matplotlib-success)
+![Preprint](https://img.shields.io/badge/preprint-coming%20soon-lightgrey)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
+
+<!-- When the preprint is out, replace the grey badge with, e.g.:
+[![medRxiv](https://img.shields.io/badge/medRxiv-10.1101%2FXXXX-b31b1b)](https://doi.org/10.1101/XXXX)
+and, on acceptance:
+[![DOI](https://img.shields.io/badge/J%20Hepatol-10.1016%2Fj.jhep.XXXX-0f4c81)](https://doi.org/10.1016/j.jhep.XXXX)
+-->
+
+<p align="center">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="820">
+</p>
+
+Two dimensionless indices of haemodynamic load on a partial liver graft, the published series used to test them, the code that reproduces every plot as a separate file, and a calculator.
 
 ```
 zF = graft PVF per 100 g / donor PVF per 100 g     (donor reference from the same series if measured, otherwise 90 mL/min/100 g)
 zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported; flagged in the data)
 ```
 
-Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders SFSS and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (ρ = 0.23, p = 0.46). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio.
+Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders small-for-size syndrome (SFSS) and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (ρ = 0.23, p = 0.46). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio. Pooled logistic fit on five SFSS groups (362 recipients, 46 events): logit(SFSS) = −6.41 + 1.88·zP, 5% risk at zP = 1.8 and 10% at 2.2.
 
-Repository: https://github.com/Danpc11/liver_pressure_index
+## Calculator
+
+**Live:** https://danpc11.github.io/liver_pressure_index/ (served from this repository by GitHub Pages; the file is `sfss_calculator.html`, it runs entirely in the browser).
+
+Enter PVP, CVP, PVF, graft weight (or GRWR and recipient weight) and the donor flow reference. It returns both indices, the pooled SFSS risk with its bootstrap band, the position relative to the window 1–2, the outflow-resistance ratio `zP/zF`, and what each inflow-modulation manoeuvre achieved in the published series. It is a research tool calibrated on group means from published data, not a validated individual predictor and not a medical device.
 
 ## Contents
 
 ```
-sfss_calculator.html     the calculator (open in a browser; no server, no dependencies)
+sfss_calculator.html     the calculator (also served at the Pages URL above)
+index.html               redirects the Pages root to the calculator
+assets/                  graphical abstract and other images for this README
 data/series.tsv          22 groups from 12 series, one row per group, source table/page for every value
 data/patients.tsv        individual patients where the papers tabulate them (Ou 2010, Yamada 2008, Alim 2016)
-data/cohort_template.tsv column layout for a future individual-patient cohort
 data/interventions.tsv   pressure and flow changes produced by each inflow-modulation manoeuvre, with source
+data/cohort_template.tsv column layout for a future individual-patient cohort
 data/graph*.tsv, certificate_small.tsv   cached outputs of the long model campaigns
 src/indices.py           computes zF, zP, Spearman correlations and the pooled logistic fit
 src/plots.py             14 plots, each saved on its own as results/<name>.pdf and .png
 src/build_app.py         regenerates sfss_calculator.html from the fitted coefficients and the series
 src/app_template.html    the calculator with placeholders
 src/model/               the perfusion-network model (2D, 3D, closed-form scaling) and its campaigns
+tests/                   index definitions, reproducibility of the fit, plots and app build (run by CI)
 run_all.sh               indices -> plots -> app
 ```
 
@@ -36,6 +63,7 @@ pip install -r requirements.txt
 ./run_all.sh                       # everything, ~2 min
 python src/plots.py risk_curve     # or any single plot
 python src/plots.py                # prints the list of plots
+python -m pytest tests -q          # what the CI runs
 ```
 
 Plots: `nomogram`, `risk_curve`, `series_pressure`, `series_flow`, `plane`, `resection`, `load_curve`, `interventions`, `network_2d`, `network_3d`, `scaling`, `allometry`, `shear_profile`, `certificate`. Each is a stand-alone figure with its own axes and legend, so they can be combined freely.
@@ -48,15 +76,29 @@ Series: Troisi 2003 (Liver Transpl 9:S36), Troisi 2005 (Am J Transplant 5:1397),
 
 ## Adding a cohort
 
-Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` shows the two functions `zF()` and `zP()`; a per-patient logistic fit replaces the pooled group fit in `fit_logistic()`, and `python src/build_app.py` then updates the calculator with the new coefficients and band.
-
-## Calculator
-
-`sfss_calculator.html` takes PVP, CVP, PVF, graft weight (or GRWR and recipient weight) and the donor flow reference, and returns both indices, the pooled SFSS risk with its bootstrap band, the position relative to the window 1–2, the outflow-resistance ratio `zP/zF`, and what each inflow-modulation manoeuvre achieved in the published series. It is a research tool calibrated on group means from published data; it is not a validated individual predictor.
+Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes `zF()` and `zP()`; a per-patient logistic fit replaces the pooled group fit in `fit_logistic()`, and `python src/build_app.py` then updates the calculator (and, after a push, the live page) with the new coefficients and band.
 
 ## Model
 
-`src/model/network.py` builds the liver as a graph (hilum → portal tree → hexagonal lobules → hepatic venous tree), solves flows and dissipation for prescribed lobule demand, finds the dissipation-optimal tree at fixed maintenance cost `Σ m_e^b`, and integrates the local shear set-point rule. `network3d.py` does the same on a hemisphere. `scaling.py` gives the closed form `D* ∝ F² C^(−2/b) N^((2−b)/b) L³`, the set-point `τ0 = √(D*/C)` and the allometric closure. `graph_scaling.py`, `network3d.py <R>` and `certify.py` are the campaigns whose outputs are cached in `data/`.
+`src/model/network.py` builds the liver as a graph (hilum → portal tree → hexagonal lobules → hepatic venous tree), solves flows and dissipation for prescribed lobule demand and finds the dissipation-optimal tree at fixed maintenance cost `Σ m_e^b`. `network3d.py` does the same on a hemisphere. `scaling.py` gives the closed form `D* ∝ F² C^(−2/b) N^((2−b)/b) L³`, the set-point `τ0 = √(D*/C)` and the allometric closure. `graph_scaling.py`, `network3d.py <R>` and `certify.py` are the campaigns whose outputs are cached in `data/`.
+
+## Publication
+
+- Preprint: *in preparation* (link will appear here and in the badge above).
+- Article: submitted to *Journal of Hepatology*.
+- Companion physics papers: Vázquez-Victorio et al., *Metabolic cost sets the shear stress profile of optimal vascular trees* (2026); Tovar et al., *Cost convexity controls the architecture of resistance-optimal networks* (2026).
+
+## Versions
+
+| version | date | changes |
+|---|---|---|
+| 1.0.0 | 2026-09-20 | Extraction table of 12 series, indices, pooled fit, 14 plots, calculator, GitHub Pages, tests, PolyForm Noncommercial licence |
+
+Releases are tagged on GitHub (`git tag v1.0.0 && git push --tags`); the calculator footer shows the repository URL so that a result can be traced to a version.
+
+## Citation
+
+See `CITATION.cff` (GitHub shows a "Cite this repository" button). Until the preprint appears, cite the repository: Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Cervera A, Tovar H, Pérez-Calixto D. liver_pressure_index v1.0.0, 2026. https://github.com/Danpc11/liver_pressure_index
 
 ## Funding
 
@@ -64,4 +106,4 @@ DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789.
 
 ## Licence
 
-[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0): free to use, modify and share for research, teaching, personal and non-profit purposes (universities, public research organisations and hospitals included, whatever their funding source); any commercial use requires a separate licence from the authors. Values in `data/` are transcribed from the cited publications and remain the property of their authors. The calculator is a research tool, not a medical device.
