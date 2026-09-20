@@ -8,12 +8,8 @@ The repository has two layers. The clinical layer (Stage 0) reproduces every num
 
 ```
 src/                  Python: model, campaigns, figures
-manuscript/           make_manuscript.js (docx-js) and the generated Word file
 app/                  sfss_calculator.html, self-contained risk calculator (research tool)
-data/                 extraction table of the published series and cached model outputs
-figures/              Figs. 1–4 and S1–S3 as vector PDF and 300-dpi PNG
-assets/               liver pictograms used in Fig. 1C (AI-generated, disclosed in the legend)
-notes/                working notes (Spanish) documenting each analysis step
+data/                 extraction table of the published series 
 run_all.sh            the whole pipeline, stage by stage
 ```
 
