@@ -101,9 +101,6 @@ Every GitHub release is archived at Zenodo. The concept DOI [10.5281/zenodo.2286
 
 See `CITATION.cff` (GitHub shows a "Cite this repository" button). Until the preprint appears, cite the archived software: Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Cervera A, Tovar H, Pérez-Calixto D. liver_pressure_index: portal pressure and flow indices of haemodynamic load on partial liver grafts (v0.1). Zenodo, 2026. https://doi.org/10.5281/zenodo.22861276
 
-## Funding
-
-DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789.
 
 ## Licence
 
