@@ -5,7 +5,6 @@
 [![Tests](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live%20on%20GitHub%20Pages-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/liver_pressure_index/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
-[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 
 <!-- When the preprint is out, replace the grey badge with, e.g.:
 [![medRxiv](https://img.shields.io/badge/medRxiv-10.1101%2FXXXX-b31b1b)](https://doi.org/10.1101/XXXX)
