@@ -234,6 +234,31 @@ def pooled_fit(s, boot=2000, seed=0):
     return dict(b0=float(b[0]), b1=float(b[1]), b1_ci=[float(lo[1]), float(hi[1])], groups=int(len(s)),
                 patients=int(n.sum()), events=int(ev.sum()))
 
+def recalibrate(outcomes, zP_values, beta, se=True):
+    """Recalibration in the large: keep the slope, fit only the intercept for a new cohort.
+
+    outcomes: 0/1 per patient (or events and n per group, passed as two arrays of the same length).
+    Returns the intercept alpha of logit(p) = alpha + beta*zP for that cohort, so that
+    risk = 1 / (1 + exp(-(alpha + beta*zP))). This is the standard first step of prediction-model updating
+    (Steyerberg; Vergouwe et al., Stat Med 2017): the coefficients travel, the level does not.
+    With only an overall rate p and an average gradient, alpha = logit(p) - beta * mean(zP).
+    """
+    y = np.asarray(outcomes, float); z = np.asarray(zP_values, float)
+    off = beta * z
+    f = lambda a: -np.sum(y * np.log(np.clip(1 / (1 + np.exp(-(a[0] + off))), 1e-9, 1 - 1e-9))
+                          + (1 - y) * np.log(np.clip(1 - 1 / (1 + np.exp(-(a[0] + off))), 1e-9, 1 - 1e-9)))
+    r = minimize(f, [np.log(max(y.mean(), 1e-6) / max(1 - y.mean(), 1e-6))], method='BFGS')
+    a = float(r.x[0])
+    out = dict(alpha=a, n=int(len(y)), events=int(y.sum()), beta_used=float(beta))
+    if se: out['se'] = float(np.sqrt(np.diag(r.hess_inv))[0])
+    return out
+
+def baseline_from_rate(rate, mean_zP, beta):
+    """Calibration in the large from the two numbers a centre can always state: its overall outcome rate and
+    its average zP. Returns the intercept alpha = logit(rate) - beta*mean(zP)."""
+    p = np.clip(rate, 1e-6, 1 - 1e-6)
+    return float(np.log(p / (1 - p)) - beta * mean_zP)
+
 def risk_after(baseline_rate, delta_zP, beta):
     """Absolute risk implied by a change in zP, given the user's own baseline rate at the starting gradient."""
     p0 = np.clip(baseline_rate, 1e-6, 1 - 1e-6)
