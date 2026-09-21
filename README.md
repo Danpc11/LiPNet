@@ -18,17 +18,26 @@ Two dimensionless indices of haemodynamic load on a partial liver graft, the pub
 zF = graft PVF per 100 g / donor PVF per 100 g     (donor reference from the same series if measured, otherwise 90 mL/min/100 g)
 zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported; flagged in the data)
 ```
-Both equal 1 in a healthy donor. In 12 published living donor liver transplantation (LDLT) series, `zP` orders small-for-size syndrome (SFSS) and mortality across groups (13 groups, Spearman ρ = 0.79, p = 0.001) and `zF` does not (11 groups, ρ = 0.35, p = 0.29; ρ = 0.23, p = 0.46 if the two Vasavada 2014 groups defined by a flow cut-off are included). The two coincide only when the graft keeps the donor's outflow resistance; `zP/zF` estimates that ratio. Pooled logistic fit on five SFSS groups (362 recipients, 46 events): logit(SFSS) = −6.40 + 1.88·zP, 5% risk at zP = 1.8 and 10% at 2.2.
+Both equal 1 in a healthy donor, and `zP/zF` estimates the graft's effective outflow resistance relative to the donor.
 
-<p align="left">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the pressure index zP orders small-for-size risk across published series, the flow index zF does not; the two coincide only at donor outflow resistance" width="410">
-</p>
+## What the published data support, and what they do not
+
+**The absolute level of risk is not transferable between centres.** At a gradient of about 5 mmHg (zP ~ 1) the reported small-for-size syndrome (SFSS) rate is 13-17% in Uemura 2016 and about 6% in Botha 2010, while Ishizaki 2012 reports 0% at zP ~ 2.5. A single logistic model with a common intercept therefore fails: fitted on the SFSS groups it gives a slope of 0.13 (95% CI -0.22 to 0.49), and the rank correlation between zP and outcome across the main-analysis groups is weak (18 groups, rho = 0.31, p = 0.214). Flow per gram does no better (11 groups, rho = 0.35, p = 0.290; rho = 0.23, p = 0.459 with the two groups defined by a flow cut-off).
+
+**The effect of changing the gradient is transferable.** Fitted with one intercept per study and a common slope on the 13 groups from the 5 series that contribute a within-study contrast (Ogura 2010, Osman 2017, Uemura 2016, Wang 2014, Yagi 2005; 134 events in 1,026 recipients):
+
+```
+logit(p) = alpha_study + 1.34 * zP        (95% CI for the slope 0.89 to 1.85)
+odds ratio 3.81 per unit of zP (2.44-6.37), i.e. 1.31 per mmHg of gradient (1.20-1.45)
+```
+
+The slope stays between 1.13 and 2.03 when any one study is dropped. The intercepts differ by more than two logits between centres; that difference is recipient severity, outcome definition and technique, not haemodynamics. The model therefore predicts **how much a given reduction of the gradient changes the odds**, not the baseline risk of a patient.
 
 ## Calculator
 
-**Live:** https://danpc11.github.io/liver_pressure_index/ (served from this repository by GitHub Pages; the file is `sfss_calculator.html`, it runs entirely in the browser).
+**Live:** https://danpc11.github.io/liver_pressure_index/ (`sfss_calculator.html`, runs entirely in the browser).
 
-Enter PVP, CVP, PVF, graft weight (or GRWR and recipient weight) and the donor flow reference. It returns both indices, the pooled SFSS risk with its bootstrap band, the position relative to the window 1–2, the outflow-resistance ratio `zP/zF`, and what each inflow-modulation manoeuvre achieved in the published series. The normal gradient (5 mmHg) is fixed because the coefficients were fitted on it; a blank CVP is taken as 5 mmHg and flagged, an explicit 0 is a measured zero; graft weight and donor reference must be positive (a blank donor reference falls back to 90 mL/min/100 g and says so); a portal flow of 0 gives z_F = 0 and no `zP/zF` ratio; outside the z_P range of the fitted groups (1.43–2.68) the risk is marked as extrapolation. It is a research tool calibrated on group means from published data, not a validated individual predictor and not a medical device.
+Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and optionally PVF and graft weight. It returns zP, zF, the ratio zP/zF, the odds ratio implied by the change of gradient with its bootstrap interval, and, only if you supply **your own** outcome rate at the starting gradient, the corresponding absolute risk. Example: lowering the gradient from 12 to 7 mmHg gives OR 0.26 (0.16-0.41); on a 10% baseline that is about 2.8%. A research tool, not a validated individual predictor and not a medical device.
 
 ## Contents
 
@@ -36,14 +45,14 @@ Enter PVP, CVP, PVF, graft weight (or GRWR and recipient weight) and the donor f
 sfss_calculator.html     the calculator (also served at the Pages URL above)
 index.html               redirects the Pages root to the calculator
 assets/                  graphical abstract and other images for this README
-data/series.tsv          22 groups from 12 series, one row per group, source table/page for every value
+data/series.tsv          31 groups from 17 series, raw values with provenance columns
 data/patients.tsv        individual patients where the papers tabulate them (Ou 2010, Yamada 2008, Alim 2016)
 data/interventions.tsv   pressure and flow changes produced by each inflow-modulation manoeuvre, with source
 data/cohort_template.tsv column layout for a future individual-patient cohort
 data/graph*.tsv, certificate_small.tsv   cached outputs of the long model campaigns
-src/indices.py           computes zF, zP, Spearman correlations and the pooled logistic fit
-src/plots.py             14 plots, each saved on its own as results/<name>.pdf and .png
-src/build_app.py         regenerates sfss_calculator.html from the fitted coefficients and the series
+src/indices.py           indices, correlations, within-study model, pooled model (for the record), risk_after()
+src/plots.py             15 plots, each saved on its own as results/<name>.pdf and .png
+src/build_app.py         regenerates sfss_calculator.html from the fitted effect
 src/app_template.html    the calculator with placeholders
 src/model/               the perfusion-network model (2D, 3D, closed-form scaling) and its campaigns
 tests/                   index definitions, reproducibility of the fit, plots and app build (run by CI)
@@ -60,7 +69,7 @@ python src/plots.py                # prints the list of plots
 python -m pytest tests -q          # what the CI runs
 ```
 
-Plots: `nomogram`, `risk_curve`, `series_pressure`, `series_flow`, `plane`, `resection`, `load_curve`, `interventions`, `network_2d`, `network_3d`, `scaling`, `allometry`, `shear_profile`, `certificate`. Each is a stand-alone figure with its own axes and legend, so they can be combined freely.
+Plots: `nomogram`, `within_study`, `risk_change`, `series_pressure`, `series_flow`, `plane`, `resection`, `load_curve`, `interventions`, `network_2d`, `network_3d`, `scaling`, `allometry`, `shear_profile`, `certificate`.
 
 ## Data
 
@@ -78,19 +87,23 @@ Each `*_basis` column states how the value was obtained:
 
 `indices.compute()` records every value it fills in itself (`CVP_filled`, `donor_ref_filled`) and treats it as imputed regardless of the label, and it raises an error if a label contradicts the data (e.g. a blank CVP marked `reported`).
 
-**Sensitivity** (`results/sensitivity.tsv`, produced by `indices.py`): main analysis, `zP` 13 groups ρ = 0.79 (p = 0.001), `zF` 11 groups ρ = 0.35 (p = 0.29); including the cut-off groups, `zF` 13 groups ρ = 0.23 (p = 0.46); restricted to groups whose value of the index rests on no imputed or filled number, `zP` 5 groups ρ = 0.70 (p = 0.19), same direction but not significant with five points, and `zF` unchanged (its 11 main-analysis groups have no imputed flow value). The pooled logistic fit cannot be repeated without imputed values: of its five SFSS groups only Yamada 2008 has fully reported pressures (and no events), so **the fitted coefficients rest on groups whose CVP was assumed at 5 mmHg**. Each mmHg of CVP shifts z_P by 0.2. This is the main limitation of the analysis and the reason the calculator is a research tool.
+**Sensitivity** (`results/sensitivity.tsv`): main analysis, zP 18 groups rho = 0.31 (p = 0.214), zF 11 groups rho = 0.35 (p = 0.290); including the cut-off groups, zP 21 groups rho = 0.34 (p = 0.137) and zF 13 groups rho = 0.23 (p = 0.459); restricted to groups with no imputed or filled value in the index itself, zP 10 groups rho = -0.28 (p = 0.434). The within-study model uses only measured or derived gradients and is the result the analysis supports.
 
-Series: Troisi 2003 (Liver Transpl 9:S36), Troisi 2005 (Am J Transplant 5:1397), Ou 2010 (Transplant Proc 42:876), Vasavada 2014 (Int J Surg 12:177), Alim 2016 (Liver Transpl 22:1643), Chan 2011 (Liver Transpl 17:115), Yagi 2005 (Liver Transpl 11:68), Yagi 2006 (Transplantation 81:373), Wang 2014 (Surg Today 45:979), Osman 2017 (Hepatol Res 47:293), Ogura 2010 (Liver Transpl 16:718), Yamada 2008 (Am J Transplant 8:847).
+Series: Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008, Uemura 2016 (Surgery 159:1623), Yao 2018 (Transplantation 102:623), Kanetkar 2017 (J Clin Exp Hepatol 7:235), Ishizaki 2012 (Liver Transpl 18:305), Botha 2010 (Liver Transpl 16:649). Several come from the same centre and overlapping periods (Kyoto: Yagi 2005, Yagi 2006, Ogura 2010, Uemura 2016, Yao 2018), so the groups are not independent observations and the confidence intervals do not account for that.
 
 ## Adding a cohort
 
-Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes `zF()` and `zP()`; a per-patient logistic fit replaces the pooled group fit in `fit_logistic()`, and `python src/build_app.py` then updates the calculator (and, after a push, the live page) with the new coefficients and band.
+Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes `zF()`, `zP()`, `within_study_fit()` (which takes a `study` column, so a new cohort enters as one more stratum) and `risk_after(baseline_rate, delta_zP, beta)`. `python src/build_app.py` then updates the calculator with the new effect. With individual-patient data the same model can be fitted with a random intercept per centre and adjusted for severity, which is the analysis this repository is meant to enable.
 
 ## Model
 
 `src/model/network.py` builds the liver as a graph (hilum → portal tree → hexagonal lobules → hepatic venous tree), solves flows and dissipation for prescribed lobule demand and finds the dissipation-optimal tree at fixed maintenance cost `Σ m_e^b`. `network3d.py` does the same on a hemisphere. `scaling.py` gives the closed form `D* ∝ F² C^(−2/b) N^((2−b)/b) L³`, the set-point `τ0 = √(D*/C)` and the allometric closure. `graph_scaling.py`, `network3d.py <R>` and `certify.py` are the campaigns whose outputs are cached in `data/`.
 
 ## Versions
+
+| version | date | changes |
+|---|---|---|
+| 0.1 | 2026-09-20 | First public release: extraction table of 12 series, indices, pooled fit, 14 plots, calculator, GitHub Pages, tests, PolyForm Noncommercial licence. Archived at Zenodo, version DOI [10.5281/zenodo.22861277](https://doi.org/10.5281/zenodo.22861277) |
 
 Every GitHub release is archived at Zenodo. The concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) always resolves to the latest version; each version has its own DOI (table above).
 
