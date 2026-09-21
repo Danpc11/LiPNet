@@ -47,6 +47,19 @@ def test_fast_plots_render():
     for n in ('nomogram', 'risk_curve', 'series_pressure', 'series_flow'):
         assert os.path.exists(os.path.join(ROOT, 'results', f'{n}.png'))
 
+def test_readme_numbers_match_results():
+    """The README quotes the main correlations and the fit; they must match results/ so that the two cannot drift apart."""
+    import pandas as pd, json, re
+    indices.main(boot=50)
+    sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t'); L = json.load(open(os.path.join(ROOT, 'results', 'logit_zP.json')))
+    readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
+    main = sens[sens.analysis.str.startswith('main analysis')]
+    for _, r in main.iterrows():
+        assert f"{int(r.groups)} groups" in readme and f"ρ = {r.spearman_rho:.2f}" in readme, f"README lacks main {r['index']} result"
+        assert (f"p = {r.p:.3f}" in readme) or (f"p = {r.p:.2f}" in readme), f"README lacks p for {r['index']}"
+    assert f"{L['b0']:.2f}".replace('-', '−') in readme and f"+ {L['b1']:.2f}" in readme, 'README intercept/slope differ from the fit'
+    assert '−6.41' not in readme, 'stale intercept in README'
+
 def test_app_builds():
     r = subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
@@ -55,7 +68,8 @@ def test_app_builds():
     assert 'id="gnorm"' not in html            # the normal gradient is fixed by the fitted model, not user-editable
     assert 'cvpRaw===\'\'' in html or "cvpRaw===''" in html   # blank CVP is distinguished from an explicit zero
     assert 'of the 5 groups had no reported central venous pressure' in html
+    assert 'function tagP(' in html and 'function tagF(' in html   # pressure and flow have separate labels
     assert 'must be a positive number' in html         # flow and weight inputs are validated
 
 if __name__ == '__main__':
-    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_pooled_fit_reproduces_published_coefficients, test_fast_plots_render, test_app_builds): t(); print('ok', t.__name__)
+    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_pooled_fit_reproduces_published_coefficients, test_fast_plots_render, test_readme_numbers_match_results, test_app_builds): t(); print('ok', t.__name__)
