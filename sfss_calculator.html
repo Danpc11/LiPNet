@@ -64,7 +64,7 @@ small{color:var(--muted)}
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Risk curve</h2><svg id="plot" viewBox="0 0 640 300" role="img" aria-label="risk curve"></svg>
 <small>The curve is anchored on the reference you chose; the markers are the current gradient and the gradient after the change. Without an anchor it shows the published groups, each centred on its own cohort.</small>
-<div class="note" style="margin-top:12px"><b>What this does and does not give you.</b> The effect of changing the gradient is transferable: OR 5.25 per unit of z<sub>P</sub> (95% CI 2.79–9.89), 1.39 per mmHg, from 11 groups in 5 series. The level of risk is not: at the same gradient, published rates run from 0% to 17%. So the percentages shown are only as good as the baseline you supply. Research tool, not a medical device.</div></div>
+<div class="note" style="margin-top:12px"><b>What this does and does not give you.</b> The effect of changing the gradient is transferable: OR 7.09 per unit of z<sub>P</sub> (95% CI 3.37–20.46), 1.48 per mmHg, from 11 groups in 5 series. The level of risk is not: at the same gradient, published rates run from 0% to 17%. So the percentages shown are only as good as the baseline you supply. Research tool, not a medical device.</div></div>
 
 <div class="card tbl" style="margin-top:12px"><h2 style="margin-top:0">What modulation does in the published series</h2>
 <table><tr><th>Manoeuvre</th><th>Reported effect</th><th>Source</th></tr>
@@ -74,13 +74,13 @@ small{color:var(--muted)}
 <tr><td>Middle hepatic vein / outflow</td><td>PVF 3.9× donor with gradient 6 mmHg and no injury: pressure falls below flow</td><td>Chan 2011</td></tr></table>
 <small>Below z<sub>P</sub> ≈ 1 (gradient under normal) the model predicts vessel regression: portal steal. Troisi calibrated shunts to about twice the donor flow; Kyoto reported steal with a 23.7% GV/SLV graft.</small></div>
 
-<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008. Model: dissipation-optimal perfusion network with fixed vascular maintenance cost (Vázquez-Victorio, Pérez-Calixto, Escutia-Guadarrama, Tovar, Pérez-Calixto, 2026). Source: https://github.com/Danpc11/liver_pressure_index</small></p>
+<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008, Uemura 2016, Yao 2018, Kanetkar 2017, Ishizaki 2012 and Botha 2010. Model: dissipation-optimal perfusion network with fixed vascular maintenance cost (Vázquez-Victorio, Pérez-Calixto, Escutia-Guadarrama, Tovar, Pérez-Calixto, 2026). Source: https://github.com/Danpc11/liver_pressure_index</small></p>
 </main>
 <script>
 const GROUPS=[{"s": "Wang 2014 (SFSS)", "z": 2.22, "p": 9.7, "n": 154}, {"s": "Wang 2014 (SFSS)", "z": 2.68, "p": 19.7, "n": 122}, {"s": "Osman 2017 (SFSS)", "z": 1.43, "p": 2.6, "n": 39}, {"s": "Osman 2017 (SFSS)", "z": 2.43, "p": 16.2, "n": 37}, {"s": "Ogura 2010 (mortality)", "z": 1.24, "p": 7.0, "n": 86}, {"s": "Ogura 2010 (mortality)", "z": 1.98, "p": 32.6, "n": 43}, {"s": "Yagi 2005 (mortality)", "z": 2.08, "p": 6.7, "n": 15}, {"s": "Yagi 2005 (mortality)", "z": 3.74, "p": 41.2, "n": 17}, {"s": "Uemura 2016 (SFSS)", "z": 1.02, "p": 17.2, "n": 29}, {"s": "Uemura 2016 (SFSS)", "z": 0.95, "p": 13.2, "n": 38}, {"s": "Uemura 2016 (SFSS)", "z": 0.95, "p": 13.0, "n": 154}],STUDIES=["Ogura 2010 (mortality)", "Osman 2017 (SFSS)", "Uemura 2016 (SFSS)", "Wang 2014 (SFSS)", "Yagi 2005 (mortality)"],ALPHAS={"Ogura 2010 (mortality)": -4.7731, "Osman 2017 (SFSS)": -6.4045, "Uemura 2016 (SFSS)": -3.7252, "Wang 2014 (SFSS)": -6.6231, "Yagi 2005 (mortality)": -7.5499};
 const REFS={"Ogura 2010 (mortality)": {"alpha": -4.7731, "n": 129, "events": 20, "zmin": 1.24, "zmax": 1.98}, "Osman 2017 (SFSS)": {"alpha": -6.4045, "n": 76, "events": 7, "zmin": 1.43, "zmax": 2.428}, "Uemura 2016 (SFSS)": {"alpha": -3.7252, "n": 221, "events": 30, "zmin": 0.946, "zmax": 1.02}, "Wang 2014 (SFSS)": {"alpha": -6.6231, "n": 276, "events": 39, "zmin": 2.22, "zmax": 2.68}, "Yagi 2005 (mortality)": {"alpha": -7.5499, "n": 32, "events": 8, "zmin": 2.08, "zmax": 3.74}};
 const CENTRED=[{"s": "Wang 2014 (SFSS)", "zc": -0.23, "lc": -0.4029, "n": 154}, {"s": "Wang 2014 (SFSS)", "zc": 0.23, "lc": 0.4029, "n": 122}, {"s": "Osman 2017 (SFSS)", "zc": -0.499, "lc": -0.8335, "n": 39}, {"s": "Osman 2017 (SFSS)", "zc": 0.499, "lc": 0.8335, "n": 37}, {"s": "Ogura 2010 (mortality)", "zc": -0.37, "lc": -0.9031, "n": 86}, {"s": "Ogura 2010 (mortality)", "zc": 0.37, "lc": 0.9031, "n": 43}, {"s": "Yagi 2005 (mortality)", "zc": -0.83, "lc": -0.9661, "n": 15}, {"s": "Yagi 2005 (mortality)", "zc": 0.83, "lc": 0.9661, "n": 17}, {"s": "Uemura 2016 (SFSS)", "zc": 0.048, "lc": 0.2334, "n": 29}, {"s": "Uemura 2016 (SFSS)", "zc": -0.022, "lc": -0.0795, "n": 38}, {"s": "Uemura 2016 (SFSS)", "zc": -0.026, "lc": -0.1539, "n": 154}];
-const BETA=1.6592,BLO=1.0268,BHI=2.2916,GN=5,DEFAULT_CVP=5,ZMIN=0.946,ZMAX=3.740;
+const BETA=1.9587,BLO=1.2160,BHI=3.0186,GN=5,DEFAULT_CVP=5,ZMIN=0.946,ZMAX=3.740;
 const $=id=>document.getElementById(id);
 function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
@@ -116,8 +116,7 @@ function calc(){
    } else if(ref==='cohort'){
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
      if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)){
-       const zbar=bg/gn, o=b/(1-b), R=(z)=>{const oo=o*Math.exp(BETA*(z-zbar)); return 100*oo/(1+oo);};
-       const RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);};
+       const zbar=bg/gn, o=b/(1-b), RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);}, R=(z)=>RL(z,BETA);
        msg.push('Anchored on your cohort: overall rate '+(100*b).toFixed(0)+'% at an average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
      } else msg.push('Enter your cohort\u2019s overall outcome rate and its average portocaval gradient, or choose another reference above.');
    } else {
@@ -137,10 +136,10 @@ function calc(){
  // anchor for the curve: {alpha} in logit(p) = alpha + BETA*zP, from whichever reference is selected
  let anchor=null;
  if(ref==='cohort'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
-   if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={a:Math.log(b/(1-b))-BETA*(bg/gn), label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
+   if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={l0:Math.log(b/(1-b)), z0:bg/gn, label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
  else if(ref==='own'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
-   if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={a:Math.log(b/(1-b))-BETA*zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
- else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, label:ref};
+   if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={l0:Math.log(b/(1-b)), z0:zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
+ else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, label:ref};   // fitted stratum: intercept and slope from the same model
  draw(zP,zP2,anchor);}
 function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
  const x=z=>ml+(z-0.6)/(4-0.6)*(W-ml-mr);
@@ -152,7 +151,8 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
    o+='<line x1="'+ml+'" y1="'+(H-mb)+'" x2="'+(W-mr)+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/><line x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/>';return o;};
  let yv;
  if(anchor){                      // absolute risk on the chosen anchor: one curve with its interval
-   const f=(z,b)=>100/(1+Math.exp(-(anchor.a+b*z)));
+   // logit p(z) = logit p_ref + b*(z - z_ref) when the user supplies the reference, so every curve passes through it
+   const f=(z,b)=>100/(1+Math.exp(-((anchor.a!==undefined?anchor.a+b*z:anchor.l0+b*(z-anchor.z0)))));
    const top=Math.max(f(4,BETA),f(4,BHI),f(isNaN(zp)?2:zp,BETA));
    const YM=top>55?100:(top>27?60:30); yv=p=>H-mb-(Math.min(p,YM)/YM)*(H-mt-mb);
    const TK=YM===100?[0,20,40,60,80,100]:(YM===60?[0,10,20,30,40,50,60]:[0,5,10,15,20,25,30]);
