@@ -5,7 +5,9 @@
 
 Available plots (results/<name>.pdf and .png):
     nomogram           zP against final PVP for several CVP values
-    within_study       outcome vs zP by study: common slope, one intercept per study
+    within_study       outcome vs zP by study: common slope, one intercept per stratum
+    forest             per-stratum slope with CI and the random-effects pooled estimate
+    centred            every group on one scale: odds and gradient relative to its own cohort mean
     risk_change        odds ratio and absolute risk implied by a change in gradient, by baseline rate
     series_pressure    outcome (%) against zP, all groups with a pressure index
     series_flow        outcome (%) against zF, all groups with a flow index
@@ -66,6 +68,56 @@ def within_study():
             transform=ax.transAxes, ha='right', va='top', fontsize=6.5)
     ax.set_xlabel('z$_P$'); ax.set_ylabel('Outcome (%)'); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60)
     ax.legend(loc='upper left', fontsize=5.5, title='stratum intercept (study × outcome)', title_fontsize=5.5); save(fig, 'within_study')
+
+def forest():
+    """Per-stratum slope with its confidence interval and the random-effects pooled estimate."""
+    import json as _json
+    f = f'{OUT}/meta_slope.json'
+    if not os.path.exists(f): indices.main()
+    M = _json.load(open(f))['meta']
+    rows = sorted(M['strata'], key=lambda r: r['beta'])
+    fig, ax = plt.subplots(figsize=(5.6, 3.4))
+    lab = lambda s: s.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mortality_or_graft_loss', ' (mortality)')
+    y = np.arange(len(rows))[::-1]
+    for yi, r in zip(y, rows):
+        lo, hi = r['beta'] - 1.96 * r['se'], r['beta'] + 1.96 * r['se']
+        ax.plot([np.exp(lo), np.exp(hi)], [yi, yi], color='0.35', lw=1.2)
+        ax.plot(np.exp(r['beta']), yi, 's', color=C_IN, ms=4 + min(10, r['events'] ** 0.5), mec='k', mew=0.4)
+        ax.text(0.9, yi + 0.33, f"{lab(r['stratum'])}  ({r['events']}/{r['patients']}, z$_P$ span {r['zP_span']:.2f})", fontsize=6.5, va='bottom', ha='left')
+    ax.axvline(np.exp(M['beta']), color=C_SIN, lw=1.2)
+    ax.axvspan(np.exp(M['beta_ci'][0]), np.exp(M['beta_ci'][1]), color=C_SIN, alpha=0.12, lw=0)
+    ax.axvline(1, color='k', lw=0.8, ls='--')
+    ax.text(0.98, 0.02, f"random effects: OR {M['OR_per_zP']:.2f} ({M['OR_per_zP_ci'][0]:.2f}–{M['OR_per_zP_ci'][1]:.1f})\n"
+                        f"tau$^2$ = {M['tau2']:.2f}, I$^2$ = {M['I2']:.0f}%, Q = {M['Q']:.2f} (p = {M['Q_p']:.2f})",
+            transform=ax.transAxes, ha='right', va='bottom', fontsize=6.5)
+    ax.set_xscale('log'); ax.set_xlim(0.7, 1e4); ax.set_yticks([]); ax.set_ylim(-1.1, len(rows) - 0.1)
+    ax.spines['left'].set_visible(False); ax.set_xlabel('Odds ratio per unit of z$_P$ (5 mmHg of gradient)')
+    save(fig, 'forest')
+
+def centred():
+    """Every group on one scale: outcome odds and gradient relative to that cohort's own average."""
+    import json as _json
+    f = f'{OUT}/meta_slope.json'
+    if not os.path.exists(f): indices.main()
+    C = _json.load(open(f))['centred']; P = pd.DataFrame(C['points'])
+    lab = lambda s: s.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mortality_or_graft_loss', ' (mortality)')
+    fig, ax = plt.subplots(figsize=(4.8, 3.8))
+    strata_ = sorted(P.stratum.unique()); cols = dict(zip(strata_, ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0']))
+    x = np.linspace(P.zP_c.min() * 1.15, P.zP_c.max() * 1.15, 20)
+    ax.fill_between(x, np.exp(C['beta_ci'][0] * x), np.exp(C['beta_ci'][1] * x), color='0.85', lw=0, zorder=0)
+    ax.plot(x, np.exp(C['beta'] * x), color='k', lw=1.4, zorder=1)
+    for st in strata_:
+        g = P[P.stratum == st]
+        ax.scatter(g.zP_c, np.exp(g.log_odds_c), s=20 + g.n * 0.8, color=cols[st], edgecolor='k', lw=0.4, label=lab(st), zorder=3)
+        if len(g) == 2: ax.plot(g.zP_c, np.exp(g.log_odds_c), '-', color=cols[st], lw=0.8, alpha=0.6, zorder=2)
+    ax.axhline(1, color='k', lw=0.6, ls=':'); ax.axvline(0, color='k', lw=0.6, ls=':')
+    ax.set_yscale('log')
+    ax.set_xlabel('z$_P$ relative to the cohort mean'); ax.set_ylabel("Outcome odds relative to the cohort mean")
+    ax.text(0.03, 0.97, f"OR {C['OR_per_zP']:.2f} per unit z$_P$ ({C['OR_per_zP_ci'][0]:.2f}–{C['OR_per_zP_ci'][1]:.2f})\n"
+                        f"{C['OR_per_mmHg']:.2f} per mmHg · weighted R$^2$ = {C['r2_weighted']:.2f}",
+            transform=ax.transAxes, va='top', fontsize=6.5)
+    ax.legend(loc='lower right', fontsize=6)
+    save(fig, 'centred')
 
 def risk_change():
     """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates."""
@@ -222,7 +274,7 @@ def certificate():
     for i, r in ce.iterrows(): ax.text(i, r.frac_seeds_at_opt * 100 + 2, f'gap {abs(r.rel_gap):.0e}', ha='center', fontsize=6.5)
     ax.set_ylim(0, 115); ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Random starts reaching the exact optimum (%)'); ax.set_title('7 lobules, 279 936 trees enumerated', fontsize=8); save(fig, 'certificate')
 
-PLOTS = dict(nomogram=nomogram, within_study=within_study, risk_change=risk_change, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
+PLOTS = dict(nomogram=nomogram, within_study=within_study, forest=forest, centred=centred, risk_change=risk_change, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
              interventions=interventions, network_2d=network_2d, network_3d=network_3d, scaling=scaling, allometry=allometry, shear_profile=shear_profile, certificate=certificate)
 
 if __name__ == '__main__':
