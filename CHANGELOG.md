@@ -4,7 +4,18 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
-## [0.3.1] – 2026-09-21
+## [0.3.0] – 2026-09-21
+
+### Added
+- `indices.meta_slope()`: random-effects (DerSimonian-Laird) meta-analysis of the per-stratum slopes, with tau2, Q and I2. Result: OR 6.69 per unit of zP (95% CI 3.12-14.4), tau2 = 0, Q = 1.47 on 4 df (p = 0.83), I2 = 0%, i.e. the five series estimate one common effect. It agrees with the stratified fit and does not spend degrees of freedom on the intercepts.
+- `indices.overdispersion()`: Pearson chi2/df of the stratified fit (0.31 on 5 df), with the quasi-binomial interval; there is no extra-binomial spread.
+- `indices.attenuation()`: regression dilution. The sampling error of the group means costs 3% of the slope; the within-group spread of the gradient implies a per-patient slope of about 3.3 (lambda 0.59), so aggregation understates rather than inflates the effect.
+- `indices.centred()`: the within (fixed-effects) transformation. Subtracting each cohort's own mean log-odds and mean zP cancels the stratum intercept exactly and puts all 11 groups on one scale; they fall on a single line (weighted R2 = 0.91, slope 1.66 +- 0.32, OR 5.25 per unit of zP, 1.39 per mmHg), with plot `centred`.
+- The calculator now uses the intercept-free centred slope and offers a **cohort-average anchor**: enter your cohort's overall outcome rate and its average portocaval gradient, and it places the patient relative to that average, which is the quantity the centring defines and the pair of numbers a centre can actually state.
+- Plot `forest`: per-stratum slope with its interval and the pooled estimate.
+- `results/meta_slope.json`; three more rows in `results/sensitivity.tsv`; tests for all three.
+
+## [0.2..2] – 2026-09-21
 
 Code and methodology audit: three corrections that change the estimated effect.
 
@@ -23,7 +34,7 @@ Code and methodology audit: three corrections that change the estimated effect.
 - The redundant `CVP_measured` column is removed; `CVP_basis` is the single provenance field.
 
 
-## [0.3.0] – 2026-09-21
+## [0.2.1] – 2026-09-21
 
 Five series with measured portocaval gradients were added; they refute the pooled common-intercept model and replace it with a within-study effect.
 
@@ -79,7 +90,7 @@ Methodological and calculator fixes after two rounds of code review.
 ### Removed
 - `data/graph3d_exponents.tsv` (exponents are computed on the fly), stored `zP`/`zF` columns, editable gradient field in the calculator.
 
-## [0.1] – 2026-09-20
+## [0.1.0] – 2026-09-20
 
 First public release. Archived as [10.5281/zenodo.22861277](https://doi.org/10.5281/zenodo.22861277).
 
