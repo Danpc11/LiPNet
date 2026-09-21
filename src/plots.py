@@ -53,18 +53,19 @@ def within_study():
     """Observed outcome vs zP with one line per study (common slope, study intercepts)."""
     L = fit(); d = series(); fig, ax = plt.subplots(figsize=(4.6, 3.8))
     cols = dict(zip(L['studies'], ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0', '#8a9a1e']))
+    lab = lambda st: st.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mortality_or_graft_loss', ' (mortality)')
     zz = np.linspace(0.8, 4, 50)
     for st, a in L['alphas'].items():
         ax.plot(zz, 100 / (1 + np.exp(-(a + L['beta'] * zz))), color=cols[st], lw=1.2, alpha=0.8)
     for g in L['study_groups']:
-        ax.scatter(g['zP'], g['pct'], s=12 + g['n'] / 3, color=cols[g['study']], edgecolor='k', lw=0.4, zorder=3,
+        ax.scatter(g['zP'], g['pct'], s=12 + g['n'] / 3, color=cols[g['stratum']], edgecolor='k', lw=0.4, zorder=3,
                    marker='o' if g['outcome_type'] == 'SFSS_or_dysfunction' else 's')
-    for st, c in cols.items(): ax.plot([], [], color=c, lw=1.2, marker='o', ms=4, label=st)
+    for st, c in cols.items(): ax.plot([], [], color=c, lw=1.2, marker='o', ms=4, label=lab(st))
     ax.axvspan(1, 2, color='0.9', lw=0)
     ax.text(0.98, 0.97, f"common slope: OR {L['OR_per_zP']:.2f} per unit z$_P$\n(95% CI {L['OR_per_zP_ci'][0]:.2f}–{L['OR_per_zP_ci'][1]:.2f})\nOR {L['OR_per_mmHg']:.2f} per mmHg",
             transform=ax.transAxes, ha='right', va='top', fontsize=6.5)
     ax.set_xlabel('z$_P$'); ax.set_ylabel('Outcome (%)'); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60)
-    ax.legend(loc='upper left', fontsize=6, title='study intercept', title_fontsize=6); save(fig, 'within_study')
+    ax.legend(loc='upper left', fontsize=5.5, title='stratum intercept (study × outcome)', title_fontsize=5.5); save(fig, 'within_study')
 
 def risk_change():
     """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates."""
