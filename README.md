@@ -7,11 +7,6 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 <!-- preprint badge goes here when it is out -->
-
-<p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; within each centre the portocaval gradient tracks outcome, while the level of risk is centre-specific" width="820">
-</p>
-
 Two donor-normalised indices of the haemodynamic load on a partial liver graft, the published series used to test them, and a calculator.
 
 ```
@@ -21,23 +16,28 @@ zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported)
 
 Both equal 1 in a healthy donor. Their ratio, `zP/zF`, estimates the graft's outflow resistance relative to the donor, which is why flow and pressure can disagree.
 
+
+<p align="center">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; within each centre the portocaval gradient tracks outcome, while the level of risk is centre-specific" width="520">
+</p>
+
 ## What the data show
 
 **The level of risk does not travel.** At a gradient near 5 mmHg the reported small-for-size rate is 13–17% in Uemura 2016 and about 6% in Botha 2010, while Ishizaki 2012 reports none at 12 mmHg. A single logistic curve fitted across centres is therefore flat (slope 0.11, 95% CI −0.25 to 0.46), and the rank correlation between `zP` and outcome across series is weak (16 groups, ρ = 0.23, p = 0.399). Flow per gram does no better (12 groups, ρ = 0.27, p = 0.388).
 
-**The effect of changing the gradient does travel.** Centre each cohort on its own average and the eleven groups fall on one line (weighted R² = 0.91):
+**The effect of changing the gradient does travel.** Fitted with one intercept per stratum (study and outcome definition) and a common slope, on eleven groups from five series, 104 events in 734 recipients:
 
 ```
-OR 5.25 per unit of zP (95% CI 2.79–9.89)   =   1.39 per mmHg of gradient
+OR 7.09 per unit of zP (95% CI 3.37–20.5)   =   1.48 per mmHg of gradient
 ```
 
-A stratified logistic fit (OR 7.09) and a random-effects meta-analysis of the five per-series slopes (OR 6.69, τ² = 0, I² = 0%) agree. The slope holds for both outcome definitions and when any study is dropped. This is the familiar behaviour of prediction models across sites: the coefficients transport, the intercept does not.
+A random-effects meta-analysis of the five per-series slopes agrees (OR 6.69, 95% CI 3.12–14.4) and finds no heterogeneity (τ² = 0, I² = 0%, Q = 1.47 on 4 df, p = 0.83). The slope holds for both outcome definitions (1.87 and 2.03) and when any study is dropped (1.67–2.16). Centring each cohort on its own average puts all eleven groups on one scale (plot `centred`, weighted R² = 0.91); that view is descriptive, the effect comes from the stratified fit. This is the familiar behaviour of prediction models across sites: the coefficients transport, the intercept does not.
 
 ## Calculator
 
 **https://danpc11.github.io/liver_pressure_index/** — a single HTML file, runs in the browser.
 
-Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and an anchor for the level: your cohort's overall outcome rate and average gradient, your rate at the current gradient, or one of the fitted series. It returns `zP`, `zF`, their ratio, the odds ratio for the change, and the absolute risks that anchor implies.
+Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and an anchor for the level: your cohort's overall outcome rate and average gradient, your rate at the current gradient, or one of the fitted series. It returns `zP`, `zF`, their ratio, the odds ratio for the change, and the absolute risks that anchor implies. Slope, interval and intercepts all come from the same stratified model, so the curve passes through the anchor you give it.
 
 ## Getting your own baseline
 
