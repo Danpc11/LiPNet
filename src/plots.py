@@ -5,7 +5,8 @@
 
 Available plots (results/<name>.pdf and .png):
     nomogram           zP against final PVP for several CVP values
-    risk_curve         pooled logistic fit of SFSS on zP with bootstrap band and the published groups
+    within_study       outcome vs zP by study: common slope, one intercept per study
+    risk_change        odds ratio and absolute risk implied by a change in gradient, by baseline rate
     series_pressure    outcome (%) against zP, all groups with a pressure index
     series_flow        outcome (%) against zF, all groups with a flow index
     plane              flow-pressure plane: donor diagonal, window, published groups, cirrhosis region
@@ -34,9 +35,10 @@ import indices
 series = lambda: indices.compute(pd.read_csv(f'{DATA}/series.tsv', sep='\t'))   # indices always recomputed from the raw columns
 def save(fig, name):
     os.makedirs(OUT, exist_ok=True); fig.savefig(f'{OUT}/{name}.pdf', bbox_inches='tight'); fig.savefig(f'{OUT}/{name}.png', dpi=300, bbox_inches='tight'); plt.close(fig); print('saved', name)
-def logit():
-    f = f'{OUT}/logit_zP.json'
-    if not os.path.exists(f): import indices; indices.main()
+import indices
+def fit():
+    f = f'{OUT}/within_study_fit.json'
+    if not os.path.exists(f): indices.main()
     return json.load(open(f))
 
 # ------------------------------------------------------------------ clinical plots
@@ -44,17 +46,46 @@ def nomogram():
     fig, ax = plt.subplots(figsize=(3.6, 3.2)); pvp = np.linspace(6, 26, 100)
     for cvp, c in ((2, '#1f5fbf'), (5, '#2e7d32'), (8, '#f28c28'), (11, '#c62828')): ax.plot(pvp, (pvp - cvp) / 5, color=c, lw=1.3, label=f'CVP {cvp} mmHg')
     ax.axhspan(1, 2, color='0.9', lw=0); ax.axhline(1, color='k', lw=0.6); ax.axhline(2, color='k', lw=0.6, ls='--')
-    ax.text(6.4, 1.5, 'target window', fontsize=7, va='center'); ax.text(6.4, 2.15, 'z$_P$ = 2', fontsize=7); ax.text(6.4, 0.55, 'steal risk', fontsize=7)
+    ax.text(25.8, 1.5, 'target window', fontsize=7, va='center', ha='right'); ax.text(25.8, 2.15, 'z$_P$ = 2', fontsize=7, ha='right'); ax.text(6.4, 0.55, 'steal risk', fontsize=7)
     ax.set_xlabel('Final portal venous pressure (mmHg)'); ax.set_ylabel('z$_P$ = (PVP − CVP)/5'); ax.set_ylim(0, 4.5); ax.legend(loc='upper left', fontsize=7); save(fig, 'nomogram')
 
-def risk_curve():
-    L = logit(); d = series(); s = d[(d.outcome_type == 'SFSS_or_dysfunction') & d.zP.notna() & d.in_main_analysis]
-    fig, ax = plt.subplots(figsize=(3.6, 3.2)); z = np.array(L['z'])
-    ax.fill_between(z, np.array(L['lo']) * 100, np.array(L['hi']) * 100, color=C_SIN, alpha=0.15, lw=0, label='95% bootstrap band')
-    ax.plot(z, np.array(L['p']) * 100, color=C_SIN, lw=1.4, label=f"logit = {L['b0']:.2f} + {L['b1']:.2f} z$_P$")
-    ax.scatter(s.zP, s.pct, s=12 + s.n / 3, color='w', edgecolor=C_SIN, lw=0.9, zorder=3, label='published groups (area ∝ n)')
-    for _, r in s.iterrows(): ax.annotate(r.study, (r.zP, r.pct), xytext=(5, 3), textcoords='offset points', fontsize=6)
-    ax.axvspan(1, 2, color='0.9', lw=0); ax.set_xlabel('z$_P$'); ax.set_ylabel('Small-for-size syndrome (%)'); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60); ax.legend(loc='upper left', fontsize=6.5); save(fig, 'risk_curve')
+def within_study():
+    """Observed outcome vs zP with one line per study (common slope, study intercepts)."""
+    L = fit(); d = series(); fig, ax = plt.subplots(figsize=(4.6, 3.8))
+    cols = dict(zip(L['studies'], ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0', '#8a9a1e']))
+    zz = np.linspace(0.8, 4, 50)
+    for st, a in L['alphas'].items():
+        ax.plot(zz, 100 / (1 + np.exp(-(a + L['beta'] * zz))), color=cols[st], lw=1.2, alpha=0.8)
+    for g in L['study_groups']:
+        ax.scatter(g['zP'], g['pct'], s=12 + g['n'] / 3, color=cols[g['study']], edgecolor='k', lw=0.4, zorder=3,
+                   marker='o' if g['outcome_type'] == 'SFSS_or_dysfunction' else 's')
+    for st, c in cols.items(): ax.plot([], [], color=c, lw=1.2, marker='o', ms=4, label=st)
+    ax.axvspan(1, 2, color='0.9', lw=0)
+    ax.text(0.98, 0.97, f"common slope: OR {L['OR_per_zP']:.2f} per unit z$_P$\n(95% CI {L['OR_per_zP_ci'][0]:.2f}–{L['OR_per_zP_ci'][1]:.2f})\nOR {L['OR_per_mmHg']:.2f} per mmHg",
+            transform=ax.transAxes, ha='right', va='top', fontsize=6.5)
+    ax.set_xlabel('z$_P$'); ax.set_ylabel('Outcome (%)'); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60)
+    ax.legend(loc='upper left', fontsize=6, title='study intercept', title_fontsize=6); save(fig, 'within_study')
+
+def risk_change():
+    """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates."""
+    L = fit(); fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
+    ax = axs[0]; dg = np.linspace(-12, 4, 100)
+    OR = np.exp(L['beta'] * dg / L['normal_gradient_mmHg'])
+    lo = np.exp(L['beta_ci'][0] * dg / L['normal_gradient_mmHg']); hi = np.exp(L['beta_ci'][1] * dg / L['normal_gradient_mmHg'])
+    ax.fill_between(dg, np.minimum(lo, hi), np.maximum(lo, hi), color=C_SIN, alpha=0.15, lw=0, label='95% bootstrap band')
+    ax.plot(dg, OR, color=C_SIN, lw=1.4); ax.axhline(1, color='k', lw=0.6); ax.axvline(0, color='k', lw=0.6)
+    ax.set_yscale('log'); ax.set_xlabel('Change in portocaval gradient (mmHg)'); ax.set_ylabel('Odds ratio for the outcome')
+    for g, t in ((-5, '−5 mmHg'), (-10, '−10 mmHg')):
+        o = np.exp(L['beta'] * g / L['normal_gradient_mmHg']); ax.plot(g, o, 'o', color=C_SIN); ax.annotate(f'{t}: OR {o:.2f}', (g, o), xytext=(6, -2), textcoords='offset points', fontsize=6.5)
+    ax.legend(fontsize=6.5, loc='upper left')
+    ax = axs[1]
+    for p0, c in ((0.05, '#2e7d32'), (0.10, '#8a9a1e'), (0.20, '#f28c28'), (0.35, '#c62828')):
+        p = [100 * indices.risk_after(p0, g / L['normal_gradient_mmHg'], L['beta']) for g in dg]
+        ax.plot(dg, p, color=c, lw=1.4, label=f'{int(p0*100)}%')
+    ax.axvline(0, color='k', lw=0.6); ax.set_xlabel('Change in portocaval gradient (mmHg)')
+    ax.set_ylabel('Outcome risk (%)'); ax.set_ylim(0, 80)
+    ax.legend(fontsize=6.5, title="centre's baseline rate\nat the starting gradient", title_fontsize=6.5, loc='upper left')
+    fig.tight_layout(); save(fig, 'risk_change')
 
 def _series(col, name, xlabel, marker_text):
     d0 = series().dropna(subset=[col]); d = d0[d0.in_main_analysis]; x = d0[~d0.in_main_analysis]
@@ -190,7 +221,7 @@ def certificate():
     for i, r in ce.iterrows(): ax.text(i, r.frac_seeds_at_opt * 100 + 2, f'gap {abs(r.rel_gap):.0e}', ha='center', fontsize=6.5)
     ax.set_ylim(0, 115); ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Random starts reaching the exact optimum (%)'); ax.set_title('7 lobules, 279 936 trees enumerated', fontsize=8); save(fig, 'certificate')
 
-PLOTS = dict(nomogram=nomogram, risk_curve=risk_curve, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
+PLOTS = dict(nomogram=nomogram, within_study=within_study, risk_change=risk_change, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
              interventions=interventions, network_2d=network_2d, network_3d=network_3d, scaling=scaling, allometry=allometry, shear_profile=shear_profile, certificate=certificate)
 
 if __name__ == '__main__':
