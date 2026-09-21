@@ -48,7 +48,7 @@ def nomogram():
     ax.set_xlabel('Final portal venous pressure (mmHg)'); ax.set_ylabel('z$_P$ = (PVP − CVP)/5'); ax.set_ylim(0, 4.5); ax.legend(loc='upper left', fontsize=7); save(fig, 'nomogram')
 
 def risk_curve():
-    L = logit(); d = series(); s = d[(d.outcome_type == 'SFSS_or_dysfunction') & d.zP.notna()]
+    L = logit(); d = series(); s = d[(d.outcome_type == 'SFSS_or_dysfunction') & d.zP.notna() & d.in_main_analysis]
     fig, ax = plt.subplots(figsize=(3.6, 3.2)); z = np.array(L['z'])
     ax.fill_between(z, np.array(L['lo']) * 100, np.array(L['hi']) * 100, color=C_SIN, alpha=0.15, lw=0, label='95% bootstrap band')
     ax.plot(z, np.array(L['p']) * 100, color=C_SIN, lw=1.4, label=f"logit = {L['b0']:.2f} + {L['b1']:.2f} z$_P$")
@@ -88,7 +88,7 @@ def plane():
     ax.plot([0, 5], [0, 5], 'k--', lw=0.7); ax.text(4.35, 4.7, 'donor outflow resistance', fontsize=6.5, rotation=45, ha='center', va='center')
     ax.plot(1, 1, 'ko', ms=5, zorder=5); ax.text(1.12, 0.62, 'donor liver', fontsize=7)
     colr = lambda p: '#c62828' if p > 20 else '#f28c28' if p > 5 else '#2e7d32'
-    for _, r in d[d.zF.notna() & d.zP.isna() & (d.outcome_type == 'SFSS_or_dysfunction')].iterrows(): ax.plot(r.zF, r.zF, 'o', color=colr(r.pct), ms=3.5 + r.n ** 0.5 / 2, mec='k', mew=0.3, alpha=0.9, zorder=4)
+    for _, r in d[d.zF.notna() & d.zP.isna() & (d.outcome_type == 'SFSS_or_dysfunction') & d.in_main_analysis].iterrows(): ax.plot(r.zF, r.zF, 'o', color=colr(r.pct), ms=3.5 + r.n ** 0.5 / 2, mec='k', mew=0.3, alpha=0.9, zorder=4)
     for _, r in d.dropna(subset=['zF', 'zP']).iterrows(): ax.plot(r.zF, r.zP, 's', color=colr(r.pct), ms=3.5 + r.n ** 0.5 / 2, mec='k', mew=0.3, alpha=0.9, zorder=4)
     ax.annotate('grafts with reconstructed\noutflow', xy=(3.8, 1.5), xytext=(2.4, 0.3), fontsize=6.5, arrowprops=dict(arrowstyle='-', lw=0.5, color='0.4'))
     ax.annotate('small grafts, standard outflow\n(flow-only series on the diagonal)', xy=(2.95, 3.05), xytext=(1.1, 4.1), fontsize=6.5, arrowprops=dict(arrowstyle='-', lw=0.5, color='0.4'))
