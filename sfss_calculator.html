@@ -31,7 +31,7 @@ small{color:var(--muted)}
 <body><main>
 <h1>Portal hemodynamic index for partial liver grafts</h1>
 <p class="sub">Computes the pressure index z<sub>P</sub> = (PVP − CVP)/5 and the flow index z<sub>F</sub> = graft PVF per 100 g ÷ donor PVF per 100 g, and reads the pooled risk of small-for-size syndrome from published living-donor series.</p>
-<div class="note"><b>Research tool.</b> This calculator does <b>not</b> estimate your patient's baseline risk. Across published series the reported outcome at the same gradient ranges from 0% to 17%, because it depends on recipient severity, outcome definition and technique. What is transferable is the <b>within-study effect of changing the gradient</b>: odds ratio 7.09 per unit of z<sub>P</sub> (95% CI 3.37–20.46), i.e. 1.48 per mmHg, fitted with one intercept per study on 11 groups from 5 series (104 events / 734 recipients). Enter your own baseline rate to obtain absolute risks. Not a validated individual predictor and not a medical device.</div>
+<div class="note"><b>Research tool.</b> This calculator does <b>not</b> estimate your patient's baseline risk. Across published series the reported outcome at the same gradient ranges from 0% to 17%, because the level depends on recipient severity, outcome definition and technique. What is transferable is the effect of <b>changing</b> the gradient, measured within each cohort: odds ratio 5.25 per unit of z<sub>P</sub> (95% CI 2.79–9.89), i.e. 1.39 per mmHg. It comes from centring each cohort on its own average (11 groups, 5 series, 104 events / 734 recipients, weighted R² 0.91), and agrees with a stratified logistic fit (OR 7.09) and a random-effects meta-analysis of the per-series slopes (OR 6.69, I² 0%). Not a validated individual predictor and not a medical device.</div>
 
 <div class="grid" style="margin-top:14px">
  <div class="card"><h2 style="margin-top:0">Pressure (after reperfusion)</h2>
@@ -49,8 +49,9 @@ small{color:var(--muted)}
 ' </div>
  <div class="card"><h2 style="margin-top:0">Reference level</h2>
   <label>Baseline to convert the effect into an absolute risk <small>(the model supplies only the effect of the change; the level is not transferable between centres)</small>
-   <select id="ref"><option value="own">My own centre's rate (enter below)</option><option value="Ogura 2010 (mortality)">Ogura 2010 (mortality) — 16% overall</option><option value="Osman 2017 (SFSS)">Osman 2017 (SFSS) — 9% overall</option><option value="Uemura 2016 (SFSS)">Uemura 2016 (SFSS) — 14% overall</option><option value="Wang 2014 (SFSS)">Wang 2014 (SFSS) — 14% overall</option><option value="Yagi 2005 (mortality)">Yagi 2005 (mortality) — 25% overall</option></select></label>
-  <label>My centre's outcome rate at the starting gradient, % <small>(used only with the option above)</small><input id="base" type="number" step="1" placeholder="e.g. 10"></label>
+   <select id="ref"><option value="cohort">My cohort's average (enter the two values below)</option><option value="own">My rate at the starting gradient</option><option value="Ogura 2010 (mortality)">Ogura 2010 (mortality) — 16% overall</option><option value="Osman 2017 (SFSS)">Osman 2017 (SFSS) — 9% overall</option><option value="Uemura 2016 (SFSS)">Uemura 2016 (SFSS) — 14% overall</option><option value="Wang 2014 (SFSS)">Wang 2014 (SFSS) — 14% overall</option><option value="Yagi 2005 (mortality)">Yagi 2005 (mortality) — 25% overall</option></select></label>
+  <label>My cohort's overall outcome rate, % <small>(SFSS or early dysfunction in comparable grafts)</small><input id="base" type="number" step="1" placeholder="e.g. 10"></label>
+  <label>My cohort's average portocaval gradient, mmHg <small>(only for the first option)</small><input id="basegrad" type="number" step="0.5" placeholder="e.g. 8"></label>
  </div>
 </div>
 
@@ -78,7 +79,7 @@ small{color:var(--muted)}
 <script>
 const GROUPS=[{"s": "Wang 2014 (SFSS)", "z": 2.22, "p": 9.7, "n": 154}, {"s": "Wang 2014 (SFSS)", "z": 2.68, "p": 19.7, "n": 122}, {"s": "Osman 2017 (SFSS)", "z": 1.43, "p": 2.6, "n": 39}, {"s": "Osman 2017 (SFSS)", "z": 2.43, "p": 16.2, "n": 37}, {"s": "Ogura 2010 (mortality)", "z": 1.24, "p": 7.0, "n": 86}, {"s": "Ogura 2010 (mortality)", "z": 1.98, "p": 32.6, "n": 43}, {"s": "Yagi 2005 (mortality)", "z": 2.08, "p": 6.7, "n": 15}, {"s": "Yagi 2005 (mortality)", "z": 3.74, "p": 41.2, "n": 17}, {"s": "Uemura 2016 (SFSS)", "z": 1.02, "p": 17.2, "n": 29}, {"s": "Uemura 2016 (SFSS)", "z": 0.95, "p": 13.2, "n": 38}, {"s": "Uemura 2016 (SFSS)", "z": 0.95, "p": 13.0, "n": 154}],STUDIES=["Ogura 2010 (mortality)", "Osman 2017 (SFSS)", "Uemura 2016 (SFSS)", "Wang 2014 (SFSS)", "Yagi 2005 (mortality)"],ALPHAS={"Ogura 2010 (mortality)": -4.7731, "Osman 2017 (SFSS)": -6.4045, "Uemura 2016 (SFSS)": -3.7252, "Wang 2014 (SFSS)": -6.6231, "Yagi 2005 (mortality)": -7.5499};
 const REFS={"Ogura 2010 (mortality)": {"alpha": -4.7731, "n": 129, "events": 20, "zmin": 1.24, "zmax": 1.98}, "Osman 2017 (SFSS)": {"alpha": -6.4045, "n": 76, "events": 7, "zmin": 1.43, "zmax": 2.428}, "Uemura 2016 (SFSS)": {"alpha": -3.7252, "n": 221, "events": 30, "zmin": 0.946, "zmax": 1.02}, "Wang 2014 (SFSS)": {"alpha": -6.6231, "n": 276, "events": 39, "zmin": 2.22, "zmax": 2.68}, "Yagi 2005 (mortality)": {"alpha": -7.5499, "n": 32, "events": 8, "zmin": 2.08, "zmax": 3.74}};
-const BETA=1.9587,BLO=1.2160,BHI=3.0186,GN=5,DEFAULT_CVP=5,ZMIN=0.946,ZMAX=3.740;
+const BETA=1.6592,BLO=1.0268,BHI=2.2916,GN=5,DEFAULT_CVP=5,ZMIN=0.946,ZMAX=3.740;
 const $=id=>document.getElementById(id);
 function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
@@ -105,17 +106,24 @@ function calc(){
    const dz=zP2-zP, or_=Math.exp(BETA*dz), orlo=Math.exp(BLO*dz), orhi=Math.exp(BHI*dz);
    const lo=Math.min(orlo,orhi), hi=Math.max(orlo,orhi);
    $('risk').textContent='OR '+or_.toFixed(2); $('risksub').textContent='95% CI '+lo.toFixed(2)+'–'+hi.toFixed(2)+' for a change of '+((pvp2-pvp)>=0?'+':'')+(pvp2-pvp).toFixed(1)+' mmHg';
-   const ref=$('ref').value;
+   const ref=$('ref').value, bgRaw=$('basegrad').value;
    if(ref!=='own'&&REFS[ref]!==undefined){
      const a=REFS[ref].alpha, L=z=>100/(1+Math.exp(-(a+BETA*z)));
      const p1=L(zP), p2=L(zP2);
      const R=REFS[ref], out=[zP,zP2].filter(v=>v<R.zmin-0.05||v>R.zmax+0.05);
      msg.push('Using <b>'+ref+'</b> as the reference level (' + R.n + ' recipients, ' + R.events + ' events, its own groups span z<sub>P</sub> '+R.zmin.toFixed(2)+'–'+R.zmax.toFixed(2)+'): that series would go from about <b>'+p1.toFixed(1)+'%</b> at z<sub>P</sub> '+zP.toFixed(2)+' to <b>'+p2.toFixed(1)+'%</b> at '+zP2.toFixed(2)+'. The level is that of the reference series, not of your patient; only the change is transferable.'+(out.length?' <b>Warning:</b> '+(out.length>1?'both values are':'one value is')+' outside the range of that series, so the level shown is an extrapolation of its intercept.':''));
+   } else if(ref==='cohort'){
+     const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
+     if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)){
+       const zbar=bg/gn, o=b/(1-b), R=(z)=>{const oo=o*Math.exp(BETA*(z-zbar)); return 100*oo/(1+oo);};
+       const RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);};
+       msg.push('Anchored on your cohort: overall rate '+(100*b).toFixed(0)+'% at an average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
+     } else msg.push('Enter your cohort\u2019s overall outcome rate and its average portocaval gradient, or choose another reference above.');
    } else {
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
      if(!isNaN(b)&&b>0&&b<1){ const o0=b/(1-b), p2=100*((o0*or_)/(1+o0*or_)), p2lo=100*((o0*lo)/(1+o0*lo)), p2hi=100*((o0*hi)/(1+o0*hi));
        msg.push('With a baseline rate of '+(100*b).toFixed(0)+'% at the starting gradient, the model implies about <b>'+p2.toFixed(1)+'%</b> (95% CI '+Math.min(p2lo,p2hi).toFixed(1)+'–'+Math.max(p2lo,p2hi).toFixed(1)+'%) after the change. The baseline rate is yours, not the model\u2019s.');}
-     else msg.push('Enter your centre\u2019s outcome rate at the starting gradient, or pick a reference series above, to convert this odds ratio into an absolute risk.');
+     else msg.push('Enter your rate at the starting gradient, or pick another reference above, to convert this odds ratio into an absolute risk.');
    }
  } else { $('risk').textContent='–'; $('risksub').textContent=isNaN(zP)?'':'enter the pressure after the planned change'; }
  if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (PVP '+(pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
