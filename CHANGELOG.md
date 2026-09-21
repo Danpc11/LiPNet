@@ -3,7 +3,7 @@
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
 
-## [0.2] – 2026-09-20
+## [0.2.0] – 2026-09-20
 
 Methodological and calculator fixes after two rounds of code review.
 
