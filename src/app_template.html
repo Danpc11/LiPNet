@@ -74,7 +74,7 @@ small{color:var(--muted)}
 <tr><td>Middle hepatic vein / outflow</td><td>PVF 3.9× donor with gradient 6 mmHg and no injury: pressure falls below flow</td><td>Chan 2011</td></tr></table>
 <small>Below z<sub>P</sub> ≈ 1 (gradient under normal) the model predicts vessel regression: portal steal. Troisi calibrated shunts to about twice the donor flow; Kyoto reported steal with a 23.7% GV/SLV graft.</small></div>
 
-<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008. Model: dissipation-optimal perfusion network with fixed vascular maintenance cost (Vázquez-Victorio, Pérez-Calixto, Escutia-Guadarrama, Tovar, Pérez-Calixto, 2026). Source: https://github.com/Danpc11/liver_pressure_index</small></p>
+<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008, Uemura 2016, Yao 2018, Kanetkar 2017, Ishizaki 2012 and Botha 2010. Model: dissipation-optimal perfusion network with fixed vascular maintenance cost (Vázquez-Victorio, Pérez-Calixto, Escutia-Guadarrama, Tovar, Pérez-Calixto, 2026). Source: https://github.com/Danpc11/liver_pressure_index</small></p>
 </main>
 <script>
 const GROUPS=__GROUPS__,STUDIES=__STUDIES__,ALPHAS=__ALPHAS__;
@@ -116,8 +116,7 @@ function calc(){
    } else if(ref==='cohort'){
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
      if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)){
-       const zbar=bg/gn, o=b/(1-b), R=(z)=>{const oo=o*Math.exp(BETA*(z-zbar)); return 100*oo/(1+oo);};
-       const RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);};
+       const zbar=bg/gn, o=b/(1-b), RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);}, R=(z)=>RL(z,BETA);
        msg.push('Anchored on your cohort: overall rate '+(100*b).toFixed(0)+'% at an average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
      } else msg.push('Enter your cohort\u2019s overall outcome rate and its average portocaval gradient, or choose another reference above.');
    } else {
@@ -137,10 +136,10 @@ function calc(){
  // anchor for the curve: {alpha} in logit(p) = alpha + BETA*zP, from whichever reference is selected
  let anchor=null;
  if(ref==='cohort'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
-   if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={a:Math.log(b/(1-b))-BETA*(bg/gn), label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
+   if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={l0:Math.log(b/(1-b)), z0:bg/gn, label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
  else if(ref==='own'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
-   if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={a:Math.log(b/(1-b))-BETA*zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
- else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, label:ref};
+   if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={l0:Math.log(b/(1-b)), z0:zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
+ else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, label:ref};   // fitted stratum: intercept and slope from the same model
  draw(zP,zP2,anchor);}
 function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
  const x=z=>ml+(z-0.6)/(4-0.6)*(W-ml-mr);
@@ -152,7 +151,8 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
    o+='<line x1="'+ml+'" y1="'+(H-mb)+'" x2="'+(W-mr)+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/><line x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/>';return o;};
  let yv;
  if(anchor){                      // absolute risk on the chosen anchor: one curve with its interval
-   const f=(z,b)=>100/(1+Math.exp(-(anchor.a+b*z)));
+   // logit p(z) = logit p_ref + b*(z - z_ref) when the user supplies the reference, so every curve passes through it
+   const f=(z,b)=>100/(1+Math.exp(-((anchor.a!==undefined?anchor.a+b*z:anchor.l0+b*(z-anchor.z0)))));
    const top=Math.max(f(4,BETA),f(4,BHI),f(isNaN(zp)?2:zp,BETA));
    const YM=top>55?100:(top>27?60:30); yv=p=>H-mb-(Math.min(p,YM)/YM)*(H-mt-mb);
    const TK=YM===100?[0,20,40,60,80,100]:(YM===60?[0,10,20,30,40,50,60]:[0,5,10,15,20,25,30]);
