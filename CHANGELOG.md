@@ -5,6 +5,12 @@ All notable changes to this repository are documented here. The format follows [
 ## [Unreleased]
 
 ### Fixed
+- `risk_change` used the centred slope while everything else used the stratified one; it now loads `within_study_fit.json`, and its legend says "bootstrap interval for the slope" instead of calling it a band.
+- The band for a published reference in the calculator is now a joint bootstrap prediction interval (intercept and slope from the same replicate); for a user-supplied anchor the level is given, so the band is labelled "slope only".
+- The meta-analysis reports a Hartung-Knapp interval (OR 6.69, 2.27-19.7) and is documented as exploratory sensitivity; the I2 = 0% is qualified by the low power of five estimates.
+- The attenuation result is stated as a scenario with an assumed within-group SD, not as an observed loss.
+- The pressure after the planned change is validated like the current pressure: negative values are rejected.
+- README: "104 events across groups with a summed denominator of 734 recipients", and transportability is stated as consistency compatible with a common effect, pending external validation.
 - **The calculator mixed two models.** The intercepts came from the stratified fit (slope 1.96) while the predictions used the centred slope (1.66), so the curve did not reproduce the series it was anchored on. Slope, interval and intercepts now come from the same stratified model, and a user-supplied reference enters as logit p(z) = logit p_ref + beta·(z − z_ref), so the curve and its band pass through the anchor: at the reference gradient the band is exactly the rate given. Each fitted stratum now reproduces its own observed events (Wang 39, Ogura 20, Osman 7, Uemura 30, Yagi 8).
 - **The centred analysis is no longer presented as equivalent to the stratified fit.** It works on transformed proportions and its interval ignores the dependence induced by centring within a study, so it is documented and used as a descriptive view on a common scale; the effect is taken from the stratified fit, with the meta-analysis as sensitivity.
 - **The per-patient extrapolation is gone.** `attenuation()` no longer reports an "implied individual slope" from an assumed within-group SD; recovering an individual-level relation from group means is not possible here, and the claim that aggregation understates the effect has been removed from the README.
