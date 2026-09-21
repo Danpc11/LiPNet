@@ -49,8 +49,8 @@ def test_fast_plots_render():
 
 def test_readme_numbers_match_results():
     """The README quotes the main correlations and the fit; they must match results/ so that the two cannot drift apart."""
-    import pandas as pd, json, re
-    indices.main(boot=50)
+    import pandas as pd, json
+    indices.main()                              # full run: never leave a short-bootstrap JSON behind for build_app
     sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t'); L = json.load(open(os.path.join(ROOT, 'results', 'logit_zP.json')))
     readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
     main = sens[sens.analysis.str.startswith('main analysis')]
