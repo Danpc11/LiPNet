@@ -130,6 +130,8 @@ def test_app_builds():
     opts = _re.findall(r'<option value="([^"]+)"', html)
     assert opts[0] == 'cohort' and opts[1] == 'own' and len(opts) >= 5, opts     # cohort average, own rate, fitted strata
     assert '"zmin"' in html and 'extrapolation of its intercept' in html        # reference range is checked
+    assert 'const CENTRED=' in html and 'anchored on ' in html                  # one clean curve, anchored or centred
+    assert 'STUDIES.forEach((st,i)=>{let pts' not in html                       # no five-curve plot any more
 
 if __name__ == '__main__':
     for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_within_study_fit_reproduces_published_effect, test_meta_analysis_and_diagnostics, test_centring_removes_the_cohort_level, test_risk_after_is_an_odds_shift, test_fast_plots_render, test_readme_numbers_match_results, test_app_builds): t(); print('ok', t.__name__)
