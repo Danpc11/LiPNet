@@ -92,10 +92,6 @@ Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes 
 
 ## Versions
 
-| version | date | changes |
-|---|---|---|
-| 0.1 | 2026-09-20 | First public release: extraction table of 12 series, indices, pooled fit, 14 plots, calculator, GitHub Pages, tests, PolyForm Noncommercial licence. Archived at Zenodo, version DOI [10.5281/zenodo.22861277](https://doi.org/10.5281/zenodo.22861277) |
-
 Every GitHub release is archived at Zenodo. The concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) always resolves to the latest version; each version has its own DOI (table above).
 
 ## Citation
