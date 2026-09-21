@@ -48,6 +48,20 @@ def test_fitted_effect():
     assert M['overdispersion']['se_scale'] == 1.0 and M['attenuation']['loss_pct'] < 10
     assert 'beta_individual_implied' not in M['attenuation']          # no per-patient extrapolation
 
+def test_hierarchical_and_validation():
+    """The hierarchical model, the leave-one-centre-out validation and the CVP scenarios must run and agree in sign."""
+    import json
+    H = json.load(open(os.path.join(ROOT, 'results', 'hierarchical.json')))
+    b, ba = H['bayes']['primary'], H['bayes']['all']
+    assert b['groups'] == 7 and len(b['studies']) == 3 and ba['groups'] == 11 and len(ba['studies']) == 5
+    assert 0.5 < b['mu_beta'] < 1.2 and b['mu_beta_ci'][0] < 0 < b['mu_beta_ci'][1]    # honest uncertainty
+    assert ba['prob_mu_positive'] > 0.95 and ba['tau_beta'] > 0
+    centres = {r['held_out'] for r in H['iecv']}
+    assert centres == {'Cairo', 'Fukuoka', 'Kyoto'} and all(r['beta_from_others'] > 1 for r in H['iecv'])
+    assert all(abs(r['OE'] - 1) < 0.05 for r in H['iecv'])                              # intercept recalibration works
+    betas = {round(x['beta'], 3) for x in H['cvp_scenarios']}
+    assert len(betas) == 1, 'a constant CVP shift must be absorbed by the intercept'
+
 def test_plots_and_calculator():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
     names = ['nomogram', 'within_study', 'forest', 'centred', 'risk_change', 'series_pressure', 'series_flow']
@@ -63,17 +77,31 @@ def test_plots_and_calculator():
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
     assert 'const ZGRID=' in html and '"band"' in html and 'slope only' in html   # joint band for published strata
 
+def test_model_predictions():
+    """The four predictions must hold with the committed data."""
+    import json, subprocess
+    env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
+    assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'predictions.py')], env=env, capture_output=True).returncode == 0
+    P = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))
+    assert P['P1_allometry']['tau0_invariant'], 'P1: the shear set-point must not scale with body mass'
+    assert P['P2_discordance']['all_below_one'] and P['P2_discordance']['reconstructed'] >= 4, 'P2'
+    assert max(P['P2_discordance']['outcome_reconstructed_pct']) <= 10, 'P2: those grafts did well'
+    assert P['P3_within_cohort']['every_pair_in_predicted_direction'], 'P3'
+    assert P['P3_within_cohort']['prob_positive'] > 0.95
+    assert P['P4_thresholds']['all_at_two'], 'P4'
+
 def test_readme_matches_results():
     sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t')
     M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
     readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
     for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
         assert f"{int(r.groups)} groups" in readme and f"ρ = {r.spearman_rho:.2f}" in readme and f"p = {r.p:.3f}" in readme
+    assert 'P1.' in readme and 'P2.' in readme and 'P3.' in readme and 'P4.' in readme, 'the README must state the predictions'
     W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
     assert f"{W['OR_per_zP']:.2f}" in readme and f"{W['OR_per_mmHg']:.2f}" in readme
     assert 'assets/graphical_abstract.png' in readme
 
 if __name__ == '__main__':
-    for t in (test_indices_and_baseline, test_data_and_provenance, test_fitted_effect,
-              test_plots_and_calculator, test_readme_matches_results):
+    for t in (test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
+              test_plots_and_calculator, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
