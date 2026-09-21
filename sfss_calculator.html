@@ -64,7 +64,7 @@ small{color:var(--muted)}
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Reading</h2><div id="read"></div></div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Risk curve</h2><svg id="plot" viewBox="0 0 640 300" role="img" aria-label="risk curve"></svg>
-<small>One curve and one colour per study: common slope, study-specific intercept. The vertical lines mark the current gradient (blue) and the gradient after the planned change (green). Shaded: window 1 ≤ z<sub>P</sub> ≤ 2.</small></div>
+<small>With a reference chosen, one curve: the risk implied by that anchor and the fitted slope, with its 95% band; the two markers are the current gradient and the gradient after the planned change, and the shaded strip is the window 1 ≤ z<sub>P</sub> ≤ 2. Without an anchor, the published groups centred on their own cohort, which is the relation the slope comes from.</small></div>
 
 <div class="card tbl" style="margin-top:12px"><h2 style="margin-top:0">What modulation does in the published series</h2>
 <table><tr><th>Manoeuvre</th><th>Reported effect</th><th>Source</th></tr>
@@ -79,12 +79,14 @@ small{color:var(--muted)}
 <script>
 const GROUPS=[{"s": "Wang 2014 (SFSS)", "z": 2.22, "p": 9.7, "n": 154}, {"s": "Wang 2014 (SFSS)", "z": 2.68, "p": 19.7, "n": 122}, {"s": "Osman 2017 (SFSS)", "z": 1.43, "p": 2.6, "n": 39}, {"s": "Osman 2017 (SFSS)", "z": 2.43, "p": 16.2, "n": 37}, {"s": "Ogura 2010 (mortality)", "z": 1.24, "p": 7.0, "n": 86}, {"s": "Ogura 2010 (mortality)", "z": 1.98, "p": 32.6, "n": 43}, {"s": "Yagi 2005 (mortality)", "z": 2.08, "p": 6.7, "n": 15}, {"s": "Yagi 2005 (mortality)", "z": 3.74, "p": 41.2, "n": 17}, {"s": "Uemura 2016 (SFSS)", "z": 1.02, "p": 17.2, "n": 29}, {"s": "Uemura 2016 (SFSS)", "z": 0.95, "p": 13.2, "n": 38}, {"s": "Uemura 2016 (SFSS)", "z": 0.95, "p": 13.0, "n": 154}],STUDIES=["Ogura 2010 (mortality)", "Osman 2017 (SFSS)", "Uemura 2016 (SFSS)", "Wang 2014 (SFSS)", "Yagi 2005 (mortality)"],ALPHAS={"Ogura 2010 (mortality)": -4.7731, "Osman 2017 (SFSS)": -6.4045, "Uemura 2016 (SFSS)": -3.7252, "Wang 2014 (SFSS)": -6.6231, "Yagi 2005 (mortality)": -7.5499};
 const REFS={"Ogura 2010 (mortality)": {"alpha": -4.7731, "n": 129, "events": 20, "zmin": 1.24, "zmax": 1.98}, "Osman 2017 (SFSS)": {"alpha": -6.4045, "n": 76, "events": 7, "zmin": 1.43, "zmax": 2.428}, "Uemura 2016 (SFSS)": {"alpha": -3.7252, "n": 221, "events": 30, "zmin": 0.946, "zmax": 1.02}, "Wang 2014 (SFSS)": {"alpha": -6.6231, "n": 276, "events": 39, "zmin": 2.22, "zmax": 2.68}, "Yagi 2005 (mortality)": {"alpha": -7.5499, "n": 32, "events": 8, "zmin": 2.08, "zmax": 3.74}};
+const CENTRED=[{"s": "Wang 2014 (SFSS)", "zc": -0.23, "lc": -0.4029, "n": 154}, {"s": "Wang 2014 (SFSS)", "zc": 0.23, "lc": 0.4029, "n": 122}, {"s": "Osman 2017 (SFSS)", "zc": -0.499, "lc": -0.8335, "n": 39}, {"s": "Osman 2017 (SFSS)", "zc": 0.499, "lc": 0.8335, "n": 37}, {"s": "Ogura 2010 (mortality)", "zc": -0.37, "lc": -0.9031, "n": 86}, {"s": "Ogura 2010 (mortality)", "zc": 0.37, "lc": 0.9031, "n": 43}, {"s": "Yagi 2005 (mortality)", "zc": -0.83, "lc": -0.9661, "n": 15}, {"s": "Yagi 2005 (mortality)", "zc": 0.83, "lc": 0.9661, "n": 17}, {"s": "Uemura 2016 (SFSS)", "zc": 0.048, "lc": 0.2334, "n": 29}, {"s": "Uemura 2016 (SFSS)", "zc": -0.022, "lc": -0.0795, "n": 38}, {"s": "Uemura 2016 (SFSS)", "zc": -0.026, "lc": -0.1539, "n": 154}];
 const BETA=1.6592,BLO=1.0268,BHI=2.2916,GN=5,DEFAULT_CVP=5,ZMIN=0.946,ZMAX=3.740;
 const $=id=>document.getElementById(id);
 function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
 function calc(){
  const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value, pvp2Raw=$('pvp2').value, baseRaw=$('base').value;
+ const ref=$('ref').value, bgRaw=$('basegrad').value;
  const pvp=(pvpRaw===''||!isFinite(+pvpRaw)||+pvpRaw<0)?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvpOk=cvpAssumed||(isFinite(+cvpRaw)&&+cvpRaw>=0);
  const cvp=cvpAssumed?DEFAULT_CVP:(cvpOk?+cvpRaw:NaN); const gn=GN;
  let pressMsg=[]; if(pvpRaw!==''&&isNaN(pvp))pressMsg.push('Portal pressure must be a non-negative number.'); if(!cvpOk)pressMsg.push('Central venous pressure must be a non-negative number (leave it blank if not measured).');
@@ -106,8 +108,7 @@ function calc(){
    const dz=zP2-zP, or_=Math.exp(BETA*dz), orlo=Math.exp(BLO*dz), orhi=Math.exp(BHI*dz);
    const lo=Math.min(orlo,orhi), hi=Math.max(orlo,orhi);
    $('risk').textContent='OR '+or_.toFixed(2); $('risksub').textContent='95% CI '+lo.toFixed(2)+'–'+hi.toFixed(2)+' for a change of '+((pvp2-pvp)>=0?'+':'')+(pvp2-pvp).toFixed(1)+' mmHg';
-   const ref=$('ref').value, bgRaw=$('basegrad').value;
-   if(ref!=='own'&&REFS[ref]!==undefined){
+     if(ref!=='own'&&REFS[ref]!==undefined){
      const a=REFS[ref].alpha, L=z=>100/(1+Math.exp(-(a+BETA*z)));
      const p1=L(zP), p2=L(zP2);
      const R=REFS[ref], out=[zP,zP2].filter(v=>v<R.zmin-0.05||v>R.zmax+0.05);
@@ -132,20 +133,60 @@ function calc(){
   if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
  if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF;msg.push('Ratio z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': estimated graft outflow resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor\u2019s).'));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available. In the published series flow per gram did not order outcomes once outflow was reconstructed; measure PVP and CVP.');
- $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';draw(zP,zP2);}
-function draw(zp,zp2){const W=640,H=300,ml=48,mr=16,mt=12,mb=40;const x=z=>ml+(z-0.8)/(4-0.8)*(W-ml-mr),y=p=>H-mb-(p/60)*(H-mt-mb);let s='';
- s+='<rect x="'+x(1)+'" y="'+mt+'" width="'+(x(2)-x(1))+'" height="'+(H-mt-mb)+'" fill="currentColor" opacity="0.08"/>';
- const cols=['#1f5fbf','#c62828','#2e7d32','#f28c28','#7b3fa0','#8a9a1e'];
- const sel=$('ref').value;
- STUDIES.forEach((st,i)=>{let pts=[];for(let z=0.8;z<=4.001;z+=0.08){const p=100/(1+Math.exp(-(ALPHAS[st]+BETA*z)));pts.push(x(z)+','+y(Math.min(p,60)));}
-  s+='<polyline fill="none" stroke="'+cols[i%cols.length]+'" stroke-width="'+(st===sel?3:1.4)+'" opacity="'+(sel==='own'||st===sel?0.9:0.35)+'" points="'+pts.join(' ')+'"/>';});
- GROUPS.forEach(g=>{const i=STUDIES.indexOf(g.s);s+='<circle cx="'+x(g.z)+'" cy="'+y(Math.min(g.p,60))+'" r="'+(2.5+Math.sqrt(g.n)/2.5)+'" fill="'+cols[i%cols.length]+'" stroke="#000" stroke-opacity="0.5" stroke-width="0.7"/>';});
- for(let p=0;p<=60;p+=10)s+='<text x="'+(ml-6)+'" y="'+(y(p)+3)+'" font-size="10" text-anchor="end" fill="currentColor">'+p+'%</text>';
- for(let z=1;z<=4;z+=0.5)s+='<text x="'+x(z)+'" y="'+(H-mb+14)+'" font-size="10" text-anchor="middle" fill="currentColor">'+z+'</text>';
- s+='<text x="'+(W/2)+'" y="'+(H-6)+'" font-size="11" text-anchor="middle" fill="currentColor">z_P = (PVP − CVP)/5</text>';
- s+='<line x1="'+ml+'" y1="'+(H-mb)+'" x2="'+(W-mr)+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/><line x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/>';
- STUDIES.forEach((st,i)=>{s+='<rect x="'+(ml+8)+'" y="'+(mt+4+i*13)+'" width="9" height="3" fill="'+cols[i%cols.length]+'"/><text x="'+(ml+21)+'" y="'+(mt+9+i*13)+'" font-size="9" fill="currentColor">'+st+'</text>';});
- [[zp,'#1f5fbf'],[zp2,'#2e7d32']].forEach(([v,c])=>{if(!isNaN(v)&&v>=0.8&&v<=4)s+='<line x1="'+x(v)+'" y1="'+mt+'" x2="'+x(v)+'" y2="'+(H-mb)+'" stroke="'+c+'" stroke-dasharray="4 3"/>';});
+ $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';
+ // anchor for the curve: {alpha} in logit(p) = alpha + BETA*zP, from whichever reference is selected
+ let anchor=null;
+ if(ref==='cohort'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
+   if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={a:Math.log(b/(1-b))-BETA*(bg/gn), label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
+ else if(ref==='own'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
+   if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={a:Math.log(b/(1-b))-BETA*zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
+ else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, label:ref};
+ draw(zP,zP2,anchor);}
+function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
+ const x=z=>ml+(z-0.6)/(4-0.6)*(W-ml-mr);
+ let s='';
+ s+='<rect x="'+x(1)+'" y="'+mt+'" width="'+(x(2)-x(1))+'" height="'+(H-mt-mb)+'" fill="currentColor" opacity="0.07"/>';
+ const axes=(ticks,fmt)=>{let o='';ticks.forEach(v=>{o+='<text x="'+(ml-7)+'" y="'+(yv(v)+3.5)+'" font-size="10" text-anchor="end" fill="currentColor">'+fmt(v)+'</text>';});
+   for(let z=1;z<=4;z+=0.5)o+='<text x="'+x(z)+'" y="'+(H-mb+15)+'" font-size="10" text-anchor="middle" fill="currentColor">'+z+'</text>';
+   o+='<text x="'+(W/2)+'" y="'+(H-5)+'" font-size="11" text-anchor="middle" fill="currentColor">z_P = (PVP − CVP)/'+GN+'</text>';
+   o+='<line x1="'+ml+'" y1="'+(H-mb)+'" x2="'+(W-mr)+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/><line x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/>';return o;};
+ let yv;
+ if(anchor){                      // absolute risk on the chosen anchor: one curve with its interval
+   const f=(z,b)=>100/(1+Math.exp(-(anchor.a+b*z)));
+   const top=Math.max(f(4,BETA),f(4,BHI),f(isNaN(zp)?2:zp,BETA));
+   const YM=top>55?100:(top>27?60:30); yv=p=>H-mb-(Math.min(p,YM)/YM)*(H-mt-mb);
+   const TK=YM===100?[0,20,40,60,80,100]:(YM===60?[0,10,20,30,40,50,60]:[0,5,10,15,20,25,30]);
+   const band=[];for(let z=0.6;z<=4.001;z+=0.05)band.push(x(z)+','+yv(f(z,BLO)));
+   for(let z=4;z>=0.6;z-=0.05)band.push(x(z)+','+yv(f(z,BHI)));
+   s+='<polygon points="'+band.join(' ')+'" fill="#c62828" opacity="0.13"/>';
+   let pts=[];for(let z=0.6;z<=4.001;z+=0.04)pts.push(x(z)+','+yv(f(z,BETA)));
+   s+='<polyline fill="none" stroke="#c62828" stroke-width="2.2" points="'+pts.join(' ')+'"/>';
+   [[zp,'#1f5fbf','now'],[zp2,'#2e7d32','after']].forEach(([v,c,lb])=>{if(!isNaN(v)&&v>=0.6&&v<=4){
+     s+='<line x1="'+x(v)+'" y1="'+yv(f(v,BETA))+'" x2="'+x(v)+'" y2="'+(H-mb)+'" stroke="'+c+'" stroke-dasharray="4 3"/>';
+     s+='<circle cx="'+x(v)+'" cy="'+yv(f(v,BETA))+'" r="5" fill="'+c+'"/>';
+     s+='<text x="'+(x(v)+7)+'" y="'+(yv(f(v,BETA))-7)+'" font-size="10" fill="'+c+'">'+lb+' '+f(v,BETA).toFixed(1)+'%</text>';}});
+   s+=axes(TK,v=>v+'%');
+   s+='<text x="'+(ml+8)+'" y="'+(mt+11)+'" font-size="10" fill="currentColor">anchored on '+anchor.label+'</text>';
+ } else {                         // no anchor yet: the centred relation, odds relative to each cohort's own mean
+   const lo=-1.6,hi=1.6; yv=l=>H-mb-((l-lo)/(hi-lo))*(H-mt-mb);
+   const zc=z=>l0+0;              // placeholder, not used
+   const xc=v=>ml+(v+1.05)/2.1*(W-ml-mr);
+   s='';s+='<line x1="'+xc(0)+'" y1="'+mt+'" x2="'+xc(0)+'" y2="'+(H-mb)+'" stroke="currentColor" stroke-dasharray="3 3" opacity="0.5"/>';
+   s+='<line x1="'+ml+'" y1="'+yv(0)+'" x2="'+(W-mr)+'" y2="'+yv(0)+'" stroke="currentColor" stroke-dasharray="3 3" opacity="0.5"/>';
+   const cl=l=>Math.max(lo,Math.min(hi,l));
+   const bandc=[];for(let v=-1.05;v<=1.051;v+=0.05)bandc.push(xc(v)+','+yv(cl(BLO*v)));
+   for(let v=1.05;v>=-1.05;v-=0.05)bandc.push(xc(v)+','+yv(cl(BHI*v)));
+   s+='<polygon points="'+bandc.join(' ')+'" fill="#c62828" opacity="0.13"/>';
+   let pts=[];for(let v=-1.05;v<=1.051;v+=0.05)pts.push(xc(v)+','+yv(cl(BETA*v)));
+   s+='<polyline fill="none" stroke="#c62828" stroke-width="2.2" points="'+pts.join(' ')+'"/>';
+   const cols=['#1f5fbf','#c62828','#2e7d32','#f28c28','#7b3fa0'];
+   CENTRED.forEach(p=>{const i=STUDIES.indexOf(p.s);s+='<circle cx="'+xc(p.zc)+'" cy="'+yv(p.lc)+'" r="'+(2.5+Math.sqrt(p.n)/2.5)+'" fill="'+cols[i%cols.length]+'" stroke="#000" stroke-opacity="0.5" stroke-width="0.7"/>';});
+   [[-1.386,'0.25'],[-0.693,'0.5'],[0,'1'],[0.693,'2'],[1.386,'4']].forEach(([l,t])=>{s+='<text x="'+(ml-7)+'" y="'+(yv(l)+3.5)+'" font-size="10" text-anchor="end" fill="currentColor">×'+t+'</text>';});
+   [-1,-0.5,0,0.5,1].forEach(v=>{s+='<text x="'+xc(v)+'" y="'+(H-mb+15)+'" font-size="10" text-anchor="middle" fill="currentColor">'+(v>0?'+':'')+v+'</text>';});
+   s+='<text x="'+(W/2)+'" y="'+(H-5)+'" font-size="11" text-anchor="middle" fill="currentColor">z_P relative to the cohort average</text>';
+   s+='<text x="'+(ml+8)+'" y="'+(mt+11)+'" font-size="10" fill="currentColor">published groups, each centred on its own cohort</text>';
+   s+='<line x1="'+ml+'" y1="'+(H-mb)+'" x2="'+(W-mr)+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/><line x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/>';
+ }
  $('plot').innerHTML=s;}
 document.querySelectorAll('input,select').forEach(i=>i.addEventListener('input',calc));i=>0;
 document.getElementById('ref').addEventListener('change',calc);calc();
