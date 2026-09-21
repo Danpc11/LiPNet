@@ -75,7 +75,8 @@ const GROUPS=__GROUPS__;
 const B0=__B0__,B1=__B1__,GN=__GN__,DEFAULT_CVP=__CVP__,ZMIN=__ZMIN__,ZMAX=__ZMAX__;
 const $=id=>document.getElementById(id);
 function interp(x,xs,ys){if(x<=xs[0])return ys[0];if(x>=xs[xs.length-1])return ys[ys.length-1];for(let i=1;i<xs.length;i++){if(x<=xs[i]){const t=(x-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+t*(ys[i]-ys[i-1]);}}}
-function tag(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
+function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
+function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
 function calc(){
  const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value;
  const pvp=(pvpRaw===''||!isFinite(+pvpRaw)||+pvpRaw<0)?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvpOk=cvpAssumed||(isFinite(+cvpRaw)&&+cvpRaw>=0); const cvp=cvpAssumed?DEFAULT_CVP:(cvpOk?+cvpRaw:NaN); const gn=GN;
@@ -90,9 +91,9 @@ function calc(){
  if(P.state==='zero')flowMsg.push('A portal flow of 0 mL/min means no portal inflow (portal vein occlusion or complete steal): z<sub>F</sub> = 0 and the ratio z<sub>P</sub>/z<sub>F</sub> is undefined.');
  const pvf100=(isFinite(pvf)&&isFinite(gw))?pvf/gw*100:NaN; const zF=isFinite(pvf100)?pvf100/dref:NaN;
  const zP=(isNaN(pvp)||isNaN(cvp))?NaN:(pvp-cvp)/gn;
- $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tag(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
+ $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tagP(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
  $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'');
- $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tag(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
+ $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tagF(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
  const inRange=!isNaN(zP)&&zP>=ZMIN&&zP<=ZMAX, inGrid=!isNaN(zP)&&zP>=CURVE.z[0]&&zP<=CURVE.z[CURVE.z.length-1];
  if(!isNaN(zP)){const p=100/(1+Math.exp(-(B0+B1*zP)));$('risk').textContent=p.toFixed(1)+'%';
    if(inGrid){const lo=100*interp(zP,CURVE.z,CURVE.lo),hi=100*interp(zP,CURVE.z,CURVE.hi);$('risksub').textContent='band '+lo.toFixed(1)+'–'+hi.toFixed(1)+'%'+(inRange?'':' — outside the range of the fitted groups (z_P '+ZMIN.toFixed(2)+'–'+ZMAX.toFixed(2)+'): extrapolation');}
@@ -100,6 +101,7 @@ function calc(){
  else{$('risk').textContent='–';$('risksub').textContent='';}
  let msg=pressMsg.concat(flowMsg);
  if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (e.g. PVP '+ (pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
+  else if(zP<=0){msg.push(zP===0?'Portal and central venous pressures are equal: no portocaval gradient, so no portal perfusion pressure. Check the measurements or the position of the catheters.':'PVP below CVP: the gradient is negative, which is not physiological; check the measurements.');}
   else if(zP<1){msg.push('The gradient is below the normal value. The model predicts regression of graft vessels (portal steal) in this range; check for over-shunting or outflow problems.');}
   else msg.push('Sinusoidal pressure is within the window in which published groups had SFSS of 0–3%.');
   if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; in the published series CVP ranged 5–10 mmHg, and each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
