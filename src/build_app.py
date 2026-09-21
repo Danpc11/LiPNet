@@ -1,21 +1,24 @@
-"""Build sfss_calculator.html (repository root) from results/logit_zP.json.
+"""Build sfss_calculator.html (repository root) from results/within_study_fit.json.
 
     python src/build_app.py
 
-The coefficients, the bootstrap band, the fitted z_P range, the normal gradient, the default CVP and the
-provenance counts are injected from the analysis outputs, so a re-run with new data updates the app.
+The within-study slope and its bootstrap interval, the study intercepts and groups, the normal gradient and
+the default CVP are injected from the analysis outputs, so a re-run with new data updates the calculator.
+The calculator reports the effect of CHANGING the gradient (an odds ratio) and converts it to an absolute risk
+only with a baseline rate supplied by the user; the baseline level is not transferable between centres.
 """
 import json, os
 ROOT = os.path.join(os.path.dirname(__file__), '..')
-L = json.load(open(f'{ROOT}/results/logit_zP.json'))
-groups = [dict(s=f"{g['study']} {g['group'][:22]}", z=round(g['zP'], 2), p=round(100 * g['events'] / g['n'], 1), n=g['n']) for g in L['groups_used']]
-studies = ', '.join(sorted({g['study'] for g in L['groups_used']}))
-assumed = sum(1 for g in L['groups_used'] if g['CVP_basis'] != 'reported')
+L = json.load(open(f'{ROOT}/results/within_study_fit.json'))
+groups = [dict(s=g['study'], z=round(g['zP'], 2), p=round(g['pct'], 1), n=g['n']) for g in L['study_groups']]
 t = open(f'{ROOT}/src/app_template.html').read()
-rep = {'__CURVE__': json.dumps({k: L[k] for k in ('z', 'p', 'lo', 'hi')}), '__GROUPS__': json.dumps(groups),
-       '__B0__': f"{L['b0']:.4f}", '__B1__': f"{L['b1']:.4f}", '__B0S__': f"{L['b0']:.2f}".replace('-', '−'), '__B1S__': f"{L['b1']:.2f}",
-       '__GN__': f"{L['normal_gradient_mmHg']:g}", '__CVP__': f"{L['default_cvp_mmHg']:g}", '__ZMIN__': f"{L['zP_min']:.3f}", '__ZMAX__': f"{L['zP_max']:.3f}",
-       '__PATIENTS__': str(L['patients']), '__EVENTS__': str(L['events']), '__STUDIES__': studies, '__ASSUMED__': str(assumed), '__NGROUPS__': str(L['groups'])}
+rep = {'__GROUPS__': json.dumps(groups), '__STUDIES__': json.dumps(L['studies']), '__ALPHAS__': json.dumps({k: round(v, 4) for k, v in L['alphas'].items()}),
+       '__BETA__': f"{L['beta']:.4f}", '__BLO__': f"{L['beta_ci'][0]:.4f}", '__BHI__': f"{L['beta_ci'][1]:.4f}",
+       '__GN__': f"{L['normal_gradient_mmHg']:g}", '__CVP__': f"{L['default_cvp_mmHg']:g}",
+       '__ZMIN__': f"{L['zP_min']:.3f}", '__ZMAX__': f"{L['zP_max']:.3f}",
+       '__OR_ZP__': f"{L['OR_per_zP']:.2f}", '__OR_LO__': f"{L['OR_per_zP_ci'][0]:.2f}", '__OR_HI__': f"{L['OR_per_zP_ci'][1]:.2f}",
+       '__OR_MM__': f"{L['OR_per_mmHg']:.2f}", '__NGROUPS__': str(L['groups']), '__NSTUDIES__': str(len(L['studies'])),
+       '__EVENTS__': str(L['events']), '__PATIENTS__': str(L['patients'])}
 for k, v in rep.items(): t = t.replace(k, v)
-assert '__' not in t.split('<script>')[0].replace('__proto__', ''), 'unfilled placeholder'
+assert '__' not in t.replace('__proto__', ''), 'unfilled placeholder: ' + t[t.index('__') - 40:t.index('__') + 40]
 open(f'{ROOT}/sfss_calculator.html', 'w').write(t); print('sfss_calculator.html written')
