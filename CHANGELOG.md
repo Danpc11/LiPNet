@@ -4,6 +4,14 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
+### Fixed
+- **The calculator mixed two models.** The intercepts came from the stratified fit (slope 1.96) while the predictions used the centred slope (1.66), so the curve did not reproduce the series it was anchored on. Slope, interval and intercepts now come from the same stratified model, and a user-supplied reference enters as logit p(z) = logit p_ref + beta·(z − z_ref), so the curve and its band pass through the anchor: at the reference gradient the band is exactly the rate given. Each fitted stratum now reproduces its own observed events (Wang 39, Ogura 20, Osman 7, Uemura 30, Yagi 8).
+- **The centred analysis is no longer presented as equivalent to the stratified fit.** It works on transformed proportions and its interval ignores the dependence induced by centring within a study, so it is documented and used as a descriptive view on a common scale; the effect is taken from the stratified fit, with the meta-analysis as sensitivity.
+- **The per-patient extrapolation is gone.** `attenuation()` no longer reports an "implied individual slope" from an assumed within-group SD; recovering an individual-level relation from group means is not possible here, and the claim that aggregation understates the effect has been removed from the README.
+- Provenance labels now match the stored values: rows that carry only a gradient have `not applicable` in `PVP_basis` and `CVP_basis`, and the Uemura and Botha notes no longer mention a derived CVP that is not stored. A test asserts that no basis claims a value that is absent.
+- `.zenodo.json` updated to 31 groups from 17 series; the calculator footer lists all 17; `0.2..2` in this file; `risk_curve` removed from the `plots.py` usage line; `recalibrate()` documented as taking individual outcomes only.
+
+
 ## [0.3.0] – 2026-09-21
 
 ### Added
@@ -19,7 +27,7 @@ All notable changes to this repository are documented here. The format follows [
 - Plot `forest`: per-stratum slope with its interval and the pooled estimate.
 - `results/meta_slope.json`; three more rows in `results/sensitivity.tsv`; tests for all three.
 
-## [0.2..2] – 2026-09-21
+## [0.2.2] – 2026-09-21
 
 Code and methodology audit: three corrections that change the estimated effect.
 
