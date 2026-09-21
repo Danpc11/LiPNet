@@ -31,27 +31,26 @@ small{color:var(--muted)}
 <body><main>
 <h1>Portal hemodynamic index for partial liver grafts</h1>
 <p class="sub">Computes the pressure index z<sub>P</sub> = (PVP − CVP)/5 and the flow index z<sub>F</sub> = graft PVF per 100 g ÷ donor PVF per 100 g, and reads the pooled risk of small-for-size syndrome from published living-donor series.</p>
-<div class="note"><b>Research tool.</b> This calculator does <b>not</b> estimate your patient's baseline risk. Across published series the reported outcome at the same gradient ranges from 0% to 17%, because the level depends on recipient severity, outcome definition and technique. What is transferable is the effect of <b>changing</b> the gradient, measured within each cohort: odds ratio 5.25 per unit of z<sub>P</sub> (95% CI 2.79–9.89), i.e. 1.39 per mmHg. It comes from centring each cohort on its own average (11 groups, 5 series, 104 events / 734 recipients, weighted R² 0.91), and agrees with a stratified logistic fit (OR 7.09) and a random-effects meta-analysis of the per-series slopes (OR 6.69, I² 0%). Not a validated individual predictor and not a medical device.</div>
 
 <div class="grid" style="margin-top:14px">
  <div class="card"><h2 style="margin-top:0">Pressure (after reperfusion)</h2>
   <label>Portal venous pressure PVP, mmHg<input id="pvp" type="number" step="0.5" value="17"></label>
-  <label>Central venous pressure CVP, mmHg <small>(leave blank if not measured: 5 mmHg is assumed and flagged; 0 is taken as a measured zero)</small><input id="cvp" type="number" step="0.5" value="5"></label>
-  <label>Portal venous pressure after the planned change, mmHg <small>(leave blank if not applicable)</small><input id="pvp2" type="number" step="0.5" placeholder="e.g. 12"></label>
-  <p style="font-size:.8rem;color:var(--muted);margin:8px 0 0">Normal portocaval gradient fixed at 5 mmHg: the risk coefficients were fitted on z<sub>P</sub> = (PVP − CVP)/5 and are not valid for another denominator.</p>
+  <label>Central venous pressure CVP, mmHg <small>(blank = 5 mmHg assumed)</small><input id="cvp" type="number" step="0.5" value="5"></label>
+  <label>Portal venous pressure after the planned change, mmHg<input id="pvp2" type="number" step="0.5" placeholder="e.g. 12"></label>
+  <p style="font-size:.8rem;color:var(--muted);margin:8px 0 0">Normal gradient fixed at 5 mmHg (the coefficients were fitted on it).</p>
  </div>
  <div class="card"><h2 style="margin-top:0">Flow</h2>
   <label>Graft portal flow PVF, mL/min<input id="pvf" type="number" step="10" value="1800"></label>
-  <label>Graft weight, g <small>(or leave blank and give GRWR + recipient weight)</small><input id="gw" type="number" step="10" value="600"></label>
+  <label>Graft weight, g <small>(or GRWR + recipient weight)</small><input id="gw" type="number" step="10" value="600"></label>
   <label>GRWR, %<input id="grwr" type="number" step="0.01" placeholder="e.g. 0.85"></label>
   <label>Recipient weight, kg<input id="rw" type="number" step="1" placeholder="e.g. 70"></label>
-  <label>Donor PVF per 100 g reference, mL/min/100 g <small>(measured in donor if available; 90 = healthy live donor)</small><input id="dref" type="number" step="5" value="90"></label>
+  <label>Donor PVF per 100 g reference, mL/min/100 g <small>(90 = healthy live donor)</small><input id="dref" type="number" step="5" value="90"></label>
 ' </div>
  <div class="card"><h2 style="margin-top:0">Reference level</h2>
-  <label>Baseline to convert the effect into an absolute risk <small>(the model supplies only the effect of the change; the level is not transferable between centres)</small>
+  <label>Anchor for the absolute risk
    <select id="ref"><option value="cohort">My cohort's average (enter the two values below)</option><option value="own">My rate at the starting gradient</option><option value="Ogura 2010 (mortality)">Ogura 2010 (mortality) — 16% overall</option><option value="Osman 2017 (SFSS)">Osman 2017 (SFSS) — 9% overall</option><option value="Uemura 2016 (SFSS)">Uemura 2016 (SFSS) — 14% overall</option><option value="Wang 2014 (SFSS)">Wang 2014 (SFSS) — 14% overall</option><option value="Yagi 2005 (mortality)">Yagi 2005 (mortality) — 25% overall</option></select></label>
-  <label>My cohort's overall outcome rate, % <small>(SFSS or early dysfunction in comparable grafts)</small><input id="base" type="number" step="1" placeholder="e.g. 10"></label>
-  <label>My cohort's average portocaval gradient, mmHg <small>(only for the first option)</small><input id="basegrad" type="number" step="0.5" placeholder="e.g. 8"></label>
+  <label>My cohort's overall outcome rate, %<input id="base" type="number" step="1" placeholder="e.g. 10"></label>
+  <label>My cohort's average portocaval gradient, mmHg<input id="basegrad" type="number" step="0.5" placeholder="e.g. 8"></label>
  </div>
 </div>
 
@@ -64,7 +63,8 @@ small{color:var(--muted)}
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Reading</h2><div id="read"></div></div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Risk curve</h2><svg id="plot" viewBox="0 0 640 300" role="img" aria-label="risk curve"></svg>
-<small>With a reference chosen, one curve: the risk implied by that anchor and the fitted slope, with its 95% band; the two markers are the current gradient and the gradient after the planned change, and the shaded strip is the window 1 ≤ z<sub>P</sub> ≤ 2. Without an anchor, the published groups centred on their own cohort, which is the relation the slope comes from.</small></div>
+<small>The curve is anchored on the reference you chose; the markers are the current gradient and the gradient after the change. Without an anchor it shows the published groups, each centred on its own cohort.</small>
+<div class="note" style="margin-top:12px"><b>What this does and does not give you.</b> The effect of changing the gradient is transferable: OR 5.25 per unit of z<sub>P</sub> (95% CI 2.79–9.89), 1.39 per mmHg, from 11 groups in 5 series. The level of risk is not: at the same gradient, published rates run from 0% to 17%. So the percentages shown are only as good as the baseline you supply. Research tool, not a medical device.</div></div>
 
 <div class="card tbl" style="margin-top:12px"><h2 style="margin-top:0">What modulation does in the published series</h2>
 <table><tr><th>Manoeuvre</th><th>Reported effect</th><th>Source</th></tr>
