@@ -18,7 +18,7 @@ zP = (PVP − CVP) / 5 mmHg                          (CVP = 5 when not reported)
 Both equal 1 in a healthy donor. Their ratio, `zP/zF`, estimates the graft's outflow resistance relative to the donor, which is why flow and pressure can disagree.
 
 <p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; within each centre the portocaval gradient tracks outcome, while the level of risk is centre-specific" width="8520">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; within each centre the portocaval gradient tracks outcome, while the level of risk is centre-specific" width="520">
 </p>
 
 ## What the data show
