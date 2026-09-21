@@ -43,6 +43,7 @@ def test_fitted_effect():
     assert abs(W['beta'] - 1.96) < 0.05 and W['groups'] == 11 and W['events'] == 104
     assert all(v > 1 for v in list(W['leave_one_study_out'].values()) + list(W['by_outcome'].values()))
     assert abs(M['meta']['beta'] - 1.90) < 0.05 and M['meta']['I2'] < 5 and M['meta']['Q_p'] > 0.5
+    assert M['meta']['beta_ci'][1] - M['meta']['beta_ci'][0] > M['meta']['beta_ci_normal'][1] - M['meta']['beta_ci_normal'][0]  # Hartung-Knapp
     assert abs(M['centred']['beta'] - 1.66) < 0.05 and M['centred']['r2_weighted'] > 0.8   # descriptive view
     assert M['overdispersion']['se_scale'] == 1.0 and M['attenuation']['loss_pct'] < 10
     assert 'beta_individual_implied' not in M['attenuation']          # no per-patient extrapolation
@@ -60,6 +61,7 @@ def test_plots_and_calculator():
     assert f"const BETA={W['beta']:.4f}" in html, 'slope and intercepts must come from the same model'
     assert f"BLO={W['beta_ci'][0]:.4f}" in html and f"{W['alphas'][W['studies'][0]]:.4f}" in html
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
+    assert 'const ZGRID=' in html and '"band"' in html and 'slope only' in html   # joint band for published strata
 
 def test_readme_matches_results():
     sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t')
