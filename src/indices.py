@@ -8,7 +8,8 @@ Definitions (the calculator and plots.py use these same functions)
 The stored table holds only raw values and their provenance; the indices are always recomputed here.
 Main analysis: groups whose hemodynamic value is measured or derived (in_main_analysis = True). Groups defined only by a
 cut-off (Vasavada 2014, PVF above/below 190) are excluded from the main correlations and shown in sensitivity.
-Sensitivity: correlations are repeated including the cut-off groups and excluding every imputed or automatically filled value.
+Sensitivity: correlations are repeated including the cut-off groups, and excluding every group whose value of the index in
+question rests on an imputed or automatically filled number (zP_imputed for PVP/CVP, zF_imputed for PVF/donor reference).
 Bootstrap: 2000 binomial resamples of the group event counts, seed 0. Curve grid 0.5-8; the range of the
 groups that entered the fit is stored so that the calculator can flag extrapolation.
 """
@@ -40,7 +41,9 @@ def compute(d):
     if len(bad): raise ValueError('CVP present but labelled not applicable: ' + ', '.join(bad.study + ' / ' + bad.group))
     d['zF'] = zF(d.PVF_per_100g, d.donor_PVF_per_100g_ref.fillna(DEFAULT_DONOR_REF))
     d['zP'] = zP(d.PVP, d.CVP.fillna(DEFAULT_CVP))
-    d['any_imputed'] = d[['PVP_basis', 'CVP_basis', 'PVF_basis']].isin(['imputed', 'threshold', 'group mean']).any(axis=1) | cvp_filled | ref_filled
+    d['zP_imputed'] = d[['PVP_basis', 'CVP_basis']].isin(['imputed']).any(axis=1) | cvp_filled
+    d['zF_imputed'] = d.PVF_basis.isin(['imputed', 'threshold', 'group mean']) | ref_filled
+    d['any_imputed'] = d.zP_imputed | d.zF_imputed
     if 'in_main_analysis' not in d: d['in_main_analysis'] = ~d.PVF_basis.isin(['threshold', 'group mean'])
     return d
 
@@ -69,11 +72,11 @@ def main(boot=2000, seed=0):
     d = compute(pd.read_csv(DATA, sep='\t'))
     d.to_csv(f'{OUT}/series_with_indices.tsv', sep='\t', index=False, float_format='%.3f')
     rows = []
-    for label, sub in (('main analysis (groups defined by a measured or derived value)', d[d.in_main_analysis]),
-                       ('including groups defined by a cut-off (Vasavada 2014)', d),
-                       ('no imputed or filled values', d[~d.any_imputed])):
+    for label, subs in (('main analysis (groups defined by a measured or derived value)', {'zP': d[d.in_main_analysis], 'zF': d[d.in_main_analysis]}),
+                        ('including groups defined by a cut-off (Vasavada 2014)', {'zP': d, 'zF': d}),
+                        ('no imputed or filled value in the index itself', {'zP': d[~d.zP_imputed & d.in_main_analysis], 'zF': d[~d.zF_imputed & d.in_main_analysis]})):
         for col in ('zP', 'zF'):
-            s = sub.dropna(subset=[col])
+            s = subs[col].dropna(subset=[col])
             if len(s) >= 3:
                 rho, p = spearmanr(s[col], s.pct); rows.append(dict(analysis=label, index=col, groups=len(s), spearman_rho=rho, p=p))
                 print(f'{label:28s} {col}: {len(s):2d} groups, Spearman rho = {rho:.2f}, p = {p:.3f}')
@@ -82,7 +85,7 @@ def main(boot=2000, seed=0):
     print(f"logit(SFSS) = {res['b0']:.2f} + {res['b1']:.2f} zP (slope 95% CI {res['b1_ci'][0]:.2f}-{res['b1_ci'][1]:.2f}); "
           f"{res['groups']} groups, {res['events']} events / {res['patients']}; zP range {res['zP_min']:.2f}-{res['zP_max']:.2f}")
     for r in (0.05, 0.10, 0.20): print(f'  zP at {int(r*100)}% risk: {(np.log(r/(1-r)) - res["b0"]) / res["b1"]:.2f}')
-    sf2 = sf[~sf.any_imputed]
+    sf2 = sf[~sf.zP_imputed]
     if len(sf2) >= 2 and sf2.events.sum() > 0:
         r2 = pooled_fit(sf2, boot, seed); rows.append(dict(analysis='fit without imputed or filled values', index='zP', groups=len(sf2), spearman_rho=np.nan, p=np.nan, b0=r2['b0'], b1=r2['b1']))
     else:
