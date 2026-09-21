@@ -9,26 +9,39 @@ def test_series_indices_match_stored_results():
     import pandas as pd
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     assert d.zP.notna().sum() == 21 and d.zF.notna().sum() == 13 and len(d) == 31
+    assert (d.gradient_mmHg.notna() & d.gradient_basis.eq('not applicable')).sum() == 0
     assert set(d.CVP_basis.unique()) <= {'reported', 'derived', 'imputed', 'threshold', 'not applicable'}
 
 def test_incomplete_edit_is_caught():
+    """A provenance label that contradicts the data must raise, not silently impute."""
     import pandas as pd
-    d = pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'); i = d.index[d.study.eq('Yamada 2008')][0]
-    e = d.copy(); e.loc[i, 'CVP'] = float('nan')
+    d = pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t')
+    i = d.index[d.study.eq('Osman 2017')][0]                   # a row whose zP comes from PVP and CVP
+    e = d.copy(); e.loc[i, 'CVP'] = float('nan'); e.loc[i, 'CVP_basis'] = 'reported'
     try:
         indices.compute(e); assert False, 'a blank CVP labelled as reported must raise'
     except ValueError:
         pass
     e.loc[i, 'CVP_basis'] = 'imputed'; c = indices.compute(e)
-    assert bool(c.loc[i, 'CVP_filled']) and bool(c.loc[i, 'any_imputed'])
+    assert bool(c.loc[i, 'CVP_filled']) and bool(c.loc[i, 'zP_imputed'])
+    j = d.index[d.study.eq('Botha 2010')][0]                   # a row whose zP comes from a reported gradient
+    e2 = d.copy(); e2.loc[j, 'gradient_basis'] = 'not applicable'
+    try:
+        indices.compute(e2); assert False, 'a gradient labelled not applicable must raise'
+    except ValueError:
+        pass
 
 def test_cut_off_groups_excluded_from_main_analysis():
     import pandas as pd
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
-    assert set(d[~d.in_main_analysis].study) == {'Vasavada 2014', 'Yao 2018', 'Kanetkar 2017'}
+    assert set(d[~d.in_main_analysis].study) == {'Vasavada 2014', 'Yao 2018', 'Kanetkar 2017', 'Wang 2014'}
+    # a cohort partitioned twice enters the model once
+    m = indices.contributing(d[d.in_main_analysis & d.zP.notna() & d.events.notna()])
+    assert m[m.study == 'Wang 2014'].n.sum() == 276, 'the Wang cohort must not be counted twice'
 
 def test_index_definitions():
-    assert indices.zP(15, 5) == 2.0            # consensus threshold: PVP 15 at CVP 5
+    assert indices.zP(15, 5) == 2.0
+    assert indices.zP(gradient=10) == 2.0            # a reported gradient is used directly            # consensus threshold: PVP 15 at CVP 5
     assert indices.zP(10, 5) == 1.0            # normal gradient
     assert abs(indices.zF(250, 120) - 2.083) < 1e-3   # 250 mL/min/100 g with the donor reference of Troisi 2005
     assert indices.zF(90, 90) == 1.0
@@ -36,15 +49,19 @@ def test_index_definitions():
 def test_within_study_fit_reproduces_published_effect():
     indices.main()                              # full run (seed 0), so the JSONs match the committed calculator
     L = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
-    assert abs(L['beta'] - 1.34) < 0.03, L['beta']
-    assert 2.2 < L['OR_per_zP_ci'][0] < 2.7 and 5.9 < L['OR_per_zP_ci'][1] < 6.9
-    assert abs(L['OR_per_mmHg'] - 1.31) < 0.02
-    assert L['groups'] == 13 and len(L['studies']) == 5 and L['patients'] == 1026 and L['events'] == 134
-    assert all(v > 0.8 for v in L['leave_one_study_out'].values()), 'slope must stay positive dropping any study'
+    assert abs(L['beta'] - 1.96) < 0.03, L['beta']
+    assert abs(L['OR_per_mmHg'] - 1.48) < 0.03
+    assert L['groups'] == 11 and len(L['studies']) == 5 and L['patients'] == 734 and L['events'] == 104
+    assert all(v > 1.0 for v in L['leave_one_study_out'].values()), 'slope must stay positive dropping any study'
+    assert all(v > 1.0 for v in L['by_outcome'].values()), 'slope must hold for each outcome definition'
+    assert L['bootstrap_failures'] == 0, L['bootstrap_failures']
+    lo, hi = L['profile_ci']                                   # profile likelihood must agree with the bootstrap
+    assert abs(lo - L['beta_ci'][0]) < 0.3 and abs(hi - L['beta_ci'][1]) < 0.4
+    assert all(' / ' in s for s in L['studies']), 'strata are study x outcome'
 
 def test_risk_after_is_an_odds_shift():
-    assert abs(indices.risk_after(0.10, -1.0, 1.34) - 0.0284) < 0.001
-    assert indices.risk_after(0.10, 0.0, 1.34) == 0.10
+    assert abs(indices.risk_after(0.10, -1.0, 1.96) - 0.0154) < 0.001
+    assert indices.risk_after(0.10, 0.0, 1.96) == 0.10
 
 def test_fast_plots_render():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
