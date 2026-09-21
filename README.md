@@ -99,11 +99,7 @@ Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes 
 
 `src/model/network.py` builds the liver as a graph (hilum → portal tree → hexagonal lobules → hepatic venous tree), solves flows and dissipation for prescribed lobule demand and finds the dissipation-optimal tree at fixed maintenance cost `Σ m_e^b`. `network3d.py` does the same on a hemisphere. `scaling.py` gives the closed form `D* ∝ F² C^(−2/b) N^((2−b)/b) L³`, the set-point `τ0 = √(D*/C)` and the allometric closure. `graph_scaling.py`, `network3d.py <R>` and `certify.py` are the campaigns whose outputs are cached in `data/`.
 
-## Versions
-
-| version | date | changes |
-|---|---|---|
-| 0.1 | 2026-09-20 | First public release: extraction table of 12 series, indices, pooled fit, 14 plots, calculator, GitHub Pages, tests, PolyForm Noncommercial licence. Archived at Zenodo, version DOI [10.5281/zenodo.22861277](https://doi.org/10.5281/zenodo.22861277) |
+## Versions|
 
 Every GitHub release is archived at Zenodo. The concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) always resolves to the latest version; each version has its own DOI (table above).
 
