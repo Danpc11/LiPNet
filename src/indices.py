@@ -19,8 +19,10 @@ beta is the transferable parameter (the change in odds per unit of zP, i.e. per 
 not transferable and must be supplied by the user as their own baseline rate. The pooled common-intercept fit is
 still computed, for the record, and reported as not robust.
 
-Main analysis: groups whose haemodynamic value is measured or derived (in_main_analysis = True). Groups defined
-only by a cut-off (Vasavada 2014, Yao 2018, Kanetkar 2017) are excluded and reported in sensitivity.
+Main analysis: groups whose haemodynamic value is measured or derived (in_main_analysis = True). Excluded and
+reported in sensitivity: groups defined only by a cut-off (Vasavada 2014, Yao 2018, Kanetkar 2017) and the second
+partition of a cohort already represented (the Wang 2014 pressure groups are the same patients as its splenectomy
+groups). Intercepts are per study AND outcome definition, so a study reporting two outcomes does not share one.
 """
 import json, os
 import numpy as np, pandas as pd
@@ -35,23 +37,31 @@ IMPUTED_BASES = ('imputed', 'threshold', 'group mean')
 def zF(pvf_per_100g, donor_ref=DEFAULT_DONOR_REF):
     return pvf_per_100g / donor_ref
 
-def zP(pvp, cvp=DEFAULT_CVP):
-    return (pvp - cvp) / NORMAL_GRADIENT
+def zP(pvp=None, cvp=DEFAULT_CVP, gradient=None):
+    """zP from the portocaval gradient. Pass `gradient` when the paper reports it directly; otherwise it is
+    PVP - CVP, with CVP defaulting to 5 mmHg."""
+    g = (pvp - cvp) if gradient is None else gradient
+    return g / NORMAL_GRADIENT
 
 def compute(d):
     """add zF, zP and provenance flags to a series table (raw columns only).
     Any value filled in here (missing CVP -> 5, missing donor reference -> 90) is recorded in the *_filled columns
     and counts as imputed, whatever the *_basis label says; a label that contradicts the data raises an error."""
     d = d.copy()
-    cvp_filled = d.PVP.notna() & d.CVP.isna(); ref_filled = d.PVF_per_100g.notna() & d.donor_PVF_per_100g_ref.isna()
+    has_g = d.gradient_mmHg.notna()
+    cvp_filled = d.PVP.notna() & d.CVP.isna() & ~has_g          # CVP defaulted to 5 to build the gradient
+    ref_filled = d.PVF_per_100g.notna() & d.donor_PVF_per_100g_ref.isna()
     d['CVP_filled'] = cvp_filled; d['donor_ref_filled'] = ref_filled
     bad = d[cvp_filled & d.CVP_basis.eq('reported')]
     if len(bad): raise ValueError('CVP missing but labelled as reported: ' + ', '.join(bad.study + ' / ' + bad.group))
     bad = d[d.CVP.notna() & d.CVP_basis.eq('not applicable')]
     if len(bad): raise ValueError('CVP present but labelled not applicable: ' + ', '.join(bad.study + ' / ' + bad.group))
+    bad = d[has_g & d.gradient_basis.eq('not applicable')]
+    if len(bad): raise ValueError('gradient present but labelled not applicable: ' + ', '.join(bad.study + ' / ' + bad.group))
     d['zF'] = zF(d.PVF_per_100g, d.donor_PVF_per_100g_ref.fillna(DEFAULT_DONOR_REF))
-    d['zP'] = zP(d.PVP, d.CVP.fillna(DEFAULT_CVP))
-    d['zP_imputed'] = d[['PVP_basis', 'CVP_basis']].isin(IMPUTED_BASES).any(axis=1) | cvp_filled
+    d['zP'] = np.where(has_g, zP(gradient=d.gradient_mmHg), zP(d.PVP, d.CVP.fillna(DEFAULT_CVP)))
+    d['zP_imputed'] = np.where(has_g, d.gradient_basis.isin(IMPUTED_BASES),
+                               d[['PVP_basis', 'CVP_basis']].isin(IMPUTED_BASES).any(axis=1) | cvp_filled)
     d['zF_imputed'] = d.PVF_basis.isin(IMPUTED_BASES) | ref_filled
     d['any_imputed'] = d.zP_imputed | d.zF_imputed
     if 'in_main_analysis' not in d: d['in_main_analysis'] = ~d.PVF_basis.isin(['threshold', 'group mean'])
@@ -62,36 +72,64 @@ def _nll_fixed(par, S, z, ev, n, k):
     p = np.clip(1 / (1 + np.exp(-(par[:k][S] + par[-1] * z))), 1e-9, 1 - 1e-9)
     return -np.sum(ev * np.log(p) + (n - ev) * np.log(1 - p))
 
-def within_study_fit(s, boot=2000, seed=0):
-    """One intercept per study, common slope. s must have study, n, events, zP."""
-    studies = sorted(s.study.unique()); k = len(studies)
-    S = np.array([studies.index(x) for x in s.study]); z = s.zP.values
+def strata(s):
+    """One stratum per study AND outcome definition: a study reporting two outcomes does not share an intercept."""
+    return s.study.astype(str) + ' / ' + s.outcome_type.astype(str)
+
+def contributing(s):
+    """Keep the strata that contribute a within-stratum contrast (>=2 groups with different zP)."""
+    return s.groupby(strata(s).values).filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
+
+def within_study_fit(s, boot=2000, seed=0, _inner=False):
+    """One intercept per stratum (study x outcome), common slope. s must have study, outcome_type, n, events, zP."""
+    st = strata(s); studies = sorted(st.unique()); k = len(studies)
+    S = np.array([studies.index(x) for x in st]); z = s.zP.values
     ev = s.events.values.astype(float); n = s.n.values.astype(float)
     x0 = np.r_[np.full(k, -2.0), 1.0]
     fit = minimize(_nll_fixed, x0, args=(S, z, ev, n, k), method='BFGS')
     beta = float(fit.x[-1]); alphas = {st: float(a) for st, a in zip(studies, fit.x[:k])}
+    n_failed = 0
     if boot:
-        rng = np.random.default_rng(seed); B = np.empty(boot)
-        for i in range(boot):
+        rng = np.random.default_rng(seed); B = []
+        for _ in range(boot):
             evb = rng.binomial(n.astype(int), ev / n)
-            B[i] = minimize(_nll_fixed, fit.x, args=(S, z, evb, n, k), method='BFGS').x[-1]
-        lo, hi = np.percentile(B, [2.5, 97.5])
+            r = minimize(_nll_fixed, fit.x, args=(S, z, evb, n, k), method='BFGS')
+            if not r.success:                                    # retry once with a derivative-free method
+                r = minimize(_nll_fixed, fit.x, args=(S, z, evb, n, k), method='Nelder-Mead',
+                             options=dict(maxiter=20000, fatol=1e-10, xatol=1e-8))
+            if r.success: B.append(r.x[-1])
+            else: n_failed += 1
+        B = np.array(B); lo, hi = np.percentile(B, [2.5, 97.5])
     else:
         lo = hi = beta
-    loo = {}
-    for st in studies:
-        sub = s[s.study != st]
-        if sub.study.nunique() >= 2 and sub.groupby('study').zP.nunique().max() > 1:
-            loo[st] = float(within_study_fit(sub, boot=0)['beta'])
+    # profile-likelihood interval as an independent check on the bootstrap
+    prof_ci = None
+    if boot:
+        l0 = fit.fun
+        f = lambda b: minimize(lambda a: _nll_fixed(np.r_[a, b], S, z, ev, n, k), fit.x[:k]).fun - l0 - 1.92
+        try:
+            from scipy.optimize import brentq
+            prof_ci = [float(brentq(f, beta - 3, beta - 1e-3)), float(brentq(f, beta + 1e-3, beta + 3))]
+        except Exception:
+            prof_ci = None
+    loo, by_outcome = {}, {}
+    if not _inner:
+        for one in sorted(s.study.unique()):
+            sub = contributing(s[s.study != one])
+            if len(sub) >= 2: loo[one] = float(within_study_fit(sub, boot=0, _inner=True)['beta'])
+        for oc, g in s.groupby('outcome_type'):
+            g = contributing(g)
+            if len(g) >= 2: by_outcome[oc] = float(within_study_fit(g, boot=0, _inner=True)['beta'])
     return dict(beta=beta, beta_ci=[float(lo), float(hi)], OR_per_zP=float(np.exp(beta)),
                 OR_per_zP_ci=[float(np.exp(lo)), float(np.exp(hi))],
                 OR_per_mmHg=float(np.exp(beta / NORMAL_GRADIENT)),
                 OR_per_mmHg_ci=[float(np.exp(lo / NORMAL_GRADIENT)), float(np.exp(hi / NORMAL_GRADIENT))],
+                profile_ci=prof_ci, bootstrap_failures=int(n_failed), by_outcome=by_outcome,
                 studies=studies, alphas=alphas, groups=int(len(s)), patients=int(n.sum()), events=int(ev.sum()),
                 zP_min=float(z.min()), zP_max=float(z.max()), normal_gradient_mmHg=NORMAL_GRADIENT,
                 default_cvp_mmHg=DEFAULT_CVP, leave_one_study_out=loo,
                 study_groups=[dict(study=r.study, group=r.group, n=int(r.n), events=int(r.events),
-                                   zP=round(float(r.zP), 3), pct=float(r.pct), outcome=r.outcome,
+                                   zP=round(float(r.zP), 3), pct=float(r.pct), outcome=r.outcome, stratum=f'{r.study} / {r.outcome_type}',
                                    outcome_type=r.outcome_type, zP_imputed=bool(r.zP_imputed)) for _, r in s.iterrows()])
 
 def pooled_fit(s, boot=2000, seed=0):
@@ -128,17 +166,20 @@ def main(boot=2000, seed=0):
 
     # within-study model: studies contributing at least two groups with different zP
     m = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]
-    contrib = m.groupby('study').filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
+    contrib = contributing(m)
     res = within_study_fit(contrib, boot, seed)
     json.dump(res, open(f'{OUT}/within_study_fit.json', 'w'), indent=1)
     print(f"\nWithin-study model: logit(p) = alpha_study + {res['beta']:.2f} zP   "
           f"(OR {res['OR_per_zP']:.2f} per unit zP, 95% CI {res['OR_per_zP_ci'][0]:.2f}-{res['OR_per_zP_ci'][1]:.2f}; "
           f"OR {res['OR_per_mmHg']:.2f} per mmHg of gradient)")
     print(f"  {res['groups']} groups from {len(res['studies'])} studies, {res['events']} events / {res['patients']} recipients")
+    if res['profile_ci']: print(f"  profile-likelihood 95% CI for the slope: {res['profile_ci'][0]:.2f} to {res['profile_ci'][1]:.2f}"
+                                f"   (bootstrap {res['beta_ci'][0]:.2f} to {res['beta_ci'][1]:.2f}; {res['bootstrap_failures']} replicates discarded)")
     print('  leave-one-study-out slopes: ' + ', '.join(f'{k} {v:.2f}' for k, v in res['leave_one_study_out'].items()))
+    print('  by outcome: ' + ', '.join(f'{k} {v:.2f}' for k, v in res['by_outcome'].items()))
     for st, a in res['alphas'].items():
         p_at2 = 1 / (1 + np.exp(-(a + res['beta'] * 2)))
-        print(f"    baseline {st:14s} alpha {a:+.2f}  -> risk at zP = 2: {100*p_at2:.1f}%")
+        print(f"    baseline {st:48s} alpha {a:+.2f}  -> risk at zP = 2: {100*p_at2:.1f}%")
 
     sf = m[(m.outcome_type == 'SFSS_or_dysfunction')]
     pf = pooled_fit(sf, boot, seed); json.dump(pf, open(f'{OUT}/pooled_fit.json', 'w'), indent=1)
