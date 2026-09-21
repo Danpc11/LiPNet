@@ -1,7 +1,7 @@
 """Single source of the two indices, the correlations and the risk models.
 
     python src/indices.py     -> results/series_with_indices.tsv, results/within_study_fit.json,
-                                 results/sensitivity.tsv, results/pooled_fit.json
+                                 results/meta_slope.json, results/sensitivity.tsv, results/pooled_fit.json
 
 Indices (the calculator and plots.py use these same functions)
     zF = graft PVF per 100 g / donor PVF per 100 g   (donor reference from the same series when measured, else 90)
@@ -15,7 +15,9 @@ slope, fitted with one intercept per study and a common slope:
 
     logit(p) = alpha_study + beta * zP
 
-beta is the transferable parameter (the change in odds per unit of zP, i.e. per 5 mmHg of gradient); alpha is
+Three checks accompany it: a random-effects meta-analysis of the per-stratum slopes (which measures the
+heterogeneity instead of assuming it), a Pearson chi2/df test for overdispersion, and a regression-dilution
+analysis of how much the aggregation into group means costs. beta is the transferable parameter (the change in odds per unit of zP, i.e. per 5 mmHg of gradient); alpha is
 not transferable and must be supplied by the user as their own baseline rate. The pooled common-intercept fit is
 still computed, for the record, and reported as not robust.
 
@@ -132,6 +134,96 @@ def within_study_fit(s, boot=2000, seed=0, _inner=False):
                                    zP=round(float(r.zP), 3), pct=float(r.pct), outcome=r.outcome, stratum=f'{r.study} / {r.outcome_type}',
                                    outcome_type=r.outcome_type, zP_imputed=bool(r.zP_imputed)) for _, r in s.iterrows()])
 
+def meta_slope(s):
+    """Random-effects meta-analysis of the within-stratum slopes (DerSimonian-Laird).
+
+    Each stratum contributes its own logistic slope of the outcome on zP with its standard error; the slopes are
+    pooled with an additive between-study variance tau2. This is the standard way of combining grouped-exposure
+    data across studies, and unlike a single fit with stratum intercepts it *measures* the heterogeneity (tau2, I2)
+    instead of assuming it away, and does not spend degrees of freedom estimating the intercepts.
+    """
+    rows = []
+    for st, g in s.groupby(strata(s).values):
+        z = g.zP.values; ev = g.events.values.astype(float); n = g.n.values.astype(float)
+        f = lambda par: _nll_fixed(par, np.zeros(len(z), int), z, ev, n, 1)
+        r = minimize(f, [-3.0, 1.0], method='BFGS')
+        se = float(np.sqrt(np.diag(r.hess_inv))[1])
+        rows.append(dict(stratum=st, groups=int(len(g)), patients=int(n.sum()), events=int(ev.sum()),
+                         beta=float(r.x[1]), se=se, zP_span=float(z.max() - z.min())))
+    p = pd.DataFrame(rows); w = 1 / p.se ** 2
+    mu_fe = float((w * p.beta).sum() / w.sum()); Q = float((w * (p.beta - mu_fe) ** 2).sum()); k = len(p)
+    tau2 = max(0.0, (Q - (k - 1)) / (w.sum() - (w ** 2).sum() / w.sum())) if k > 1 else 0.0
+    w2 = 1 / (p.se ** 2 + tau2); mu = float((w2 * p.beta).sum() / w2.sum()); se = float(np.sqrt(1 / w2.sum()))
+    lo, hi = mu - 1.96 * se, mu + 1.96 * se
+    I2 = float(max(0.0, 100 * (Q - (k - 1)) / Q)) if Q > 0 else 0.0
+    from scipy.stats import chi2 as _chi2
+    return dict(beta=mu, se=se, beta_ci=[lo, hi], beta_fixed_effect=mu_fe, tau2=float(tau2), Q=Q, Q_df=k - 1,
+                Q_p=float(1 - _chi2.cdf(Q, k - 1)) if k > 1 else float('nan'), I2=I2,
+                OR_per_zP=float(np.exp(mu)), OR_per_zP_ci=[float(np.exp(lo)), float(np.exp(hi))],
+                OR_per_mmHg=float(np.exp(mu / NORMAL_GRADIENT)),
+                OR_per_mmHg_ci=[float(np.exp(lo / NORMAL_GRADIENT)), float(np.exp(hi / NORMAL_GRADIENT))],
+                strata=rows)
+
+def centred(s):
+    """Remove the cohort level by centring within stratum ("within" or fixed-effects transformation).
+
+    For each group take the empirical log-odds of the outcome (Haldane-corrected) and subtract the mean log-odds of
+    its own stratum; do the same with zP. The stratum intercept cancels exactly, so every group lands on one common
+    scale: the y axis is the outcome odds relative to that cohort's own average, the x axis the gradient relative to
+    that cohort's own average. The slope of the weighted regression through the origin is the same within-stratum
+    effect, obtained without estimating a single intercept.
+    """
+    d = s.copy()
+    d['log_odds'] = np.log((d.events + 0.5) / (d.n - d.events + 0.5))
+    d['var_log_odds'] = 1 / (d.events + 0.5) + 1 / (d.n - d.events + 0.5)
+    g = strata(d).values
+    d['log_odds_c'] = d.log_odds - d.groupby(g).log_odds.transform('mean')
+    d['zP_c'] = d.zP - d.groupby(g).zP.transform('mean')
+    d['OR_vs_own_cohort'] = np.exp(d.log_odds_c)
+    w = 1 / d.var_log_odds
+    beta = float((w * d.zP_c * d.log_odds_c).sum() / (w * d.zP_c ** 2).sum())
+    se = float(np.sqrt(1 / (w * d.zP_c ** 2).sum()))
+    r2 = float(1 - (w * (d.log_odds_c - beta * d.zP_c) ** 2).sum() / (w * d.log_odds_c ** 2).sum())
+    lo, hi = beta - 1.96 * se, beta + 1.96 * se
+    return dict(beta=beta, se=se, beta_ci=[lo, hi], r2_weighted=r2,
+                OR_per_zP=float(np.exp(beta)), OR_per_zP_ci=[float(np.exp(lo)), float(np.exp(hi))],
+                OR_per_mmHg=float(np.exp(beta / NORMAL_GRADIENT)),
+                points=[dict(study=r.study, group=r.group, stratum=f'{r.study} / {r.outcome_type}', n=int(r.n),
+                             events=int(r.events), zP_c=round(float(r.zP_c), 4),
+                             log_odds_c=round(float(r.log_odds_c), 4), se_log_odds=round(float(np.sqrt(r.var_log_odds)), 4))
+                        for _, r in d.iterrows()])
+
+def overdispersion(s):
+    """Pearson chi2 / df of the stratified fit: >1 means more spread than binomial sampling explains, and the
+    standard error should be scaled by its square root (quasi-binomial)."""
+    st = strata(s); studies = sorted(st.unique()); k = len(studies)
+    S = np.array([studies.index(x) for x in st]); z = s.zP.values
+    ev = s.events.values.astype(float); n = s.n.values.astype(float)
+    fit = minimize(_nll_fixed, np.r_[np.full(k, -3.0), 1.0], args=(S, z, ev, n, k), method='BFGS')
+    p = 1 / (1 + np.exp(-(fit.x[:k][S] + fit.x[-1] * z)))
+    chi2 = float(np.sum((ev - n * p) ** 2 / (n * p * (1 - p)))); df = int(len(z) - k - 1)
+    scale = float(np.sqrt(max(1.0, chi2 / df))) if df > 0 else 1.0
+    se = float(np.sqrt(np.diag(fit.hess_inv))[-1])
+    return dict(chi2=chi2, df=df, ratio=chi2 / df if df > 0 else float('nan'), se_scale=scale,
+                beta=float(fit.x[-1]), se_model=se, se_quasi=se * scale,
+                beta_ci_quasi=[float(fit.x[-1] - 1.96 * se * scale), float(fit.x[-1] + 1.96 * se * scale)])
+
+def attenuation(s, within_group_sd_mmHg=3.5, draws=400, seed=1):
+    """Regression dilution. (a) Group means carry a sampling error sd/sqrt(n): the slope is re-estimated with that
+    noise added, to show how much of it the aggregated analysis loses. (b) If individual gradients were used, the
+    within-group spread would attenuate the slope by lambda = var(z) / (var(z) + (sd/5)^2), so the per-patient slope
+    implied by the aggregated one is beta/lambda."""
+    st = strata(s); studies = sorted(st.unique()); k = len(studies)
+    S = np.array([studies.index(x) for x in st]); z = s.zP.values
+    ev = s.events.values.astype(float); n = s.n.values.astype(float)
+    fit = minimize(_nll_fixed, np.r_[np.full(k, -3.0), 1.0], args=(S, z, ev, n, k), method='BFGS'); b = float(fit.x[-1])
+    rng = np.random.default_rng(seed); se_z = (within_group_sd_mmHg / np.sqrt(n)) / NORMAL_GRADIENT
+    sims = [minimize(_nll_fixed, fit.x, args=(S, z + rng.normal(0, se_z), ev, n, k), method='BFGS').x[-1] for _ in range(draws)]
+    lam = float(np.var(z) / (np.var(z) + (within_group_sd_mmHg / NORMAL_GRADIENT) ** 2))
+    return dict(beta=b, beta_with_group_mean_error=float(np.mean(sims)),
+                loss_pct=float(100 * (1 - np.mean(sims) / b)), lambda_individual=lam,
+                beta_individual_implied=b / lam, within_group_sd_mmHg=within_group_sd_mmHg)
+
 def pooled_fit(s, boot=2000, seed=0):
     """Common-intercept logistic (kept for the record; not robust across centres)."""
     z, ev, n = s.zP.values, s.events.values.astype(float), s.n.values.astype(float)
@@ -181,14 +273,39 @@ def main(boot=2000, seed=0):
         p_at2 = 1 / (1 + np.exp(-(a + res['beta'] * 2)))
         print(f"    baseline {st:48s} alpha {a:+.2f}  -> risk at zP = 2: {100*p_at2:.1f}%")
 
+    meta = meta_slope(contrib); od = overdispersion(contrib); att = attenuation(contrib); cen = centred(contrib)
+    json.dump(dict(meta=meta, overdispersion=od, attenuation=att, centred=cen), open(f'{OUT}/meta_slope.json', 'w'), indent=1)
+    print(f"\nCohort level removed by centring within stratum: slope {cen['beta']:.2f} +- {cen['se']:.2f}, "
+          f"OR {cen['OR_per_zP']:.2f} per unit zP ({cen['OR_per_zP_ci'][0]:.2f}-{cen['OR_per_zP_ci'][1]:.2f}), "
+          f"{cen['OR_per_mmHg']:.2f} per mmHg; weighted R2 of the common line = {cen['r2_weighted']:.2f}")
+    print(f"\nRandom-effects meta-analysis of the stratum slopes: {meta['beta']:.2f} (95% CI {meta['beta_ci'][0]:.2f} to {meta['beta_ci'][1]:.2f}), "
+          f"OR {meta['OR_per_zP']:.2f} per unit zP ({meta['OR_per_zP_ci'][0]:.2f}-{meta['OR_per_zP_ci'][1]:.2f}), {meta['OR_per_mmHg']:.2f} per mmHg")
+    print(f"  heterogeneity: tau2 = {meta['tau2']:.3f}, Q = {meta['Q']:.2f} on {meta['Q_df']} df (p = {meta['Q_p']:.2f}), I2 = {meta['I2']:.0f}%")
+    for r in meta['strata']: print(f"    {r['stratum']:48s} slope {r['beta']:+.2f} (SE {r['se']:.2f}), zP span {r['zP_span']:.2f}, {r['events']}/{r['patients']}")
+    print(f"  overdispersion: Pearson chi2/df = {od['ratio']:.2f} on {od['df']} df -> SE scale {od['se_scale']:.2f}; quasi-binomial CI {od['beta_ci_quasi'][0]:.2f} to {od['beta_ci_quasi'][1]:.2f}")
+    print(f"  regression dilution: sampling error of the group means costs {att['loss_pct']:.0f}% of the slope; "
+          f"with individual gradients (SD {att['within_group_sd_mmHg']} mmHg) the implied per-patient slope is {att['beta_individual_implied']:.2f} (lambda {att['lambda_individual']:.2f})")
+
     sf = m[(m.outcome_type == 'SFSS_or_dysfunction')]
     pf = pooled_fit(sf, boot, seed); json.dump(pf, open(f'{OUT}/pooled_fit.json', 'w'), indent=1)
     print(f"\nCommon-intercept pooled fit (not robust): logit = {pf['b0']:.2f} + {pf['b1']:.2f} zP "
           f"(slope 95% CI {pf['b1_ci'][0]:.2f} to {pf['b1_ci'][1]:.2f}), {pf['groups']} groups")
     rows.append(dict(analysis='common-intercept pooled fit (SFSS groups)', index='zP', groups=pf['groups'],
                      spearman_rho=np.nan, p=np.nan, b0=pf['b0'], b1=pf['b1']))
-    rows.append(dict(analysis='within-study fit (common slope, study intercepts)', index='zP', groups=res['groups'],
+    rows.append(dict(analysis='within-study fit (common slope, stratum intercepts)', index='zP', groups=res['groups'],
                      spearman_rho=np.nan, p=np.nan, b1=res['beta'], b1_lo=res['beta_ci'][0], b1_hi=res['beta_ci'][1]))
+    rows.append(dict(analysis='random-effects meta-analysis of stratum slopes', index='zP', groups=res['groups'],
+                     spearman_rho=np.nan, p=np.nan, b1=meta['beta'], b1_lo=meta['beta_ci'][0], b1_hi=meta['beta_ci'][1],
+                     tau2=meta['tau2'], I2=meta['I2'], Q=meta['Q'], Q_df=meta['Q_df'], Q_p=meta['Q_p']))
+    rows.append(dict(analysis='overdispersion (Pearson chi2/df) and quasi-binomial CI', index='zP', groups=res['groups'],
+                     spearman_rho=np.nan, p=np.nan, b1=od['beta'], b1_lo=od['beta_ci_quasi'][0], b1_hi=od['beta_ci_quasi'][1],
+                     chi2_over_df=od['ratio']))
+    rows.append(dict(analysis='centred within stratum (cohort level removed)', index='zP', groups=res['groups'],
+                     spearman_rho=np.nan, p=np.nan, b1=cen['beta'], b1_lo=cen['beta_ci'][0], b1_hi=cen['beta_ci'][1],
+                     r2_weighted=cen['r2_weighted']))
+    rows.append(dict(analysis='regression dilution (group-mean sampling error; implied per-patient slope)', index='zP',
+                     groups=res['groups'], spearman_rho=np.nan, p=np.nan, b1=att['beta_with_group_mean_error'],
+                     b1_individual_implied=att['beta_individual_implied'], attenuation_lambda=att['lambda_individual']))
     pd.DataFrame(rows).to_csv(f'{OUT}/sensitivity.tsv', sep='\t', index=False, float_format='%.4f')
 
 if __name__ == '__main__':
