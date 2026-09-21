@@ -59,6 +59,16 @@ def test_within_study_fit_reproduces_published_effect():
     assert abs(lo - L['beta_ci'][0]) < 0.3 and abs(hi - L['beta_ci'][1]) < 0.4
     assert all(' / ' in s for s in L['studies']), 'strata are study x outcome'
 
+def test_baseline_recalibration():
+    """Calibration in the large: the intercept from a rate and a mean gradient, and from patient data."""
+    import numpy as np
+    a = indices.baseline_from_rate(0.10, 1.6, 1.66)
+    assert abs(1 / (1 + np.exp(-(a + 1.66 * 1.6))) - 0.10) < 1e-9        # reproduces the rate at the mean
+    rng = np.random.default_rng(0); z = rng.normal(1.6, 0.5, 400)
+    y = rng.binomial(1, 1 / (1 + np.exp(-(a + 1.66 * z))))
+    r = indices.recalibrate(y, z, 1.66)
+    assert abs(r['alpha'] - a) < 3 * r['se'] and r['n'] == 400
+
 def test_risk_after_is_an_odds_shift():
     assert abs(indices.risk_after(0.10, -1.0, 1.96) - 0.0154) < 0.001
     assert indices.risk_after(0.10, 0.0, 1.96) == 0.10
@@ -101,6 +111,7 @@ def test_readme_numbers_match_results():
     indices.main()                              # full run: never leave a short-bootstrap JSON behind for build_app
     sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t')
     readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
+    assert 'assets/graphical_abstract.png' in readme, 'the graphical abstract must stay in the README'
     main = sens[sens.analysis.str.startswith('main analysis')]
     for _, r in main.iterrows():
         assert f"{int(r.groups)} groups" in readme, f"README lacks the group count for main {r['index']}"
@@ -134,4 +145,4 @@ def test_app_builds():
     assert 'STUDIES.forEach((st,i)=>{let pts' not in html                       # no five-curve plot any more
 
 if __name__ == '__main__':
-    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_within_study_fit_reproduces_published_effect, test_meta_analysis_and_diagnostics, test_centring_removes_the_cohort_level, test_risk_after_is_an_odds_shift, test_fast_plots_render, test_readme_numbers_match_results, test_app_builds): t(); print('ok', t.__name__)
+    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_within_study_fit_reproduces_published_effect, test_meta_analysis_and_diagnostics, test_centring_removes_the_cohort_level, test_baseline_recalibration, test_risk_after_is_an_odds_shift, test_fast_plots_render, test_readme_numbers_match_results, test_app_builds): t(); print('ok', t.__name__)
