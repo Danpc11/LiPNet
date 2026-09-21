@@ -123,16 +123,12 @@ def centred():
 
 def risk_change():
     """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates.
-    Uses the intercept-free centred slope, the same estimate the calculator applies."""
-    import json as _json
-    f = f'{OUT}/meta_slope.json'
-    if not os.path.exists(f): indices.main()
-    C = _json.load(open(f))['centred']
-    L = dict(beta=C['beta'], beta_ci=C['beta_ci'], normal_gradient_mmHg=indices.NORMAL_GRADIENT); fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
+    Uses the stratified model, the same estimate the calculator applies."""
+    L = fit(); fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
     ax = axs[0]; dg = np.linspace(-12, 4, 100)
     OR = np.exp(L['beta'] * dg / L['normal_gradient_mmHg'])
     lo = np.exp(L['beta_ci'][0] * dg / L['normal_gradient_mmHg']); hi = np.exp(L['beta_ci'][1] * dg / L['normal_gradient_mmHg'])
-    ax.fill_between(dg, np.minimum(lo, hi), np.maximum(lo, hi), color=C_SIN, alpha=0.15, lw=0, label='95% bootstrap band')
+    ax.fill_between(dg, np.minimum(lo, hi), np.maximum(lo, hi), color=C_SIN, alpha=0.15, lw=0, label='95% bootstrap interval for the slope')
     ax.plot(dg, OR, color=C_SIN, lw=1.4); ax.axhline(1, color='k', lw=0.6); ax.axvline(0, color='k', lw=0.6)
     ax.set_yscale('log'); ax.set_xlabel('Change in portocaval gradient (mmHg)'); ax.set_ylabel('Odds ratio for the outcome')
     ax.set_ylim(2e-2, 5)
