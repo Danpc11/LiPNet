@@ -7,6 +7,8 @@ All notable changes to this repository are documented here. The format follows [
 ## [0.3.0] – 2026-09-21
 
 ### Added
+- `indices.baseline_from_rate()` and `indices.recalibrate()`: calibration in the large, the standard first step of prediction-model updating (Steyerberg; Vergouwe et al., Stat Med 2017; Janssen et al., Can J Anesth 2009). The first gives the intercept from a centre's overall outcome rate and average gradient; the second fits only the intercept on a cohort with the slope held as an offset. README gains a section on how to obtain a baseline.
+- The graphical abstract, lost from the README in an earlier rewrite, is restored, and a test now guards it.
 - `indices.meta_slope()`: random-effects (DerSimonian-Laird) meta-analysis of the per-stratum slopes, with tau2, Q and I2. Result: OR 6.69 per unit of zP (95% CI 3.12-14.4), tau2 = 0, Q = 1.47 on 4 df (p = 0.83), I2 = 0%, i.e. the five series estimate one common effect. It agrees with the stratified fit and does not spend degrees of freedom on the intercepts.
 - `indices.overdispersion()`: Pearson chi2/df of the stratified fit (0.31 on 5 df), with the quasi-binomial interval; there is no extra-binomial spread.
 - `indices.attenuation()`: regression dilution. The sampling error of the group means costs 3% of the slope; the within-group spread of the gradient implies a per-patient slope of about 3.3 (lambda 0.59), so aggregation understates rather than inflates the effect.
@@ -17,7 +19,7 @@ All notable changes to this repository are documented here. The format follows [
 - Plot `forest`: per-stratum slope with its interval and the pooled estimate.
 - `results/meta_slope.json`; three more rows in `results/sensitivity.tsv`; tests for all three.
 
-## [0.2.2] – 2026-09-21
+## [0.2..2] – 2026-09-21
 
 Code and methodology audit: three corrections that change the estimated effect.
 
