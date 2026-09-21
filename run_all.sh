@@ -2,8 +2,9 @@
 # Rebuilds every result, every plot (one file each) and the calculator. Run from the repository root.
 set -e
 export PYTHONPATH=src
-python src/indices.py          # indices + pooled logistic fit -> results/
-python src/plots.py all        # 14 individual plots -> results/<name>.pdf/.png (network_2d/3d recompute the model, ~1 min)
+python src/indices.py          # indices, stratified and hierarchical fits, validation
+python src/predictions.py      # the four predictions of the model -> results/predictions.json          # indices + pooled logistic fit -> results/
+python src/plots.py all        # 18 stand-alone plots -> results/<name>.pdf/.png (network_2d/3d recompute the model, ~1 min)
 python src/build_app.py        # -> sfss_calculator.html
 # Long model campaigns behind the cached tables in data/ (optional, 1-2 h):
 #   for R in 3.0 4.5 6.5 9.0 12.0; do python src/model/graph_scaling.py $R; done
