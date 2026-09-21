@@ -31,7 +31,7 @@ small{color:var(--muted)}
 <body><main>
 <h1>Portal hemodynamic index for partial liver grafts</h1>
 <p class="sub">Computes the pressure index z<sub>P</sub> = (PVP − CVP)/5 and the flow index z<sub>F</sub> = graft PVF per 100 g ÷ donor PVF per 100 g, and reads the pooled risk of small-for-size syndrome from published living-donor series.</p>
-<div class="note"><b>Research tool.</b> The risk curve is a pooled logistic fit to five published groups (362 recipients, 46 events; Osman 2017, Wang 2014, Yamada 2008), calibrated on group means; 4 of the 5 groups had no reported central venous pressure and 5 mmHg was assumed for them. It orders groups; it is not a validated individual predictor and must not replace clinical judgement or the ILTS-iLDLT-LTSI consensus thresholds (PVP &lt;15 mmHg and/or PVF &lt;250 mL/min/100 g).</div>
+<div class="note"><b>Research tool.</b> This calculator does <b>not</b> estimate your patient's baseline risk. Across published series the reported outcome at the same gradient ranges from 0% to 17%, because it depends on recipient severity, outcome definition and technique. What is transferable is the <b>within-study effect of changing the gradient</b>: odds ratio 3.81 per unit of z<sub>P</sub> (95% CI 2.44–6.37), i.e. 1.31 per mmHg, fitted with one intercept per study on 13 groups from 5 series (134 events / 1026 recipients). Enter your own baseline rate to obtain absolute risks. Not a validated individual predictor and not a medical device.</div>
 
 <div class="grid" style="margin-top:14px">
  <div class="card"><h2 style="margin-top:0">Pressure (after reperfusion)</h2>
@@ -51,13 +51,13 @@ small{color:var(--muted)}
 <div class="grid" style="margin-top:12px">
  <div class="card"><small>Pressure index</small><div class="big" id="zp">–</div><div id="zptag"></div><small id="zpsub"></small></div>
  <div class="card"><small>Flow index</small><div class="big" id="zf">–</div><div id="zftag"></div><small id="zfsub"></small></div>
- <div class="card"><small>Pooled SFSS risk at this z<sub>P</sub> (95% bootstrap band)</small><div class="big" id="risk">–</div><small id="risksub"></small></div>
+ <div class="card"><small>Effect of the change in gradient</small><div class="big" id="risk">–</div><small id="risksub"></small></div>
 </div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Reading</h2><div id="read"></div></div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Risk curve</h2><svg id="plot" viewBox="0 0 640 300" role="img" aria-label="risk curve"></svg>
-<small>Circles: published groups (area ∝ n). Shaded: model window 1 ≤ z<sub>P</sub> ≤ 2. Fitted logit = −6.40 + 1.88·z<sub>P</sub>.</small></div>
+<small>One curve and one colour per study: common slope, study-specific intercept. The vertical lines mark the current gradient (blue) and the gradient after the planned change (green). Shaded: window 1 ≤ z<sub>P</sub> ≤ 2.</small></div>
 
 <div class="card tbl" style="margin-top:12px"><h2 style="margin-top:0">What modulation does in the published series</h2>
 <table><tr><th>Manoeuvre</th><th>Reported effect</th><th>Source</th></tr>
@@ -70,54 +70,59 @@ small{color:var(--muted)}
 <p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008. Model: dissipation-optimal perfusion network with fixed vascular maintenance cost (Vázquez-Victorio, Pérez-Calixto, Escutia-Guadarrama, Tovar, Pérez-Calixto, 2026). Source: https://github.com/Danpc11/liver_pressure_index</small></p>
 </main>
 <script>
-const CURVE={"z": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 6.0, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.0, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 8.0], "p": [0.00422, 0.00508, 0.00613, 0.00738, 0.0089, 0.01071, 0.0129, 0.01553, 0.01867, 0.02245, 0.02696, 0.03235, 0.03878, 0.04642, 0.05548, 0.06619, 0.0788, 0.09356, 0.11075, 0.13065, 0.15351, 0.17954, 0.20889, 0.24163, 0.2777, 0.31691, 0.3589, 0.40317, 0.44907, 0.49586, 0.54273, 0.58885, 0.63345, 0.67589, 0.71561, 0.75225, 0.78559, 0.81554, 0.84214, 0.86555, 0.88595, 0.9036, 0.91877, 0.93173, 0.94276, 0.95209, 0.95997, 0.9666, 0.97216, 0.97682, 0.98071, 0.98396, 0.98667, 0.98893, 0.99081, 0.99237, 0.99367, 0.99475, 0.99564, 0.99639, 0.997, 0.99752, 0.99794, 0.99829, 0.99858, 0.99883, 0.99903, 0.99919, 0.99933, 0.99945, 0.99954, 0.99962, 0.99968, 0.99974, 0.99978, 0.99982], "lo": [0.00029, 0.00041, 0.00056, 0.00078, 0.00107, 0.00147, 0.00201, 0.00273, 0.00375, 0.00512, 0.00698, 0.00952, 0.01298, 0.01783, 0.02407, 0.03274, 0.04346, 0.05827, 0.07517, 0.09506, 0.11273, 0.12918, 0.14438, 0.15991, 0.17529, 0.18947, 0.20375, 0.21902, 0.23649, 0.25257, 0.27189, 0.2894, 0.30701, 0.32585, 0.34459, 0.36628, 0.38807, 0.40969, 0.43222, 0.45289, 0.47762, 0.49789, 0.51801, 0.5382, 0.55826, 0.58048, 0.60047, 0.62014, 0.63944, 0.65834, 0.67726, 0.69665, 0.71545, 0.73268, 0.74785, 0.76489, 0.77978, 0.79333, 0.80623, 0.81852, 0.83024, 0.84231, 0.85366, 0.86404, 0.87355, 0.88249, 0.89087, 0.89873, 0.90607, 0.91294, 0.91936, 0.92534, 0.93091, 0.93609, 0.94091, 0.94539], "hi": [0.02978, 0.03249, 0.03557, 0.03853, 0.0418, 0.04502, 0.04884, 0.05256, 0.05738, 0.06253, 0.06829, 0.0737, 0.08002, 0.08728, 0.09535, 0.10417, 0.1147, 0.12907, 0.14638, 0.16751, 0.19584, 0.2327, 0.28271, 0.3478, 0.41557, 0.49081, 0.56911, 0.6412, 0.70742, 0.7666, 0.81895, 0.86162, 0.8956, 0.92197, 0.94247, 0.95767, 0.96871, 0.97701, 0.98324, 0.98781, 0.99115, 0.99358, 0.99527, 0.99656, 0.9975, 0.99818, 0.99868, 0.99904, 0.9993, 0.99949, 0.99963, 0.99973, 0.99981, 0.99986, 0.9999, 0.99993, 0.99995, 0.99996, 0.99997, 0.99998, 0.99999, 0.99999, 0.99999, 0.99999, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]};
-const GROUPS=[{"s": "Wang 2014 splenectomy", "z": 2.22, "p": 9.7, "n": 154}, {"s": "Wang 2014 no splenectomy", "z": 2.68, "p": 19.7, "n": 122}, {"s": "Osman 2017 A: final PVP <15", "z": 1.43, "p": 2.6, "n": 39}, {"s": "Osman 2017 B: final PVP 15-19", "z": 2.43, "p": 16.2, "n": 37}, {"s": "Yamada 2008 HPCS for PVP >20 (GRWR", "z": 1.68, "p": 0.0, "n": 10}];
-const B0=-6.4041,B1=1.8787,GN=5,DEFAULT_CVP=5,ZMIN=1.430,ZMAX=2.680;
+const GROUPS=[{"s": "Wang 2014", "z": 2.22, "p": 9.7, "n": 154}, {"s": "Wang 2014", "z": 2.68, "p": 19.7, "n": 122}, {"s": "Wang 2014", "z": 3.2, "p": 16.7, "n": 54}, {"s": "Wang 2014", "z": 2.2, "p": 8.8, "n": 238}, {"s": "Osman 2017", "z": 1.43, "p": 2.6, "n": 39}, {"s": "Osman 2017", "z": 2.43, "p": 16.2, "n": 37}, {"s": "Ogura 2010", "z": 1.24, "p": 7.0, "n": 86}, {"s": "Ogura 2010", "z": 1.98, "p": 32.6, "n": 43}, {"s": "Yagi 2005", "z": 2.08, "p": 6.7, "n": 15}, {"s": "Yagi 2005", "z": 3.74, "p": 41.2, "n": 17}, {"s": "Uemura 2016", "z": 1.02, "p": 17.2, "n": 29}, {"s": "Uemura 2016", "z": 0.95, "p": 13.2, "n": 38}, {"s": "Uemura 2016", "z": 0.95, "p": 13.0, "n": 154}],STUDIES=["Ogura 2010", "Osman 2017", "Uemura 2016", "Wang 2014", "Yagi 2005"],ALPHAS={"Ogura 2010": -3.7605, "Osman 2017": -5.0264, "Uemura 2016": -3.1305, "Wang 2014": -5.2674, "Yagi 2005": -5.3699};
+const BETA=1.3373,BLO=0.8924,BHI=1.8519,GN=5,DEFAULT_CVP=5,ZMIN=0.946,ZMAX=3.740;
 const $=id=>document.getElementById(id);
-function interp(x,xs,ys){if(x<=xs[0])return ys[0];if(x>=xs[xs.length-1])return ys[ys.length-1];for(let i=1;i<xs.length;i++){if(x<=xs[i]){const t=(x-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+t*(ys[i]-ys[i-1]);}}}
 function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
 function calc(){
- const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value;
- const pvp=(pvpRaw===''||!isFinite(+pvpRaw)||+pvpRaw<0)?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvpOk=cvpAssumed||(isFinite(+cvpRaw)&&+cvpRaw>=0); const cvp=cvpAssumed?DEFAULT_CVP:(cvpOk?+cvpRaw:NaN); const gn=GN;
+ const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value, pvp2Raw=$('pvp2').value, baseRaw=$('base').value;
+ const pvp=(pvpRaw===''||!isFinite(+pvpRaw)||+pvpRaw<0)?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvpOk=cvpAssumed||(isFinite(+cvpRaw)&&+cvpRaw>=0);
+ const cvp=cvpAssumed?DEFAULT_CVP:(cvpOk?+cvpRaw:NaN); const gn=GN;
  let pressMsg=[]; if(pvpRaw!==''&&isNaN(pvp))pressMsg.push('Portal pressure must be a non-negative number.'); if(!cvpOk)pressMsg.push('Central venous pressure must be a non-negative number (leave it blank if not measured).');
- // flow inputs: distinguish blank, zero and invalid before computing anything
  const num=id=>{const v=$(id).value; if(v==='')return {v:NaN,state:'blank'}; const x=+v; if(!isFinite(x))return {v:NaN,state:'invalid'}; return {v:x,state:x>0?'ok':(x===0?'zero':'negative')};};
  const P=num('pvf'), G=num('gw'), R=num('grwr'), W=num('rw'), D=num('dref'); let flowMsg=[];
- let dref=90; if(D.state==='ok')dref=D.v; else if(D.state!=='blank')flowMsg.push('Donor flow reference must be a positive number; '+(D.state==='zero'?'0':'the value entered')+' is not valid, so the healthy live-donor reference 90 mL/min/100 g was used.'); else flowMsg.push('No donor flow reference entered: 90 mL/min/100 g (healthy live donor) was used.');
+ let dref=90; if(D.state==='ok')dref=D.v; else if(D.state!=='blank')flowMsg.push('Donor flow reference must be a positive number; the healthy live-donor reference 90 mL/min/100 g was used.'); else flowMsg.push('No donor flow reference entered: 90 mL/min/100 g (healthy live donor) was used.');
  let gw=NaN; if(G.state==='ok')gw=G.v; else if(G.state==='blank'){ if(R.state==='ok'&&W.state==='ok')gw=R.v/100*W.v*1000; else if(R.state!=='blank'||W.state!=='blank')flowMsg.push('GRWR and recipient weight must both be positive numbers to derive the graft weight.'); }
- else flowMsg.push('Graft weight must be a positive number ('+$('gw').value+' is not valid); the flow index was not computed.');
+ else flowMsg.push('Graft weight must be a positive number; the flow index was not computed.');
  let pvf=NaN; if(P.state==='ok'||P.state==='zero')pvf=P.v; else if(P.state!=='blank')flowMsg.push('Portal flow must be a non-negative number; the flow index was not computed.');
  if(P.state==='zero')flowMsg.push('A portal flow of 0 mL/min means no portal inflow (portal vein occlusion or complete steal): z<sub>F</sub> = 0 and the ratio z<sub>P</sub>/z<sub>F</sub> is undefined.');
  const pvf100=(isFinite(pvf)&&isFinite(gw))?pvf/gw*100:NaN; const zF=isFinite(pvf100)?pvf100/dref:NaN;
  const zP=(isNaN(pvp)||isNaN(cvp))?NaN:(pvp-cvp)/gn;
+ const pvp2=(pvp2Raw===''||!isFinite(+pvp2Raw))?NaN:+pvp2Raw; const zP2=(isNaN(pvp2)||isNaN(cvp))?NaN:(pvp2-cvp)/gn;
  $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tagP(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
- $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'');
+ $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'')+(isNaN(zP2)?'':' → '+(pvp2-cvp).toFixed(1)+' mmHg (z_P '+zP2.toFixed(2)+')');
  $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tagF(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
- const inRange=!isNaN(zP)&&zP>=ZMIN&&zP<=ZMAX, inGrid=!isNaN(zP)&&zP>=CURVE.z[0]&&zP<=CURVE.z[CURVE.z.length-1];
- if(!isNaN(zP)){const p=100/(1+Math.exp(-(B0+B1*zP)));$('risk').textContent=p.toFixed(1)+'%';
-   if(inGrid){const lo=100*interp(zP,CURVE.z,CURVE.lo),hi=100*interp(zP,CURVE.z,CURVE.hi);$('risksub').textContent='band '+lo.toFixed(1)+'–'+hi.toFixed(1)+'%'+(inRange?'':' — outside the range of the fitted groups (z_P '+ZMIN.toFixed(2)+'–'+ZMAX.toFixed(2)+'): extrapolation');}
-   else{$('risksub').textContent='outside the fitted curve: no band shown, value is an extrapolation';}}
- else{$('risk').textContent='–';$('risksub').textContent='';}
  let msg=pressMsg.concat(flowMsg);
- if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (e.g. PVP '+ (pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
-  else if(zP<=0){msg.push(zP===0?'Portal and central venous pressures are equal: no portocaval gradient, so no portal perfusion pressure. Check the measurements or the position of the catheters.':'PVP below CVP: the gradient is negative, which is not physiological; check the measurements.');}
+ if(!isNaN(zP)&&!isNaN(zP2)){
+   const dz=zP2-zP, or_=Math.exp(BETA*dz), orlo=Math.exp(BLO*dz), orhi=Math.exp(BHI*dz);
+   const lo=Math.min(orlo,orhi), hi=Math.max(orlo,orhi);
+   $('risk').textContent='OR '+or_.toFixed(2); $('risksub').textContent='95% CI '+lo.toFixed(2)+'–'+hi.toFixed(2)+' for a change of '+((pvp2-pvp)>=0?'+':'')+(pvp2-pvp).toFixed(1)+' mmHg';
+   const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
+   if(!isNaN(b)&&b>0&&b<1){ const f=p=>{const o=p/(1-p); return 100*(o/(1+o));};
+     const p1=f(b*1), o0=b/(1-b), p2=100*((o0*or_)/(1+o0*or_)), p2lo=100*((o0*lo)/(1+o0*lo)), p2hi=100*((o0*hi)/(1+o0*hi));
+     msg.push('With a baseline rate of '+(100*b).toFixed(0)+'% at the starting gradient, the model implies about <b>'+p2.toFixed(1)+'%</b> (95% CI '+Math.min(p2lo,p2hi).toFixed(1)+'–'+Math.max(p2lo,p2hi).toFixed(1)+'%) after the change. The baseline rate is yours, not the model\u2019s.');}
+   else msg.push('Enter your centre\u2019s outcome rate at the starting gradient to convert this odds ratio into an absolute risk.');
+ } else { $('risk').textContent='–'; $('risksub').textContent=isNaN(zP)?'':'enter the pressure after the planned change'; }
+ if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (PVP '+(pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
+  else if(zP<=0){msg.push(zP===0?'Portal and central venous pressures are equal: no portocaval gradient. Check the measurements or the position of the catheters.':'PVP below CVP: the gradient is negative, which is not physiological; check the measurements.');}
   else if(zP<1){msg.push('The gradient is below the normal value. The model predicts regression of graft vessels (portal steal) in this range; check for over-shunting or outflow problems.');}
-  else msg.push('Sinusoidal pressure is within the window in which published groups had SFSS of 0–3%.');
-  if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; in the published series CVP ranged 5–10 mmHg, and each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
- if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF;msg.push('Ratio z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': estimated graft outflow resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow. Injury tracked pressure, not flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor’s), so flow- and pressure-based thresholds agree.'));}
+  if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
+ if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF;msg.push('Ratio z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': estimated graft outflow resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor\u2019s).'));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available. In the published series flow per gram did not order outcomes once outflow was reconstructed; measure PVP and CVP.');
- $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';draw(zP);}
-function draw(zp){const W=640,H=300,ml=48,mr=16,mt=12,mb=40;const x=z=>ml+(z-0.8)/(4-0.8)*(W-ml-mr),y=p=>H-mb-(p/60)*(H-mt-mb);let s='';
+ $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';draw(zP,zP2);}
+function draw(zp,zp2){const W=640,H=300,ml=48,mr=16,mt=12,mb=40;const x=z=>ml+(z-0.8)/(4-0.8)*(W-ml-mr),y=p=>H-mb-(p/60)*(H-mt-mb);let s='';
  s+='<rect x="'+x(1)+'" y="'+mt+'" width="'+(x(2)-x(1))+'" height="'+(H-mt-mb)+'" fill="currentColor" opacity="0.08"/>';
- const idx=CURVE.z.map((z,i)=>i).filter(i=>CURVE.z[i]>=0.8&&CURVE.z[i]<=4);let band='M'+idx.map(i=>x(CURVE.z[i])+','+y(Math.min(100*CURVE.hi[i],60))).join(' L')+' L'+idx.slice().reverse().map(i=>x(CURVE.z[i])+','+y(Math.min(100*CURVE.lo[i],60))).join(' L')+' Z';s+='<path d="'+band+'" fill="#c62828" opacity="0.15"/>';
- s+='<polyline fill="none" stroke="#c62828" stroke-width="2" points="'+idx.map(i=>x(CURVE.z[i])+','+y(Math.min(100*CURVE.p[i],60))).join(' ')+'"/>';
- GROUPS.forEach(g=>{s+='<circle cx="'+x(g.z)+'" cy="'+y(g.p)+'" r="'+(3+Math.sqrt(g.n)/1.5)+'" fill="none" stroke="#c62828" stroke-width="1.5"/><text x="'+(x(g.z)+8)+'" y="'+(y(g.p)-4)+'" font-size="9" fill="currentColor">'+g.s+'</text>';});
+ const cols=['#1f5fbf','#c62828','#2e7d32','#f28c28','#7b3fa0','#8a9a1e'];
+ STUDIES.forEach((st,i)=>{let pts=[];for(let z=0.8;z<=4.001;z+=0.08){const p=100/(1+Math.exp(-(ALPHAS[st]+BETA*z)));pts.push(x(z)+','+y(Math.min(p,60)));}
+  s+='<polyline fill="none" stroke="'+cols[i%cols.length]+'" stroke-width="1.6" opacity="0.85" points="'+pts.join(' ')+'"/>';});
+ GROUPS.forEach(g=>{const i=STUDIES.indexOf(g.s);s+='<circle cx="'+x(g.z)+'" cy="'+y(Math.min(g.p,60))+'" r="'+(2.5+Math.sqrt(g.n)/2.5)+'" fill="'+cols[i%cols.length]+'" stroke="#000" stroke-opacity="0.5" stroke-width="0.7"/>';});
  for(let p=0;p<=60;p+=10)s+='<text x="'+(ml-6)+'" y="'+(y(p)+3)+'" font-size="10" text-anchor="end" fill="currentColor">'+p+'%</text>';
  for(let z=1;z<=4;z+=0.5)s+='<text x="'+x(z)+'" y="'+(H-mb+14)+'" font-size="10" text-anchor="middle" fill="currentColor">'+z+'</text>';
  s+='<text x="'+(W/2)+'" y="'+(H-6)+'" font-size="11" text-anchor="middle" fill="currentColor">z_P = (PVP − CVP)/5</text>';
  s+='<line x1="'+ml+'" y1="'+(H-mb)+'" x2="'+(W-mr)+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/><line x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(H-mb)+'" stroke="currentColor" opacity="0.5"/>';
- if(!isNaN(zp)&&zp>=0.8&&zp<=4){const p=100/(1+Math.exp(-(B0+B1*zp)));s+='<line x1="'+x(zp)+'" y1="'+mt+'" x2="'+x(zp)+'" y2="'+(H-mb)+'" stroke="#1f5fbf" stroke-dasharray="4 3"/><circle cx="'+x(zp)+'" cy="'+y(Math.min(p,60))+'" r="6" fill="#1f5fbf"/>';}
+ STUDIES.forEach((st,i)=>{s+='<rect x="'+(ml+8)+'" y="'+(mt+4+i*13)+'" width="9" height="3" fill="'+cols[i%cols.length]+'"/><text x="'+(ml+21)+'" y="'+(mt+9+i*13)+'" font-size="9" fill="currentColor">'+st+'</text>';});
+ [[zp,'#1f5fbf'],[zp2,'#2e7d32']].forEach(([v,c])=>{if(!isNaN(v)&&v>=0.8&&v<=4)s+='<line x1="'+x(v)+'" y1="'+mt+'" x2="'+x(v)+'" y2="'+(H-mb)+'" stroke="'+c+'" stroke-dasharray="4 3"/>';});
  $('plot').innerHTML=s;}
 document.querySelectorAll('input').forEach(i=>i.addEventListener('input',calc));calc();
 </script>
