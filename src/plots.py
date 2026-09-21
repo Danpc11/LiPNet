@@ -52,22 +52,24 @@ def nomogram():
     ax.set_xlabel('Final portal venous pressure (mmHg)'); ax.set_ylabel('z$_P$ = (PVP − CVP)/5'); ax.set_ylim(0, 4.5); ax.legend(loc='upper left', fontsize=7); save(fig, 'nomogram')
 
 def within_study():
-    """Observed outcome vs zP with one line per study (common slope, study intercepts)."""
-    L = fit(); d = series(); fig, ax = plt.subplots(figsize=(4.6, 3.8))
-    cols = dict(zip(L['studies'], ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0', '#8a9a1e']))
-    lab = lambda st: st.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mortality_or_graft_loss', ' (mortality)')
-    zz = np.linspace(0.8, 4, 50)
+    """Observed outcome against zP, one curve per stratum: same slope, different level."""
+    L = fit(); fig, ax = plt.subplots(figsize=(4.6, 3.6))
+    cols = dict(zip(L['studies'], ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0']))
+    lab = lambda st: st.replace(' / SFSS_or_dysfunction', '').replace(' / mortality_or_graft_loss', '')
+    zz = np.linspace(0.8, 4, 60)
     for st, a in L['alphas'].items():
-        ax.plot(zz, 100 / (1 + np.exp(-(a + L['beta'] * zz))), color=cols[st], lw=1.2, alpha=0.8)
+        ax.plot(zz, 100 / (1 + np.exp(-(a + L['beta'] * zz))), color=cols[st], lw=1.4, alpha=0.9)
     for g in L['study_groups']:
-        ax.scatter(g['zP'], g['pct'], s=12 + g['n'] / 3, color=cols[g['stratum']], edgecolor='k', lw=0.4, zorder=3,
-                   marker='o' if g['outcome_type'] == 'SFSS_or_dysfunction' else 's')
-    for st, c in cols.items(): ax.plot([], [], color=c, lw=1.2, marker='o', ms=4, label=lab(st))
-    ax.axvspan(1, 2, color='0.9', lw=0)
-    ax.text(0.98, 0.97, f"common slope: OR {L['OR_per_zP']:.2f} per unit z$_P$\n(95% CI {L['OR_per_zP_ci'][0]:.2f}–{L['OR_per_zP_ci'][1]:.2f})\nOR {L['OR_per_mmHg']:.2f} per mmHg",
-            transform=ax.transAxes, ha='right', va='top', fontsize=6.5)
+        ax.scatter(g['zP'], g['pct'], s=14 + g['n'] / 4, color=cols[g['stratum']], edgecolor='k', lw=0.4, zorder=3)
+    for st in L['studies']:                       # label each curve at its right end instead of a legend box
+        gs = [g['zP'] for g in L['study_groups'] if g['stratum'] == st]
+        ze = min(3.95, max(gs) + 0.35); pe = 100 / (1 + np.exp(-(L['alphas'][st] + L['beta'] * ze)))
+        if pe > 57: ze = (np.log(0.57 / 0.43) - L['alphas'][st]) / L['beta']; pe = 57
+        ax.annotate(lab(st), (ze, pe), xytext=(4, 0), textcoords='offset points', color=cols[st], fontsize=7, va='center')
+    ax.axvspan(1, 2, color='0.92', lw=0)
     ax.set_xlabel('z$_P$'); ax.set_ylabel('Outcome (%)'); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60)
-    ax.legend(loc='upper left', fontsize=5.5, title='stratum intercept (study × outcome)', title_fontsize=5.5); save(fig, 'within_study')
+    ax.set_title('Same slope, different level', fontsize=8, loc='left')
+    save(fig, 'within_study')
 
 def forest():
     """Per-stratum slope with its confidence interval and the random-effects pooled estimate."""
@@ -120,14 +122,20 @@ def centred():
     save(fig, 'centred')
 
 def risk_change():
-    """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates."""
-    L = fit(); fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
+    """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates.
+    Uses the intercept-free centred slope, the same estimate the calculator applies."""
+    import json as _json
+    f = f'{OUT}/meta_slope.json'
+    if not os.path.exists(f): indices.main()
+    C = _json.load(open(f))['centred']
+    L = dict(beta=C['beta'], beta_ci=C['beta_ci'], normal_gradient_mmHg=indices.NORMAL_GRADIENT); fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
     ax = axs[0]; dg = np.linspace(-12, 4, 100)
     OR = np.exp(L['beta'] * dg / L['normal_gradient_mmHg'])
     lo = np.exp(L['beta_ci'][0] * dg / L['normal_gradient_mmHg']); hi = np.exp(L['beta_ci'][1] * dg / L['normal_gradient_mmHg'])
     ax.fill_between(dg, np.minimum(lo, hi), np.maximum(lo, hi), color=C_SIN, alpha=0.15, lw=0, label='95% bootstrap band')
     ax.plot(dg, OR, color=C_SIN, lw=1.4); ax.axhline(1, color='k', lw=0.6); ax.axvline(0, color='k', lw=0.6)
     ax.set_yscale('log'); ax.set_xlabel('Change in portocaval gradient (mmHg)'); ax.set_ylabel('Odds ratio for the outcome')
+    ax.set_ylim(2e-2, 5)
     for g, t in ((-5, '−5 mmHg'), (-10, '−10 mmHg')):
         o = np.exp(L['beta'] * g / L['normal_gradient_mmHg']); ax.plot(g, o, 'o', color=C_SIN); ax.annotate(f'{t}: OR {o:.2f}', (g, o), xytext=(6, -2), textcoords='offset points', fontsize=6.5)
     ax.legend(fontsize=6.5, loc='upper left')
@@ -137,7 +145,7 @@ def risk_change():
         ax.plot(dg, p, color=c, lw=1.4, label=f'{int(p0*100)}%')
     ax.axvline(0, color='k', lw=0.6); ax.set_xlabel('Change in portocaval gradient (mmHg)')
     ax.set_ylabel('Outcome risk (%)'); ax.set_ylim(0, 80)
-    ax.legend(fontsize=6.5, title="centre's baseline rate\nat the starting gradient", title_fontsize=6.5, loc='upper left')
+    ax.legend(fontsize=6.5, title="baseline rate at the\nstarting gradient", title_fontsize=6.5, loc='upper left')
     fig.tight_layout(); save(fig, 'risk_change')
 
 def _series(col, name, xlabel, marker_text):
