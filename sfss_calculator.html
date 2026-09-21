@@ -75,7 +75,7 @@ const GROUPS=[{"s": "Wang 2014 splenectomy", "z": 2.22, "p": 9.7, "n": 154}, {"s
 const B0=-6.4041,B1=1.8787,GN=5,DEFAULT_CVP=5,ZMIN=1.430,ZMAX=2.680;
 const $=id=>document.getElementById(id);
 function interp(x,xs,ys){if(x<=xs[0])return ys[0];if(x>=xs[xs.length-1])return ys[ys.length-1];for(let i=1;i<xs.length;i++){if(x<=xs[i]){const t=(x-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+t*(ys[i]-ys[i-1]);}}}
-function tag(z){if(isNaN(z))return['neutral','no data'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
+function tag(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function calc(){
  const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value;
  const pvp=(pvpRaw===''||!isFinite(+pvpRaw)||+pvpRaw<0)?NaN:+pvpRaw; const cvpAssumed=(cvpRaw===''); const cvpOk=cvpAssumed||(isFinite(+cvpRaw)&&+cvpRaw>=0); const cvp=cvpAssumed?DEFAULT_CVP:(cvpOk?+cvpRaw:NaN); const gn=GN;
@@ -86,7 +86,8 @@ function calc(){
  let dref=90; if(D.state==='ok')dref=D.v; else if(D.state!=='blank')flowMsg.push('Donor flow reference must be a positive number; '+(D.state==='zero'?'0':'the value entered')+' is not valid, so the healthy live-donor reference 90 mL/min/100 g was used.'); else flowMsg.push('No donor flow reference entered: 90 mL/min/100 g (healthy live donor) was used.');
  let gw=NaN; if(G.state==='ok')gw=G.v; else if(G.state==='blank'){ if(R.state==='ok'&&W.state==='ok')gw=R.v/100*W.v*1000; else if(R.state!=='blank'||W.state!=='blank')flowMsg.push('GRWR and recipient weight must both be positive numbers to derive the graft weight.'); }
  else flowMsg.push('Graft weight must be a positive number ('+$('gw').value+' is not valid); the flow index was not computed.');
- let pvf=NaN; if(P.state==='ok')pvf=P.v; else if(P.state==='zero')flowMsg.push('A portal flow of 0 mL/min means no portal inflow (portal vein occlusion or complete steal), not a missing value; the flow index is not defined.'); else if(P.state!=='blank')flowMsg.push('Portal flow must be a positive number; the flow index was not computed.');
+ let pvf=NaN; if(P.state==='ok'||P.state==='zero')pvf=P.v; else if(P.state!=='blank')flowMsg.push('Portal flow must be a non-negative number; the flow index was not computed.');
+ if(P.state==='zero')flowMsg.push('A portal flow of 0 mL/min means no portal inflow (portal vein occlusion or complete steal): z<sub>F</sub> = 0 and the ratio z<sub>P</sub>/z<sub>F</sub> is undefined.');
  const pvf100=(isFinite(pvf)&&isFinite(gw))?pvf/gw*100:NaN; const zF=isFinite(pvf100)?pvf100/dref:NaN;
  const zP=(isNaN(pvp)||isNaN(cvp))?NaN:(pvp-cvp)/gn;
  $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tag(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
@@ -102,7 +103,7 @@ function calc(){
   else if(zP<1){msg.push('The gradient is below the normal value. The model predicts regression of graft vessels (portal steal) in this range; check for over-shunting or outflow problems.');}
   else msg.push('Sinusoidal pressure is within the window in which published groups had SFSS of 0–3%.');
   if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; in the published series CVP ranged 5–10 mmHg, and each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
- if(!isNaN(zP)&&!isNaN(zF)){const r=zP/zF;msg.push('Ratio z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': estimated graft outflow resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow. Injury tracked pressure, not flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor’s), so flow- and pressure-based thresholds agree.'));}
+ if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF;msg.push('Ratio z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': estimated graft outflow resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow. Injury tracked pressure, not flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor’s), so flow- and pressure-based thresholds agree.'));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available. In the published series flow per gram did not order outcomes once outflow was reconstructed; measure PVP and CVP.');
  $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';draw(zP);}
 function draw(zp){const W=640,H=300,ml=48,mr=16,mt=12,mb=40;const x=z=>ml+(z-0.8)/(4-0.8)*(W-ml-mr),y=p=>H-mb-(p/60)*(H-mt-mb);let s='';
