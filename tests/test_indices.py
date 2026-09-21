@@ -8,7 +8,7 @@ import indices
 def test_series_indices_match_stored_results():
     import pandas as pd
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
-    assert d.zP.notna().sum() == 21 and d.zF.notna().sum() == 13 and len(d) == 31
+    assert d.zP.notna().sum() == 21 and d.zF.notna().sum() == 14 and len(d) == 31
     assert (d.gradient_mmHg.notna() & d.gradient_basis.eq('not applicable')).sum() == 0
     assert set(d.CVP_basis.unique()) <= {'reported', 'derived', 'imputed', 'threshold', 'not applicable'}
 
@@ -63,11 +63,36 @@ def test_risk_after_is_an_odds_shift():
     assert abs(indices.risk_after(0.10, -1.0, 1.96) - 0.0154) < 0.001
     assert indices.risk_after(0.10, 0.0, 1.96) == 0.10
 
+def test_meta_analysis_and_diagnostics():
+    """Random-effects pooling, overdispersion and regression dilution must agree with the stratified fit."""
+    import json
+    M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
+    meta, od, att = M['meta'], M['overdispersion'], M['attenuation']
+    assert abs(meta['beta'] - 1.90) < 0.05 and abs(meta['OR_per_zP'] - 6.69) < 0.3
+    assert meta['tau2'] == 0 and meta['I2'] < 5 and meta['Q_p'] > 0.5     # the strata estimate one common effect
+    assert len(meta['strata']) == 5 and all(r['beta'] > 0 for r in meta['strata'])
+    W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
+    assert abs(meta['beta'] - W['beta']) < 0.2, 'meta-analysis and stratified fit must agree'
+    assert od['ratio'] < 1.5 and od['se_scale'] == 1.0                    # no extra-binomial spread
+    assert att['loss_pct'] < 10 and att['lambda_individual'] < 1 and att['beta_individual_implied'] > W['beta']
+
+def test_centring_removes_the_cohort_level():
+    """Centring within stratum must cancel the intercepts exactly and recover the same slope."""
+    import json, pandas as pd, numpy as np
+    C = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))['centred']
+    P = pd.DataFrame(C['points'])
+    for _, g in P.groupby('stratum'):                      # each stratum is centred: its means are zero
+        assert abs(g.zP_c.mean()) < 1e-9 and abs(g.log_odds_c.mean()) < 1e-9
+    W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
+    assert abs(C['beta'] - W['beta']) < 0.4, 'centred slope must agree with the stratified fit'
+    assert C['r2_weighted'] > 0.8, C['r2_weighted']        # one common line once the cohort level is gone
+    assert C['OR_per_zP_ci'][0] > 1
+
 def test_fast_plots_render():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
-    r = subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'plots.py'), 'nomogram', 'within_study', 'risk_change', 'series_pressure', 'series_flow', 'plane', 'resection', 'load_curve', 'interventions'], env=env, capture_output=True, text=True)
+    r = subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'plots.py'), 'nomogram', 'within_study', 'forest', 'centred', 'risk_change', 'series_pressure', 'series_flow', 'plane', 'resection', 'load_curve', 'interventions'], env=env, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-    for n in ('nomogram', 'within_study', 'risk_change', 'series_pressure'):
+    for n in ('nomogram', 'within_study', 'forest', 'centred', 'risk_change', 'series_pressure'):
         assert os.path.exists(os.path.join(ROOT, 'results', f'{n}.png'))
 
 def test_readme_numbers_match_results():
@@ -97,6 +122,14 @@ def test_app_builds():
     assert 'must be a positive number' in html         # flow and weight inputs are validated
     assert 'does <b>not</b> estimate' in html          # no absolute-risk claim without a baseline rate
     assert 'const BETA=' in html and 'const B0=' not in html
+    assert 'id="pvp2"' in html and 'id="base"' in html and 'id="ref"' in html and 'id="basegrad"' in html
+    import json as _json
+    C = _json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))['centred']
+    assert f"const BETA={C['beta']:.4f}" in html, 'the calculator must use the intercept-free centred slope'
+    import re as _re
+    opts = _re.findall(r'<option value="([^"]+)"', html)
+    assert opts[0] == 'cohort' and opts[1] == 'own' and len(opts) >= 5, opts     # cohort average, own rate, fitted strata
+    assert '"zmin"' in html and 'extrapolation of its intercept' in html        # reference range is checked
 
 if __name__ == '__main__':
-    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_within_study_fit_reproduces_published_effect, test_risk_after_is_an_odds_shift, test_fast_plots_render, test_readme_numbers_match_results, test_app_builds): t(); print('ok', t.__name__)
+    for t in (test_series_indices_match_stored_results, test_incomplete_edit_is_caught, test_cut_off_groups_excluded_from_main_analysis, test_index_definitions, test_within_study_fit_reproduces_published_effect, test_meta_analysis_and_diagnostics, test_centring_removes_the_cohort_level, test_risk_after_is_an_odds_shift, test_fast_plots_render, test_readme_numbers_match_results, test_app_builds): t(); print('ok', t.__name__)
