@@ -4,6 +4,7 @@
     python src/plots.py nomogram centred series_pressure series_flow
 
 Available plots (results/<name>.pdf and .png):
+    predictions        the four predictions of the model on one page (P1-P4)
     nomogram           zP against final PVP for several CVP values
     within_study       outcome vs zP by study: common slope, one intercept per stratum
     forest             per-stratum slope with CI and the random-effects pooled estimate
@@ -44,6 +45,64 @@ def fit():
     return json.load(open(f))
 
 # ------------------------------------------------------------------ clinical plots
+def predictions():
+    """The four predictions of the model on one page: allometry, discordance, within-cohort ordering, thresholds."""
+    import json as _json
+    f = f'{OUT}/predictions.json'
+    if not os.path.exists(f): import predictions as _p; _p.main()
+    P = _json.load(open(f)); d = series()
+    fig, axs = plt.subplots(2, 2, figsize=(7.6, 6.4)); fig.subplots_adjust(hspace=0.38, wspace=0.3)
+    lab = lambda ax, t: ax.set_title(t, loc='left', fontsize=7.5, fontweight='bold')
+    # P1 allometric closure
+    ax = axs[0, 0]; lab(ax, 'P1  set-point invariant across mammals')
+    t = pd.read_csv(f'{OUT}/prediction_allometry.tsv', sep='\t')
+    for (fl, l), g in t.groupby(['flow', 'lobule_exponent']):
+        ax.plot(g.b, g.tau0_exponent, '-' if l > 0 else ':', marker='o', ms=3,
+                label=f"{fl.split('~')[0].strip()}, lobule M^{l:.2f}")
+    ax.axhspan(-0.05, 0.05, color='0.9', lw=0); ax.axhline(0, color='k', lw=0.6)
+    ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Exponent of the shear set-point\nwith body mass')
+    ax.legend(fontsize=5.5)
+    # P2 discordance
+    ax = axs[0, 1]; lab(ax, 'P2  flow and pressure separate when outflow is enlarged')
+    b = d.dropna(subset=['zP', 'zF']); rec = b[b.outflow.str.startswith('reconstructed')]; std = b[b.outflow == 'standard']
+    ax.plot([0, 5], [0, 5], 'k--', lw=0.8); ax.text(3.3, 3.75, 'donor resistance', fontsize=6, rotation=45, ha='center')
+    for _, r in b.iterrows():
+        c = C_SIN if r.pct > 10 else ('#f28c28' if r.pct > 5 else C_OUT)
+        ax.plot(r.zF, r.zP, 'o', color=c, ms=5 + r.n ** 0.5 / 3, mec='k', mew=0.4)
+        ax.annotate(f"{r.study.split()[0]} {r.study.split()[1]}", (r.zF, r.zP), xytext=(6, 4), textcoords='offset points', fontsize=5.5)
+    ax.plot(1, 1, 'ko', ms=5); ax.annotate('donor', (1, 1), xytext=(4, 2), textcoords='offset points', fontsize=6)
+    ax.set_xlim(0, 5); ax.set_ylim(0, 5); ax.set_aspect('equal')
+    ax.set_xlabel('z$_F$'); ax.set_ylabel('z$_P$')
+    ax.text(0.03, 0.97, f"reconstructed outflow: z$_P$/z$_F$ = {', '.join(f'{x:.2f}' for x in P['P2_discordance']['ratio_reconstructed'])}\noutcomes 0–10%",
+            transform=ax.transAxes, va='top', fontsize=6)
+    # P3 within-cohort
+    ax = axs[1, 0]; lab(ax, 'P3  common slope, centre-specific level')
+    L = fit(); zz = np.linspace(0.8, 4, 50)
+    palette = ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0']
+    for i, (st, a) in enumerate(L['alphas'].items()):
+        ax.plot(zz, 100 / (1 + np.exp(-(a + L['beta'] * zz))), color=palette[i % 5], lw=1.2)
+    for g in L['study_groups']:
+        ax.scatter(g['zP'], g['pct'], s=10 + g['n'] / 5, color=palette[L['studies'].index(g['stratum']) % 5], edgecolor='k', lw=0.3, zorder=3)
+    ax.axvspan(1, 2, color='0.92', lw=0); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60)
+    ax.set_xlabel('z$_P$'); ax.set_ylabel('Outcome (%)')
+    p3 = P['P3_within_cohort']
+    ax.text(0.03, 0.97, f"OR {p3['OR_per_zP']:.2f} per unit z$_P$\nhierarchical {np.exp(p3['hierarchical_mu']):.2f}, P(>0) = {p3['prob_positive']:.2f}\n"
+                        f"intercepts span {p3['intercept_range'][1]-p3['intercept_range'][0]:.1f} logits",
+            transform=ax.transAxes, va='top', fontsize=6)
+    # P4 thresholds
+    ax = axs[1, 1]; lab(ax, 'P4  three fields, one threshold')
+    items = [('Cirrhosis\nHVPG ≥ 10 mmHg', 2.0, '#7b3fa0'), ('Graft\nPVP 15 at CVP 5', 2.0, C_IN),
+             ('Resection\nHVPG 10 → remnant', 2.0, C_OUT), ('Variceal bleeding\nHVPG ≥ 12 mmHg', 2.4, C_SIN)]
+    y = np.arange(len(items))[::-1]
+    ax.axvspan(1, 2, color='0.9', lw=0)
+    for yi, (t_, z_, c) in zip(y, items):
+        ax.plot([0, z_], [yi, yi], color=c, lw=2.5); ax.plot(z_, yi, 'o', color=c, ms=7)
+        ax.text(0.08, yi + 0.22, t_, fontsize=6, va='bottom')
+    ax.axvline(2, color='k', ls='--', lw=0.8)
+    ax.set_yticks([]); ax.set_ylim(-0.6, len(items) - 0.2); ax.set_xlim(0, 3)
+    ax.set_xlabel('z$_P$'); ax.spines['left'].set_visible(False)
+    save(fig, 'predictions')
+
 def nomogram():
     fig, ax = plt.subplots(figsize=(3.6, 3.2)); pvp = np.linspace(6, 26, 100)
     for cvp, c in ((2, '#1f5fbf'), (5, '#2e7d32'), (8, '#f28c28'), (11, '#c62828')): ax.plot(pvp, (pvp - cvp) / 5, color=c, lw=1.3, label=f'CVP {cvp} mmHg')
@@ -54,7 +113,8 @@ def nomogram():
 def within_study():
     """Observed outcome against zP, one curve per stratum: same slope, different level."""
     L = fit(); fig, ax = plt.subplots(figsize=(4.6, 3.6))
-    cols = dict(zip(L['studies'], ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0']))
+    palette = ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0', '#8a9a1e', '#00838f', '#6d4c41']
+    cols = {st: palette[i % len(palette)] for i, st in enumerate(L['studies'])}
     lab = lambda st: st.replace(' / SFSS_or_dysfunction', '').replace(' / mortality_or_graft_loss', '')
     zz = np.linspace(0.8, 4, 60)
     for st, a in L['alphas'].items():
@@ -104,7 +164,8 @@ def centred():
     C = _json.load(open(f))['centred']; P = pd.DataFrame(C['points'])
     lab = lambda s: s.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mortality_or_graft_loss', ' (mortality)')
     fig, ax = plt.subplots(figsize=(4.8, 3.8))
-    strata_ = sorted(P.stratum.unique()); cols = dict(zip(strata_, ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0']))
+    strata_ = sorted(P.stratum.unique()); palette = ['#1f5fbf', '#c62828', '#2e7d32', '#f28c28', '#7b3fa0', '#8a9a1e', '#00838f', '#6d4c41']
+    cols = {st: palette[i % len(palette)] for i, st in enumerate(strata_)}
     x = np.linspace(P.zP_c.min() * 1.15, P.zP_c.max() * 1.15, 20)
     ax.fill_between(x, np.exp(C['beta_ci'][0] * x), np.exp(C['beta_ci'][1] * x), color='0.85', lw=0, zorder=0)
     ax.plot(x, np.exp(C['beta'] * x), color='k', lw=1.4, zorder=1)
@@ -278,7 +339,7 @@ def certificate():
     for i, r in ce.iterrows(): ax.text(i, r.frac_seeds_at_opt * 100 + 2, f'gap {abs(r.rel_gap):.0e}', ha='center', fontsize=6.5)
     ax.set_ylim(0, 115); ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Random starts reaching the exact optimum (%)'); ax.set_title('7 lobules, 279 936 trees enumerated', fontsize=8); save(fig, 'certificate')
 
-PLOTS = dict(nomogram=nomogram, within_study=within_study, forest=forest, centred=centred, risk_change=risk_change, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
+PLOTS = dict(predictions=predictions, nomogram=nomogram, within_study=within_study, forest=forest, centred=centred, risk_change=risk_change, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
              interventions=interventions, network_2d=network_2d, network_3d=network_3d, scaling=scaling, allometry=allometry, shear_profile=shear_profile, certificate=certificate)
 
 if __name__ == '__main__':
