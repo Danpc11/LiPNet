@@ -1,17 +1,26 @@
-"""Single source of the two indices, the correlations and the pooled logistic fit.
+"""Single source of the two indices, the correlations and the risk models.
 
-    python src/indices.py            -> results/series_with_indices.tsv, results/logit_zP.json, results/sensitivity.tsv
+    python src/indices.py     -> results/series_with_indices.tsv, results/within_study_fit.json,
+                                 results/sensitivity.tsv, results/pooled_fit.json
 
-Definitions (the calculator and plots.py use these same functions)
+Indices (the calculator and plots.py use these same functions)
     zF = graft PVF per 100 g / donor PVF per 100 g   (donor reference from the same series when measured, else 90)
     zP = (PVP - CVP) / 5 mmHg                          (CVP = 5 when not reported; provenance in the *_basis columns)
-The stored table holds only raw values and their provenance; the indices are always recomputed here.
-Main analysis: groups whose hemodynamic value is measured or derived (in_main_analysis = True). Groups defined only by a
-cut-off (Vasavada 2014, PVF above/below 190) are excluded from the main correlations and shown in sensitivity.
-Sensitivity: correlations are repeated including the cut-off groups, and excluding every group whose value of the index in
-question rests on an imputed or automatically filled number (zP_imputed for PVP/CVP, zF_imputed for PVF/donor reference).
-Bootstrap: 2000 binomial resamples of the group event counts, seed 0. Curve grid 0.5-8; the range of the
-groups that entered the fit is stored so that the calculator can flag extrapolation.
+The stored table holds raw values and their provenance only; the indices are always recomputed here.
+
+Risk model. A single pooled logistic model with a common intercept does not hold across centres: at the same
+gradient the reported incidence ranges from 0% (Ishizaki 2012) to 17% (Uemura 2016), because the baseline level
+depends on recipient severity, outcome definition and technique. The estimable quantity is the WITHIN-STUDY
+slope, fitted with one intercept per study and a common slope:
+
+    logit(p) = alpha_study + beta * zP
+
+beta is the transferable parameter (the change in odds per unit of zP, i.e. per 5 mmHg of gradient); alpha is
+not transferable and must be supplied by the user as their own baseline rate. The pooled common-intercept fit is
+still computed, for the record, and reported as not robust.
+
+Main analysis: groups whose haemodynamic value is measured or derived (in_main_analysis = True). Groups defined
+only by a cut-off (Vasavada 2014, Yao 2018, Kanetkar 2017) are excluded and reported in sensitivity.
 """
 import json, os
 import numpy as np, pandas as pd
@@ -21,6 +30,7 @@ from scipy.stats import spearmanr
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 DATA = f'{ROOT}/data/series.tsv'; OUT = f'{ROOT}/results'
 NORMAL_GRADIENT = 5.0; DEFAULT_CVP = 5.0; DEFAULT_DONOR_REF = 90.0
+IMPUTED_BASES = ('imputed', 'threshold', 'group mean')
 
 def zF(pvf_per_100g, donor_ref=DEFAULT_DONOR_REF):
     return pvf_per_100g / donor_ref
@@ -30,8 +40,8 @@ def zP(pvp, cvp=DEFAULT_CVP):
 
 def compute(d):
     """add zF, zP and provenance flags to a series table (raw columns only).
-    Any value filled in here (missing CVP -> 5, missing donor reference -> 90) is recorded in the *_filled columns and
-    counts as imputed, whatever the *_basis label says; a label that contradicts the data raises an error."""
+    Any value filled in here (missing CVP -> 5, missing donor reference -> 90) is recorded in the *_filled columns
+    and counts as imputed, whatever the *_basis label says; a label that contradicts the data raises an error."""
     d = d.copy()
     cvp_filled = d.PVP.notna() & d.CVP.isna(); ref_filled = d.PVF_per_100g.notna() & d.donor_PVF_per_100g_ref.isna()
     d['CVP_filled'] = cvp_filled; d['donor_ref_filled'] = ref_filled
@@ -41,56 +51,103 @@ def compute(d):
     if len(bad): raise ValueError('CVP present but labelled not applicable: ' + ', '.join(bad.study + ' / ' + bad.group))
     d['zF'] = zF(d.PVF_per_100g, d.donor_PVF_per_100g_ref.fillna(DEFAULT_DONOR_REF))
     d['zP'] = zP(d.PVP, d.CVP.fillna(DEFAULT_CVP))
-    d['zP_imputed'] = d[['PVP_basis', 'CVP_basis']].isin(['imputed']).any(axis=1) | cvp_filled
-    d['zF_imputed'] = d.PVF_basis.isin(['imputed', 'threshold', 'group mean']) | ref_filled
+    d['zP_imputed'] = d[['PVP_basis', 'CVP_basis']].isin(IMPUTED_BASES).any(axis=1) | cvp_filled
+    d['zF_imputed'] = d.PVF_basis.isin(IMPUTED_BASES) | ref_filled
     d['any_imputed'] = d.zP_imputed | d.zF_imputed
     if 'in_main_analysis' not in d: d['in_main_analysis'] = ~d.PVF_basis.isin(['threshold', 'group mean'])
     return d
 
-def fit_logistic(z, events, n):
-    def nll(b):
-        p = np.clip(1 / (1 + np.exp(-(b[0] + b[1] * z))), 1e-9, 1 - 1e-9)
-        return -np.sum(events * np.log(p) + (n - events) * np.log(1 - p))
-    return minimize(nll, [-4.0, 1.5]).x
+# ---------------------------------------------------------------- risk models
+def _nll_fixed(par, S, z, ev, n, k):
+    p = np.clip(1 / (1 + np.exp(-(par[:k][S] + par[-1] * z))), 1e-9, 1 - 1e-9)
+    return -np.sum(ev * np.log(p) + (n - ev) * np.log(1 - p))
+
+def within_study_fit(s, boot=2000, seed=0):
+    """One intercept per study, common slope. s must have study, n, events, zP."""
+    studies = sorted(s.study.unique()); k = len(studies)
+    S = np.array([studies.index(x) for x in s.study]); z = s.zP.values
+    ev = s.events.values.astype(float); n = s.n.values.astype(float)
+    x0 = np.r_[np.full(k, -2.0), 1.0]
+    fit = minimize(_nll_fixed, x0, args=(S, z, ev, n, k), method='BFGS')
+    beta = float(fit.x[-1]); alphas = {st: float(a) for st, a in zip(studies, fit.x[:k])}
+    if boot:
+        rng = np.random.default_rng(seed); B = np.empty(boot)
+        for i in range(boot):
+            evb = rng.binomial(n.astype(int), ev / n)
+            B[i] = minimize(_nll_fixed, fit.x, args=(S, z, evb, n, k), method='BFGS').x[-1]
+        lo, hi = np.percentile(B, [2.5, 97.5])
+    else:
+        lo = hi = beta
+    loo = {}
+    for st in studies:
+        sub = s[s.study != st]
+        if sub.study.nunique() >= 2 and sub.groupby('study').zP.nunique().max() > 1:
+            loo[st] = float(within_study_fit(sub, boot=0)['beta'])
+    return dict(beta=beta, beta_ci=[float(lo), float(hi)], OR_per_zP=float(np.exp(beta)),
+                OR_per_zP_ci=[float(np.exp(lo)), float(np.exp(hi))],
+                OR_per_mmHg=float(np.exp(beta / NORMAL_GRADIENT)),
+                OR_per_mmHg_ci=[float(np.exp(lo / NORMAL_GRADIENT)), float(np.exp(hi / NORMAL_GRADIENT))],
+                studies=studies, alphas=alphas, groups=int(len(s)), patients=int(n.sum()), events=int(ev.sum()),
+                zP_min=float(z.min()), zP_max=float(z.max()), normal_gradient_mmHg=NORMAL_GRADIENT,
+                default_cvp_mmHg=DEFAULT_CVP, leave_one_study_out=loo,
+                study_groups=[dict(study=r.study, group=r.group, n=int(r.n), events=int(r.events),
+                                   zP=round(float(r.zP), 3), pct=float(r.pct), outcome=r.outcome,
+                                   outcome_type=r.outcome_type, zP_imputed=bool(r.zP_imputed)) for _, r in s.iterrows()])
 
 def pooled_fit(s, boot=2000, seed=0):
+    """Common-intercept logistic (kept for the record; not robust across centres)."""
     z, ev, n = s.zP.values, s.events.values.astype(float), s.n.values.astype(float)
-    b = fit_logistic(z, ev, n); rng = np.random.default_rng(seed)
-    B = np.array([fit_logistic(z, rng.binomial(n.astype(int), ev / n), n) for _ in range(boot)])
-    lo, hi = np.percentile(B, [2.5, 97.5], axis=0)
-    zz = np.round(np.arange(0.5, 8.01, 0.1), 2)
-    P = 1 / (1 + np.exp(-(b[0] + b[1] * zz))); PB = 1 / (1 + np.exp(-(B[:, [0]] + B[:, [1]] * zz))); ci = np.percentile(PB, [2.5, 97.5], axis=0)
-    return dict(b0=float(b[0]), b1=float(b[1]), b0_ci=[float(lo[0]), float(hi[0])], b1_ci=[float(lo[1]), float(hi[1])],
-                groups=int(len(s)), events=int(ev.sum()), patients=int(n.sum()), zP_min=float(z.min()), zP_max=float(z.max()),
-                normal_gradient_mmHg=NORMAL_GRADIENT, default_cvp_mmHg=DEFAULT_CVP,
-                z=zz.tolist(), p=P.round(5).tolist(), lo=ci[0].round(5).tolist(), hi=ci[1].round(5).tolist(),
-                groups_used=[dict(study=r.study, group=r.group, n=int(r.n), events=int(r.events), zP=round(float(r.zP), 3),
-                                  CVP_basis=r.CVP_basis, PVP_basis=r.PVP_basis) for _, r in s.iterrows()])
+    f = lambda b: _nll_fixed(np.r_[b[0], b[1]], np.zeros(len(z), int), z, ev, n, 1)
+    b = minimize(f, [-4.0, 1.5]).x; rng = np.random.default_rng(seed)
+    B = np.array([minimize(lambda p, e=rng.binomial(n.astype(int), ev / n): _nll_fixed(np.r_[p[0], p[1]], np.zeros(len(z), int), z, e, n, 1), b).x for _ in range(boot)]) if boot else np.empty((0, 2))
+    lo, hi = (np.percentile(B, [2.5, 97.5], axis=0) if boot else (b, b))
+    return dict(b0=float(b[0]), b1=float(b[1]), b1_ci=[float(lo[1]), float(hi[1])], groups=int(len(s)),
+                patients=int(n.sum()), events=int(ev.sum()))
 
+def risk_after(baseline_rate, delta_zP, beta):
+    """Absolute risk implied by a change in zP, given the user's own baseline rate at the starting gradient."""
+    p0 = np.clip(baseline_rate, 1e-6, 1 - 1e-6)
+    odds = p0 / (1 - p0) * np.exp(beta * delta_zP)
+    return odds / (1 + odds)
+
+# ---------------------------------------------------------------- driver
 def main(boot=2000, seed=0):
     os.makedirs(OUT, exist_ok=True)
     d = compute(pd.read_csv(DATA, sep='\t'))
     d.to_csv(f'{OUT}/series_with_indices.tsv', sep='\t', index=False, float_format='%.3f')
+
     rows = []
-    for label, subs in (('main analysis (groups defined by a measured or derived value)', {'zP': d[d.in_main_analysis], 'zF': d[d.in_main_analysis]}),
-                        ('including groups defined by a cut-off (Vasavada 2014)', {'zP': d, 'zF': d}),
+    for label, subs in (('main analysis (measured or derived haemodynamics)', {'zP': d[d.in_main_analysis], 'zF': d[d.in_main_analysis]}),
+                        ('including groups defined by a cut-off', {'zP': d, 'zF': d}),
                         ('no imputed or filled value in the index itself', {'zP': d[~d.zP_imputed & d.in_main_analysis], 'zF': d[~d.zF_imputed & d.in_main_analysis]})):
         for col in ('zP', 'zF'):
             s = subs[col].dropna(subset=[col])
             if len(s) >= 3:
                 rho, p = spearmanr(s[col], s.pct); rows.append(dict(analysis=label, index=col, groups=len(s), spearman_rho=rho, p=p))
-                print(f'{label:28s} {col}: {len(s):2d} groups, Spearman rho = {rho:.2f}, p = {p:.3f}')
-    sf = d[(d.outcome_type == 'SFSS_or_dysfunction') & d.zP.notna() & d.in_main_analysis]
-    res = pooled_fit(sf, boot, seed); json.dump(res, open(f'{OUT}/logit_zP.json', 'w'), indent=1)
-    print(f"logit(SFSS) = {res['b0']:.2f} + {res['b1']:.2f} zP (slope 95% CI {res['b1_ci'][0]:.2f}-{res['b1_ci'][1]:.2f}); "
-          f"{res['groups']} groups, {res['events']} events / {res['patients']}; zP range {res['zP_min']:.2f}-{res['zP_max']:.2f}")
-    for r in (0.05, 0.10, 0.20): print(f'  zP at {int(r*100)}% risk: {(np.log(r/(1-r)) - res["b0"]) / res["b1"]:.2f}')
-    sf2 = sf[~sf.zP_imputed]
-    if len(sf2) >= 2 and sf2.events.sum() > 0:
-        r2 = pooled_fit(sf2, boot, seed); rows.append(dict(analysis='fit without imputed or filled values', index='zP', groups=len(sf2), spearman_rho=np.nan, p=np.nan, b0=r2['b0'], b1=r2['b1']))
-    else:
-        print(f'Sensitivity fit without imputed or filled values: not estimable ({len(sf2)} SFSS group(s) with fully reported pressures, {int(sf2.events.sum())} events)')
-        rows.append(dict(analysis='fit without imputed or filled values', index='zP', groups=len(sf2), spearman_rho=np.nan, p=np.nan, b0=np.nan, b1=np.nan))
+                print(f'{label[:46]:46s} {col}: {len(s):2d} groups, Spearman rho = {rho:+.2f}, p = {p:.3f}')
+
+    # within-study model: studies contributing at least two groups with different zP
+    m = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]
+    contrib = m.groupby('study').filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
+    res = within_study_fit(contrib, boot, seed)
+    json.dump(res, open(f'{OUT}/within_study_fit.json', 'w'), indent=1)
+    print(f"\nWithin-study model: logit(p) = alpha_study + {res['beta']:.2f} zP   "
+          f"(OR {res['OR_per_zP']:.2f} per unit zP, 95% CI {res['OR_per_zP_ci'][0]:.2f}-{res['OR_per_zP_ci'][1]:.2f}; "
+          f"OR {res['OR_per_mmHg']:.2f} per mmHg of gradient)")
+    print(f"  {res['groups']} groups from {len(res['studies'])} studies, {res['events']} events / {res['patients']} recipients")
+    print('  leave-one-study-out slopes: ' + ', '.join(f'{k} {v:.2f}' for k, v in res['leave_one_study_out'].items()))
+    for st, a in res['alphas'].items():
+        p_at2 = 1 / (1 + np.exp(-(a + res['beta'] * 2)))
+        print(f"    baseline {st:14s} alpha {a:+.2f}  -> risk at zP = 2: {100*p_at2:.1f}%")
+
+    sf = m[(m.outcome_type == 'SFSS_or_dysfunction')]
+    pf = pooled_fit(sf, boot, seed); json.dump(pf, open(f'{OUT}/pooled_fit.json', 'w'), indent=1)
+    print(f"\nCommon-intercept pooled fit (not robust): logit = {pf['b0']:.2f} + {pf['b1']:.2f} zP "
+          f"(slope 95% CI {pf['b1_ci'][0]:.2f} to {pf['b1_ci'][1]:.2f}), {pf['groups']} groups")
+    rows.append(dict(analysis='common-intercept pooled fit (SFSS groups)', index='zP', groups=pf['groups'],
+                     spearman_rho=np.nan, p=np.nan, b0=pf['b0'], b1=pf['b1']))
+    rows.append(dict(analysis='within-study fit (common slope, study intercepts)', index='zP', groups=res['groups'],
+                     spearman_rho=np.nan, p=np.nan, b1=res['beta'], b1_lo=res['beta_ci'][0], b1_hi=res['beta_ci'][1]))
     pd.DataFrame(rows).to_csv(f'{OUT}/sensitivity.tsv', sep='\t', index=False, float_format='%.4f')
 
 if __name__ == '__main__':
