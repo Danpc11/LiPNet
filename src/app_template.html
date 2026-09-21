@@ -79,6 +79,7 @@ small{color:var(--muted)}
 <script>
 const GROUPS=__GROUPS__,STUDIES=__STUDIES__,ALPHAS=__ALPHAS__;
 const REFS=__REFS__;
+const ZGRID=__ZGRID__;
 const CENTRED=__CENTRED__;
 const BETA=__BETA__,BLO=__BLO__,BHI=__BHI__,GN=__GN__,DEFAULT_CVP=__CVP__,ZMIN=__ZMIN__,ZMAX=__ZMAX__;
 const $=id=>document.getElementById(id);
@@ -99,7 +100,8 @@ function calc(){
  if(P.state==='zero')flowMsg.push('A portal flow of 0 mL/min means no portal inflow (portal vein occlusion or complete steal): z<sub>F</sub> = 0 and the ratio z<sub>P</sub>/z<sub>F</sub> is undefined.');
  const pvf100=(isFinite(pvf)&&isFinite(gw))?pvf/gw*100:NaN; const zF=isFinite(pvf100)?pvf100/dref:NaN;
  const zP=(isNaN(pvp)||isNaN(cvp))?NaN:(pvp-cvp)/gn;
- const pvp2=(pvp2Raw===''||!isFinite(+pvp2Raw))?NaN:+pvp2Raw; const zP2=(isNaN(pvp2)||isNaN(cvp))?NaN:(pvp2-cvp)/gn;
+ const pvp2=(pvp2Raw===''||!isFinite(+pvp2Raw)||+pvp2Raw<0)?NaN:+pvp2Raw;
+ if(pvp2Raw!==''&&isNaN(pvp2))pressMsg.push('The pressure after the change must be a non-negative number.'); const zP2=(isNaN(pvp2)||isNaN(cvp))?NaN:(pvp2-cvp)/gn;
  $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tagP(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
  $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'')+(isNaN(zP2)?'':' → '+(pvp2-cvp).toFixed(1)+' mmHg (z_P '+zP2.toFixed(2)+')');
  $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tagF(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
@@ -139,7 +141,7 @@ function calc(){
    if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={l0:Math.log(b/(1-b)), z0:bg/gn, label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
  else if(ref==='own'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
    if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={l0:Math.log(b/(1-b)), z0:zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
- else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, label:ref};   // fitted stratum: intercept and slope from the same model
+ else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, band:REFS[ref].band, label:ref};   // fitted stratum: joint bootstrap band
  draw(zP,zP2,anchor);}
 function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
  const x=z=>ml+(z-0.6)/(4-0.6)*(W-ml-mr);
@@ -156,8 +158,14 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
    const top=Math.max(f(4,BETA),f(4,BHI),f(isNaN(zp)?2:zp,BETA));
    const YM=top>55?100:(top>27?60:30); yv=p=>H-mb-(Math.min(p,YM)/YM)*(H-mt-mb);
    const TK=YM===100?[0,20,40,60,80,100]:(YM===60?[0,10,20,30,40,50,60]:[0,5,10,15,20,25,30]);
-   const band=[];for(let z=0.6;z<=4.001;z+=0.05)band.push(x(z)+','+yv(f(z,BLO)));
-   for(let z=4;z>=0.6;z-=0.05)band.push(x(z)+','+yv(f(z,BHI)));
+   let band=[];
+   if(anchor.band){                       // published stratum: percentiles of the bootstrap predictions (intercept and slope together)
+     ZGRID.forEach((z,i)=>band.push(x(z)+','+yv(100*anchor.band.lo[i])));
+     for(let i=ZGRID.length-1;i>=0;i--)band.push(x(ZGRID[i])+','+yv(100*anchor.band.hi[i]));
+   } else {                               // user anchor: only the slope is uncertain, the level is given
+     for(let z=0.6;z<=4.001;z+=0.05)band.push(x(z)+','+yv(f(z,BLO)));
+     for(let z=4;z>=0.6;z-=0.05)band.push(x(z)+','+yv(f(z,BHI)));
+   }
    s+='<polygon points="'+band.join(' ')+'" fill="#c62828" opacity="0.13"/>';
    let pts=[];for(let z=0.6;z<=4.001;z+=0.04)pts.push(x(z)+','+yv(f(z,BETA)));
    s+='<polyline fill="none" stroke="#c62828" stroke-width="2.2" points="'+pts.join(' ')+'"/>';
@@ -166,7 +174,7 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
      s+='<circle cx="'+x(v)+'" cy="'+yv(f(v,BETA))+'" r="5" fill="'+c+'"/>';
      s+='<text x="'+(x(v)+7)+'" y="'+(yv(f(v,BETA))-7)+'" font-size="10" fill="'+c+'">'+lb+' '+f(v,BETA).toFixed(1)+'%</text>';}});
    s+=axes(TK,v=>v+'%');
-   s+='<text x="'+(ml+8)+'" y="'+(mt+11)+'" font-size="10" fill="currentColor">anchored on '+anchor.label+'</text>';
+   s+='<text x="'+(ml+8)+'" y="'+(mt+11)+'" font-size="10" fill="currentColor">anchored on '+anchor.label+(anchor.band?'':' — band: slope only')+'</text>';
  } else {                         // no anchor yet: the centred relation, odds relative to each cohort's own mean
    const lo=-1.6,hi=1.6; yv=l=>H-mb-((l-lo)/(hi-lo))*(H-mt-mb);
    const zc=z=>l0+0;              // placeholder, not used
