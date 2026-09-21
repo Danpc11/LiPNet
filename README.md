@@ -22,22 +22,22 @@ Both equal 1 in a healthy donor, and `zP/zF` estimates the graft's effective out
 
 ## What the published data support, and what they do not
 
-**The absolute level of risk is not transferable between centres.** At a gradient of about 5 mmHg (zP ~ 1) the reported small-for-size syndrome (SFSS) rate is 13-17% in Uemura 2016 and about 6% in Botha 2010, while Ishizaki 2012 reports 0% at zP ~ 2.5. A single logistic model with a common intercept therefore fails: fitted on the SFSS groups it gives a slope of 0.13 (95% CI -0.22 to 0.49), and the rank correlation between zP and outcome across the main-analysis groups is weak (18 groups, rho = 0.31, p = 0.214). Flow per gram does no better (11 groups, rho = 0.35, p = 0.290; rho = 0.23, p = 0.459 with the two groups defined by a flow cut-off).
+**The absolute level of risk is not transferable between centres.** At a gradient of about 5 mmHg (zP ~ 1) the reported small-for-size syndrome (SFSS) rate is 13-17% in Uemura 2016 and about 6% in Botha 2010, while Ishizaki 2012 reports 0% at zP ~ 2.5. A single logistic model with a common intercept therefore fails: fitted on the SFSS groups it gives a slope of 0.11 (95% CI -0.25 to 0.46), and the rank correlation between zP and outcome across the main-analysis groups is weak (16 groups, rho = 0.23, p = 0.399). Flow per gram does no better (11 groups, rho = 0.35, p = 0.290; rho = 0.23, p = 0.459 with the two groups defined by a flow cut-off).
 
-**The effect of changing the gradient is transferable.** Fitted with one intercept per study and a common slope on the 13 groups from the 5 series that contribute a within-study contrast (Ogura 2010, Osman 2017, Uemura 2016, Wang 2014, Yagi 2005; 134 events in 1,026 recipients):
+**The effect of changing the gradient is transferable.** Fitted with one intercept per study and a common slope on the 11 groups from the 5 series that contribute a within-stratum contrast (Ogura 2010, Osman 2017, Uemura 2016, Wang 2014, Yagi 2005; 104 events in 734 recipients). A stratum is a study **and** an outcome definition, so a series reporting two outcomes does not share one intercept, and a cohort partitioned twice (the Wang 2014 pressure groups are the same patients as its splenectomy groups) enters only once:
 
 ```
-logit(p) = alpha_study + 1.34 * zP        (95% CI for the slope 0.89 to 1.85)
-odds ratio 3.81 per unit of zP (2.44-6.37), i.e. 1.31 per mmHg of gradient (1.20-1.45)
+logit(p) = alpha_stratum + 1.96 * zP     (95% CI for the slope 1.22 to 3.02; profile likelihood 1.18 to 2.83)
+odds ratio 7.09 per unit of zP (3.37-20.46), i.e. 1.48 per mmHg of gradient (1.28-1.83)
 ```
 
-The slope stays between 1.13 and 2.03 when any one study is dropped. The intercepts differ by more than two logits between centres; that difference is recipient severity, outcome definition and technique, not haemodynamics. The model therefore predicts **how much a given reduction of the gradient changes the odds**, not the baseline risk of a patient.
+The slope stays between 1.67 and 2.16 when any one study is dropped, and is 1.87 for the SFSS outcomes and 2.03 for the mortality outcomes fitted separately. The intercepts differ by more than two logits between centres; that difference is recipient severity, outcome definition and technique, not haemodynamics. The model therefore predicts **how much a given reduction of the gradient changes the odds**, not the baseline risk of a patient.
 
 ## Calculator
 
 **Live:** https://danpc11.github.io/liver_pressure_index/ (`sfss_calculator.html`, runs entirely in the browser).
 
-Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and optionally PVF and graft weight. It returns zP, zF, the ratio zP/zF, the odds ratio implied by the change of gradient with its bootstrap interval, and, only if you supply **your own** outcome rate at the starting gradient, the corresponding absolute risk. Example: lowering the gradient from 12 to 7 mmHg gives OR 0.26 (0.16-0.41); on a 10% baseline that is about 2.8%. A research tool, not a validated individual predictor and not a medical device.
+Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and optionally PVF and graft weight. It returns zP, zF, the ratio zP/zF, and the odds ratio implied by the change of gradient with its bootstrap interval. To turn that into an absolute risk you choose a reference level: either **your own** outcome rate at the starting gradient, or one of the fitted strata (Ogura 2010, Osman 2017, Uemura 2016, Wang 2014, Yagi 2005), in which case the app shows what that series would go from and to, warns when the entered gradient falls outside the range that series actually spans, and highlights its curve in the plot. Example: lowering the gradient from 12 to 7 mmHg gives OR 0.14 (0.05-0.31); on a 10% baseline that is about 1.5%. A research tool, not a validated individual predictor and not a medical device.
 
 ## Contents
 
@@ -73,7 +73,7 @@ Plots: `nomogram`, `within_study`, `risk_change`, `series_pressure`, `series_flo
 
 ## Data
 
-`data/series.tsv` holds **raw values and their provenance only**; the indices are recomputed by `src/indices.py`, which is the single source used by the plots, the tests and the calculator. Columns: `study`, `group`, `n`, `source` (table or section and page in the original PDF), `GRWR`, `PVF_per_100g`, `PVF_basis`, `donor_PVF_per_100g_ref`, `PVP`, `PVP_basis`, `CVP`, `CVP_basis`, `CVP_measured`, `outcome`, `outcome_type`, `events`, `events_basis`, `pct`, `notes`.
+`data/series.tsv` holds **raw values and their provenance only**, including a `gradient_mmHg` column for the series that report the portocaval gradient itself (Uemura 2016, Ishizaki 2012, Botha 2010, Ogura 2010, Chan 2011, Yamada 2008); `zP` uses that gradient when present and PVP − CVP otherwise; the indices are recomputed by `src/indices.py`, which is the single source used by the plots, the tests and the calculator. Columns: `study`, `group`, `n`, `source` (table or section and page in the original PDF), `GRWR`, `PVF_per_100g`, `PVF_basis`, `donor_PVF_per_100g_ref`, `PVP`, `PVP_basis`, `CVP`, `CVP_basis`, `CVP_measured`, `outcome`, `outcome_type`, `events`, `events_basis`, `pct`, `notes`.
 
 Each `*_basis` column states how the value was obtained:
 
@@ -87,7 +87,7 @@ Each `*_basis` column states how the value was obtained:
 
 `indices.compute()` records every value it fills in itself (`CVP_filled`, `donor_ref_filled`) and treats it as imputed regardless of the label, and it raises an error if a label contradicts the data (e.g. a blank CVP marked `reported`).
 
-**Sensitivity** (`results/sensitivity.tsv`): main analysis, zP 18 groups rho = 0.31 (p = 0.214), zF 11 groups rho = 0.35 (p = 0.290); including the cut-off groups, zP 21 groups rho = 0.34 (p = 0.137) and zF 13 groups rho = 0.23 (p = 0.459); restricted to groups with no imputed or filled value in the index itself, zP 10 groups rho = -0.28 (p = 0.434). The within-study model uses only measured or derived gradients and is the result the analysis supports.
+**Sensitivity** (`results/sensitivity.tsv`): main analysis, zP 16 groups rho = 0.23 (p = 0.399), zF 11 groups rho = 0.35 (p = 0.290); including the cut-off groups, zP 21 groups rho = 0.34 (p = 0.137) and zF 13 groups rho = 0.23 (p = 0.459); restricted to groups with no imputed or filled value in the index itself, zP 10 groups rho = -0.28 (p = 0.434). The within-study model uses only measured or derived gradients and is the result the analysis supports.
 
 Series: Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008, Uemura 2016 (Surgery 159:1623), Yao 2018 (Transplantation 102:623), Kanetkar 2017 (J Clin Exp Hepatol 7:235), Ishizaki 2012 (Liver Transpl 18:305), Botha 2010 (Liver Transpl 16:649). Several come from the same centre and overlapping periods (Kyoto: Yagi 2005, Yagi 2006, Ogura 2010, Uemura 2016, Yao 2018), so the groups are not independent observations and the confidence intervals do not account for that.
 
@@ -99,7 +99,14 @@ Fill `data/cohort_template.tsv` (one row per patient). `src/indices.py` exposes 
 
 `src/model/network.py` builds the liver as a graph (hilum → portal tree → hexagonal lobules → hepatic venous tree), solves flows and dissipation for prescribed lobule demand and finds the dissipation-optimal tree at fixed maintenance cost `Σ m_e^b`. `network3d.py` does the same on a hemisphere. `scaling.py` gives the closed form `D* ∝ F² C^(−2/b) N^((2−b)/b) L³`, the set-point `τ0 = √(D*/C)` and the allometric closure. `graph_scaling.py`, `network3d.py <R>` and `certify.py` are the campaigns whose outputs are cached in `data/`.
 
-## Versions|
+## Versions
+
+| version | date | changes |
+|---|---|---|
+| 0.3.1 | 2026-09-21 | Audit fixes: a cohort counted twice removed, intercepts per study × outcome, gradient column, convergence and profile-likelihood checks; effect OR 7.09 per unit z_P |
+| 0.3.0 | 2026-09-21 | Five series with measured gradients; within-study model replaces the pooled fit; calculator rebuilt around the change of gradient |
+| 0.2.0 | 2026-09-20 | Provenance columns, single-source indices, calculator input validation |
+| 0.1.0 | 2026-09-20 | First public release: extraction table of 12 series, indices, pooled fit, 14 plots, calculator, GitHub Pages, tests, PolyForm Noncommercial licence. Archived at Zenodo, version DOI [10.5281/zenodo.22861277](https://doi.org/10.5281/zenodo.22861277) |
 
 Every GitHub release is archived at Zenodo. The concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) always resolves to the latest version; each version has its own DOI (table above).
 
