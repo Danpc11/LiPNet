@@ -4,7 +4,7 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
-## [0.3] – 2026-09-21
+## [0.3.0] – 2026-09-21
 
 Five series with measured portocaval gradients were added; they refute the pooled common-intercept model and replace it with a within-study effect.
 
@@ -25,7 +25,7 @@ Five series with measured portocaval gradients were added; they refute the poole
 - `within_study_fit(boot=0)` no longer fails (used by the leave-one-study-out loop).
 
 
-## [0.2] – 2026-09-20
+## [0.2.0] – 2026-09-20
 
 Methodological and calculator fixes after two rounds of code review.
 
