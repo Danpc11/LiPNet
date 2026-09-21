@@ -4,7 +4,7 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
-## [0.4.0] – 2026-09-21
+## [0.3.1] – 2026-09-21
 
 Code and methodology audit: three corrections that change the estimated effect.
 
