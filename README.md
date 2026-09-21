@@ -12,6 +12,10 @@ and, on acceptance:
 [![DOI](https://img.shields.io/badge/J%20Hepatol-10.1016%2Fj.jhep.XXXX-0f4c81)](https://doi.org/10.1016/j.jhep.XXXX)
 -->
 
+<p align="center">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: a partial liver graft as a fraction of the donor perfusion network; the portocaval gradient normalised to its physiological value orders outcome within each centre, while the absolute level of risk is centre-specific" width="820">
+</p>
+
 Two dimensionless indices of haemodynamic load on a partial liver graft, the published series used to test them, the code that reproduces every plot as a separate file, and a calculator.
 
 ```
@@ -40,6 +44,18 @@ Three checks support that estimate. A random-effects meta-analysis of the five p
 **Live:** https://danpc11.github.io/liver_pressure_index/ (`sfss_calculator.html`, runs entirely in the browser).
 
 Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and optionally PVF and graft weight. The calculator implements the centred result directly: it uses the intercept-free slope (OR 5.25 per unit of zP, 1.39 per mmHg) and asks for a reference level rather than assuming one. It returns zP, zF, the ratio zP/zF, and the odds ratio implied by the change of gradient with its bootstrap interval. To turn that into an absolute risk you choose a reference level: **your cohort's average** (its overall outcome rate and its average gradient, the two numbers a centre actually knows, which is exactly the anchor the centring defines), your own rate at the starting gradient, or one of the fitted strata (Ogura 2010, Osman 2017, Uemura 2016, Wang 2014, Yagi 2005), in which case the app shows what that series would go from and to, warns when the entered gradient falls outside the range that series actually spans, and the plot shows a single curve anchored on that reference, with the current and post-change gradients marked; with no anchor it shows the published groups centred on their own cohort. Example: lowering the gradient from 12 to 7 mmHg gives OR 0.14 (0.05-0.31); on a 10% baseline that is about 1.5%. A research tool, not a validated individual predictor and not a medical device.
+
+## How to obtain your baseline
+
+The model supplies the slope; the level has to come from the centre that uses it. This is the standard problem of **recalibration in the large**, the first and least demanding step of prediction-model updating: keep the coefficients and re-estimate only the intercept for the new setting (Steyerberg, *Clinical Prediction Models*; Vergouwe et al., Stat Med 2017;36:4529-39; Janssen et al., *A simple method to adjust clinical prediction models to local circumstances*, Can J Anesth 2009;56:194-201). It is what has been done for decades with Framingham, EuroSCORE and TAVI mortality models before local use, and geographic validation studies show exactly our pattern: heterogeneity of I2 = 0% for discrimination and the slope, but 74% for the calibration intercept (Jacobs et al., J Clin Epidemiol 2023).
+
+Three ways to get it, in increasing order of effort:
+
+1. **From two numbers you already have** (what the calculator does by default). With your cohort's overall outcome rate p and its average gradient, the intercept is `alpha = logit(p) - beta * mean(zP)`, and the risk of a patient is `logistic(alpha + beta * zP)`. This is calibration in the large computed from the event rate alone, and it needs no individual data.
+2. **From a retrospective audit.** With 50-100 consecutive recipients and their final PVP, CVP and outcome, fit only the intercept with `beta` held fixed as an offset (`indices.recalibrate()`); this also gives a standard error for the level and lets you check the slope in your own data.
+3. **From a prospective cohort.** Fill `data/cohort_template.tsv` and refit intercept and slope; the closed testing procedure of Vergouwe et al. tells you when your sample justifies re-estimating more than the intercept.
+
+Two cautions from the same literature. Recalibrating the intercept corrects the average level but does not repair discrimination if the case mix differs (Debray et al., J Clin Epidemiol 2015;68:279-89), and recalibration should not be reflexive: if the level differs because of something the model omits, updating the intercept hides that rather than fixing it (Van Calster et al., 2025).
 
 ## Contents
 
