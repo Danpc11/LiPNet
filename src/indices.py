@@ -90,7 +90,7 @@ def within_study_fit(s, boot=2000, seed=0, _inner=False):
     x0 = np.r_[np.full(k, -2.0), 1.0]
     fit = minimize(_nll_fixed, x0, args=(S, z, ev, n, k), method='BFGS')
     beta = float(fit.x[-1]); alphas = {st: float(a) for st, a in zip(studies, fit.x[:k])}
-    n_failed = 0
+    n_failed = 0; zgrid = np.round(np.arange(0.6, 4.001, 0.05), 3); preds = []
     if boot:
         rng = np.random.default_rng(seed); B = []
         for _ in range(boot):
@@ -99,7 +99,9 @@ def within_study_fit(s, boot=2000, seed=0, _inner=False):
             if not r.success:                                    # retry once with a derivative-free method
                 r = minimize(_nll_fixed, fit.x, args=(S, z, evb, n, k), method='Nelder-Mead',
                              options=dict(maxiter=20000, fatol=1e-10, xatol=1e-8))
-            if r.success: B.append(r.x[-1])
+            if r.success:
+                B.append(r.x[-1])
+                preds.append(1 / (1 + np.exp(-(r.x[:k][:, None] + r.x[-1] * zgrid[None, :]))))
             else: n_failed += 1
         B = np.array(B); lo, hi = np.percentile(B, [2.5, 97.5])
     else:
@@ -128,6 +130,10 @@ def within_study_fit(s, boot=2000, seed=0, _inner=False):
                 OR_per_mmHg_ci=[float(np.exp(lo / NORMAL_GRADIENT)), float(np.exp(hi / NORMAL_GRADIENT))],
                 profile_ci=prof_ci, bootstrap_failures=int(n_failed), by_outcome=by_outcome,
                 studies=studies, alphas=alphas, groups=int(len(s)), patients=int(n.sum()), events=int(ev.sum()),
+                zgrid=zgrid.tolist(),
+                pred_band={st: dict(lo=np.percentile(np.array(preds)[:, i, :], 2.5, axis=0).round(5).tolist(),
+                                    hi=np.percentile(np.array(preds)[:, i, :], 97.5, axis=0).round(5).tolist())
+                           for i, st in enumerate(studies)} if preds else {},
                 zP_min=float(z.min()), zP_max=float(z.max()), normal_gradient_mmHg=NORMAL_GRADIENT,
                 default_cvp_mmHg=DEFAULT_CVP, leave_one_study_out=loo,
                 study_groups=[dict(study=r.study, group=r.group, n=int(r.n), events=int(r.events),
@@ -135,7 +141,11 @@ def within_study_fit(s, boot=2000, seed=0, _inner=False):
                                    outcome_type=r.outcome_type, zP_imputed=bool(r.zP_imputed)) for _, r in s.iterrows()])
 
 def meta_slope(s):
-    """Random-effects meta-analysis of the within-stratum slopes (DerSimonian-Laird).
+    """Exploratory sensitivity analysis: random-effects meta-analysis of the within-stratum slopes.
+
+    DerSimonian-Laird for tau2 with a Hartung-Knapp interval, which is the one reported: with five strata a normal
+    interval on the random-effects standard error is too narrow. The primary estimate remains within_study_fit();
+    I2 and tau2 here describe consistency among five estimates and have little power to detect heterogeneity.
 
     Each stratum contributes its own logistic slope of the outcome on zP with its standard error; the slopes are
     pooled with an additive between-study variance tau2. This is the standard way of combining grouped-exposure
@@ -154,10 +164,16 @@ def meta_slope(s):
     mu_fe = float((w * p.beta).sum() / w.sum()); Q = float((w * (p.beta - mu_fe) ** 2).sum()); k = len(p)
     tau2 = max(0.0, (Q - (k - 1)) / (w.sum() - (w ** 2).sum() / w.sum())) if k > 1 else 0.0
     w2 = 1 / (p.se ** 2 + tau2); mu = float((w2 * p.beta).sum() / w2.sum()); se = float(np.sqrt(1 / w2.sum()))
-    lo, hi = mu - 1.96 * se, mu + 1.96 * se
+    # Hartung-Knapp: scale the variance by the observed dispersion of the estimates and use a t quantile.
+    # With five strata the normal interval is too narrow, so this is the one reported.
+    from scipy.stats import t as _t
+    q = float((w2 * (p.beta - mu) ** 2).sum() / (k - 1)) if k > 1 else 1.0
+    q = max(q, 1.0)                                   # ad hoc truncation: never narrower than the normal interval
+    se_hk = float(np.sqrt(q / w2.sum())); tcrit = float(_t.ppf(0.975, k - 1)) if k > 1 else 1.96
+    lo, hi = mu - tcrit * se_hk, mu + tcrit * se_hk
     I2 = float(max(0.0, 100 * (Q - (k - 1)) / Q)) if Q > 0 else 0.0
     from scipy.stats import chi2 as _chi2
-    return dict(beta=mu, se=se, beta_ci=[lo, hi], beta_fixed_effect=mu_fe, tau2=float(tau2), Q=Q, Q_df=k - 1,
+    return dict(beta=mu, se=se, se_hartung_knapp=se_hk, beta_ci=[lo, hi], beta_ci_normal=[mu - 1.96 * se, mu + 1.96 * se], beta_fixed_effect=mu_fe, tau2=float(tau2), Q=Q, Q_df=k - 1,
                 Q_p=float(1 - _chi2.cdf(Q, k - 1)) if k > 1 else float('nan'), I2=I2,
                 OR_per_zP=float(np.exp(mu)), OR_per_zP_ci=[float(np.exp(lo)), float(np.exp(hi))],
                 OR_per_mmHg=float(np.exp(mu / NORMAL_GRADIENT)),
@@ -210,7 +226,8 @@ def overdispersion(s):
                 beta_ci_quasi=[float(fit.x[-1] - 1.96 * se * scale), float(fit.x[-1] + 1.96 * se * scale)])
 
 def attenuation(s, within_group_sd_mmHg=3.5, draws=400, seed=1):
-    """How much of the slope the sampling error of the group means could cost: each group's zP is perturbed by
+    """Scenario analysis, not an observed result: the within-group SD is assumed, not reported by the series.
+    How much of the slope the sampling error of the group means could cost: each group's zP is perturbed by
     sd/sqrt(n) and the slope re-estimated. It says nothing about a per-patient slope: recovering an individual-level
     relation from group means is not possible here (ecological bias, between-study variation, error in the means)."""
     st = strata(s); studies = sorted(st.unique()); k = len(studies)
@@ -301,12 +318,14 @@ def main(boot=2000, seed=0):
     print(f"\nCohort level removed by centring within stratum: slope {cen['beta']:.2f} +- {cen['se']:.2f}, "
           f"OR {cen['OR_per_zP']:.2f} per unit zP ({cen['OR_per_zP_ci'][0]:.2f}-{cen['OR_per_zP_ci'][1]:.2f}), "
           f"{cen['OR_per_mmHg']:.2f} per mmHg; weighted R2 of the common line = {cen['r2_weighted']:.2f}")
-    print(f"\nRandom-effects meta-analysis of the stratum slopes: {meta['beta']:.2f} (95% CI {meta['beta_ci'][0]:.2f} to {meta['beta_ci'][1]:.2f}), "
+    print(f"\nSensitivity, random-effects meta-analysis (Hartung-Knapp): {meta['beta']:.2f} (95% CI {meta['beta_ci'][0]:.2f} to {meta['beta_ci'][1]:.2f}), "
           f"OR {meta['OR_per_zP']:.2f} per unit zP ({meta['OR_per_zP_ci'][0]:.2f}-{meta['OR_per_zP_ci'][1]:.2f}), {meta['OR_per_mmHg']:.2f} per mmHg")
-    print(f"  heterogeneity: tau2 = {meta['tau2']:.3f}, Q = {meta['Q']:.2f} on {meta['Q_df']} df (p = {meta['Q_p']:.2f}), I2 = {meta['I2']:.0f}%")
+    print(f"  heterogeneity: tau2 = {meta['tau2']:.3f}, Q = {meta['Q']:.2f} on {meta['Q_df']} df (p = {meta['Q_p']:.2f}), I2 = {meta['I2']:.0f}% "
+          f"(five estimates: little power to detect heterogeneity)")
     for r in meta['strata']: print(f"    {r['stratum']:48s} slope {r['beta']:+.2f} (SE {r['se']:.2f}), zP span {r['zP_span']:.2f}, {r['events']}/{r['patients']}")
     print(f"  overdispersion: Pearson chi2/df = {od['ratio']:.2f} on {od['df']} df -> SE scale {od['se_scale']:.2f}; quasi-binomial CI {od['beta_ci_quasi'][0]:.2f} to {od['beta_ci_quasi'][1]:.2f}")
-    print(f"  regression dilution: the sampling error of the group means costs {att['loss_pct']:.0f}% of the slope")
+    print(f"  scenario analysis: assuming a within-group SD of {att['within_group_sd_mmHg']} mmHg, perturbing the reported "
+          f"group means changes the slope by about {att['loss_pct']:.0f}%")
 
     sf = m[(m.outcome_type == 'SFSS_or_dysfunction')]
     pf = pooled_fit(sf, boot, seed); json.dump(pf, open(f'{OUT}/pooled_fit.json', 'w'), indent=1)
