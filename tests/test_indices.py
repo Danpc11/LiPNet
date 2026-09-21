@@ -21,6 +21,8 @@ def test_indices_and_baseline():
 def test_data_and_provenance():
     d = pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t')
     c = indices.compute(d)
+    for col in ('PVP', 'CVP'):                          # a basis must not claim a value that is not there
+        assert not (d[col].isna() & ~d[f'{col}_basis'].isin(['not applicable', 'imputed'])).any(), col
     assert len(c) == 31 and c.zP.notna().sum() == 21 and c.zF.notna().sum() == 14
     assert set(c[~c.in_main_analysis].study) == {'Vasavada 2014', 'Yao 2018', 'Kanetkar 2017', 'Wang 2014'}
     m = indices.contributing(c[c.in_main_analysis & c.zP.notna() & c.events.notna()])
@@ -41,8 +43,9 @@ def test_fitted_effect():
     assert abs(W['beta'] - 1.96) < 0.05 and W['groups'] == 11 and W['events'] == 104
     assert all(v > 1 for v in list(W['leave_one_study_out'].values()) + list(W['by_outcome'].values()))
     assert abs(M['meta']['beta'] - 1.90) < 0.05 and M['meta']['I2'] < 5 and M['meta']['Q_p'] > 0.5
-    assert abs(M['centred']['beta'] - 1.66) < 0.05 and M['centred']['r2_weighted'] > 0.8
+    assert abs(M['centred']['beta'] - 1.66) < 0.05 and M['centred']['r2_weighted'] > 0.8   # descriptive view
     assert M['overdispersion']['se_scale'] == 1.0 and M['attenuation']['loss_pct'] < 10
+    assert 'beta_individual_implied' not in M['attenuation']          # no per-patient extrapolation
 
 def test_plots_and_calculator():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
@@ -52,9 +55,10 @@ def test_plots_and_calculator():
     assert all(os.path.exists(os.path.join(ROOT, 'results', f'{n}.png')) for n in names)
     assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True).returncode == 0
     html = open(os.path.join(ROOT, 'sfss_calculator.html')).read()
-    C = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))['centred']
+    W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
     assert '__' not in html.replace('__proto__', '')
-    assert f"const BETA={C['beta']:.4f}" in html, 'the calculator must use the intercept-free centred slope'
+    assert f"const BETA={W['beta']:.4f}" in html, 'slope and intercepts must come from the same model'
+    assert f"BLO={W['beta_ci'][0]:.4f}" in html and f"{W['alphas'][W['studies'][0]]:.4f}" in html
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
 
 def test_readme_matches_results():
@@ -63,7 +67,8 @@ def test_readme_matches_results():
     readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
     for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
         assert f"{int(r.groups)} groups" in readme and f"ρ = {r.spearman_rho:.2f}" in readme and f"p = {r.p:.3f}" in readme
-    assert f"{M['centred']['OR_per_zP']:.2f}" in readme and f"{M['centred']['OR_per_mmHg']:.2f}" in readme
+    W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
+    assert f"{W['OR_per_zP']:.2f}" in readme and f"{W['OR_per_mmHg']:.2f}" in readme
     assert 'assets/graphical_abstract.png' in readme
 
 if __name__ == '__main__':
