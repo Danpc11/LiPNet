@@ -1,7 +1,7 @@
 """Each plot is a separate function and a separate file.  Run from the repository root:
 
     python src/plots.py all
-    python src/plots.py nomogram risk_curve series_pressure series_flow
+    python src/plots.py nomogram centred series_pressure series_flow
 
 Available plots (results/<name>.pdf and .png):
     nomogram           zP against final PVP for several CVP values
