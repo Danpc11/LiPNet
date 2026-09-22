@@ -1,5 +1,5 @@
 {
- "title": "liver_pressure_index: portal pressure and flow indices of haemodynamic load on partial liver grafts",
+ "title": "LiPNet: portal pressure and flow indices of haemodynamic load on partial liver grafts",
  "description": "<p>Two dimensionless indices of the haemodynamic load on a partial liver graft (zP, the portocaval gradient normalised to its physiological value; zF, portal flow per gram relative to the donor), the extraction table of 31 groups from 17 published living donor liver transplantation series with the source of every value, the code that reproduces each plot as a separate file, the perfusion-network model behind the indices, and a browser calculator. The effect of changing the gradient is estimated within study; the absolute level of risk is centre-specific. Research tool, not a medical device.</p>",
  "upload_type": "software",
  "access_right": "open",
@@ -42,16 +42,16 @@
  ],
  "related_identifiers": [
   {
-   "identifier": "https://github.com/Danpc11/liver_pressure_index",
+   "identifier": "https://github.com/Danpc11/LiPNet",
    "relation": "isSupplementTo",
    "scheme": "url"
   },
   {
-   "identifier": "https://danpc11.github.io/liver_pressure_index/",
+   "identifier": "https://danpc11.github.io/LiPNet/",
    "relation": "isDescribedBy",
    "scheme": "url"
   }
  ],
  "grants": [],
- "notes": "Funding: DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789. Values in data/ are transcribed from the cited publications and remain the property of their authors."
+ "notes": "Funding: DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789. Values in data/ are transcribed from the cited publications and remain the property of their authors. Article in preparation: Vascular resistance modulates portal flow–pressure decoupling in partial liver grafts."
 }
