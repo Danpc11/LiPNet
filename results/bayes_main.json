@@ -1,0 +1,465 @@
+{
+ "primary (SFSS or early dysfunction)": {
+  "tau_prior": 0.5,
+  "strata": [
+   "Osman 2017 / SFSS_or_dysfunction",
+   "Uemura 2016 / SFSS_or_dysfunction",
+   "Wang 2014 / SFSS_or_dysfunction"
+  ],
+  "groups": 7,
+  "events": 76,
+  "patients": 573,
+  "mu_beta": 1.5470263957977295,
+  "mu_beta_ci": [
+   0.3255254626274109,
+   2.787879705429077
+  ],
+  "tau_beta": 0.36505094170570374,
+  "tau_beta_ci": [
+   0.014370018616318703,
+   1.028281807899475
+  ],
+  "prob_mu_positive": 0.990375,
+  "OR_per_zP": 4.697481155395508,
+  "OR_per_zP_ci": [
+   1.3847580934669013,
+   16.24653581491767
+  ],
+  "OR_per_mmHg": 1.3626145124435425,
+  "prediction_interval": [
+   -0.015070353462363545,
+   3.0886890219071894
+  ],
+  "prob_new_study_positive": 0.97425,
+  "beta_by_stratum": {
+   "Osman 2017 / SFSS_or_dysfunction": {
+    "mean": 1.6298621892929077,
+    "ci": [
+     0.40081900358200073,
+     2.9541244506835938
+    ]
+   },
+   "Uemura 2016 / SFSS_or_dysfunction": {
+    "mean": 1.562332272529602,
+    "ci": [
+     0.015551058575510979,
+     3.0240023136138916
+    ]
+   },
+   "Wang 2014 / SFSS_or_dysfunction": {
+    "mean": 1.611732840538025,
+    "ci": [
+     0.4360729157924652,
+     2.793100595474243
+    ]
+   }
+  },
+  "rhat": {
+   "mu_beta": 1.0002397298812866,
+   "tau_beta": 1.0012856721878052,
+   "max": 1.0012856721878052
+  },
+  "ess": {
+   "mu_beta": 5114.256489789627,
+   "tau_beta": 5497.904636706726,
+   "min": 5114.256489789627
+  },
+  "divergences": 0,
+  "ppc_inside": 7,
+  "ppc_total": 7,
+  "ppc": [
+   {
+    "stratum": "Wang 2014 / SFSS_or_dysfunction",
+    "group": "splenectomy",
+    "observed": 15,
+    "predicted_median": 15.0,
+    "predicted_ci": [
+     7.0,
+     27.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Wang 2014 / SFSS_or_dysfunction",
+    "group": "no splenectomy",
+    "observed": 24,
+    "predicted_median": 23.0,
+    "predicted_ci": [
+     13.0,
+     36.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Osman 2017 / SFSS_or_dysfunction",
+    "group": "A: final PVP <15",
+    "observed": 1,
+    "predicted_median": 1.0,
+    "predicted_ci": [
+     0.0,
+     6.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Osman 2017 / SFSS_or_dysfunction",
+    "group": "B: final PVP 15-19",
+    "observed": 6,
+    "predicted_median": 6.0,
+    "predicted_ci": [
+     1.0,
+     13.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Uemura 2016 / SFSS_or_dysfunction",
+    "group": "S: GRWR <0.7",
+    "observed": 5,
+    "predicted_median": 4.0,
+    "predicted_ci": [
+     1.0,
+     9.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Uemura 2016 / SFSS_or_dysfunction",
+    "group": "M: GRWR 0.7-0.8",
+    "observed": 5,
+    "predicted_median": 5.0,
+    "predicted_ci": [
+     1.0,
+     10.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Uemura 2016 / SFSS_or_dysfunction",
+    "group": "L: GRWR >=0.8",
+    "observed": 20,
+    "predicted_median": 21.0,
+    "predicted_ci": [
+     11.0,
+     32.0
+    ],
+    "inside": true
+   }
+  ]
+ },
+ "secondary (mortality or graft loss)": {
+  "tau_prior": 0.5,
+  "strata": [
+   "Ogura 2010 / mortality_or_graft_loss",
+   "Yagi 2005 / mortality_or_graft_loss"
+  ],
+  "groups": 4,
+  "events": 28,
+  "patients": 161,
+  "mu_beta": 1.7407922744750977,
+  "mu_beta_ci": [
+   0.5967058539390564,
+   2.8572311401367188
+  ],
+  "tau_beta": 0.3943292200565338,
+  "tau_beta_ci": [
+   0.018663441762328148,
+   1.0865787267684937
+  ],
+  "prob_mu_positive": 0.997375,
+  "OR_per_zP": 5.7018585205078125,
+  "OR_per_zP_ci": [
+   1.8161263503433613,
+   17.413245288898164
+  ],
+  "OR_per_mmHg": 1.416456699371338,
+  "prediction_interval": [
+   0.21199028638290437,
+   3.187398419184754
+  ],
+  "prob_new_study_positive": 0.98325,
+  "beta_by_stratum": {
+   "Ogura 2010 / mortality_or_graft_loss": {
+    "mean": 1.9494404792785645,
+    "ci": [
+     0.915320873260498,
+     3.07839035987854
+    ]
+   },
+   "Yagi 2005 / mortality_or_graft_loss": {
+    "mean": 1.6992546319961548,
+    "ci": [
+     0.6235648393630981,
+     2.8810203075408936
+    ]
+   }
+  },
+  "rhat": {
+   "mu_beta": 0.99981689453125,
+   "tau_beta": 1.0010327100753784,
+   "max": 1.0010327100753784
+  },
+  "ess": {
+   "mu_beta": 4401.440121503901,
+   "tau_beta": 4932.179002366335,
+   "min": 4401.440121503901
+  },
+  "divergences": 0,
+  "ppc_inside": 4,
+  "ppc_total": 4,
+  "ppc": [
+   {
+    "stratum": "Ogura 2010 / mortality_or_graft_loss",
+    "group": "final PVP <15",
+    "observed": 6,
+    "predicted_median": 7.0,
+    "predicted_ci": [
+     2.0,
+     15.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Ogura 2010 / mortality_or_graft_loss",
+    "group": "final PVP >=15",
+    "observed": 14,
+    "predicted_median": 12.0,
+    "predicted_ci": [
+     5.0,
+     21.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Yagi 2005 / mortality_or_graft_loss",
+    "group": "L: PVP <20 (POD 1-3)",
+    "observed": 1,
+    "predicted_median": 1.0,
+    "predicted_ci": [
+     0.0,
+     4.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Yagi 2005 / mortality_or_graft_loss",
+    "group": "H: PVP >=20 (POD 1-3)",
+    "observed": 7,
+    "predicted_median": 7.0,
+    "predicted_ci": [
+     2.0,
+     13.0
+    ],
+    "inside": true
+   }
+  ]
+ },
+ "exploratory (all outcomes)": {
+  "tau_prior": 0.5,
+  "strata": [
+   "Ogura 2010 / mortality_or_graft_loss",
+   "Osman 2017 / SFSS_or_dysfunction",
+   "Uemura 2016 / SFSS_or_dysfunction",
+   "Wang 2014 / SFSS_or_dysfunction",
+   "Yagi 2005 / mortality_or_graft_loss"
+  ],
+  "groups": 11,
+  "events": 104,
+  "patients": 734,
+  "mu_beta": 1.7947458028793335,
+  "mu_beta_ci": [
+   0.9658632874488831,
+   2.637160062789917
+  ],
+  "tau_beta": 0.3259187638759613,
+  "tau_beta_ci": [
+   0.014749032445251942,
+   0.9417676329612732
+  ],
+  "prob_mu_positive": 1.0,
+  "OR_per_zP": 6.0179443359375,
+  "OR_per_zP_ci": [
+   2.6270545810773833,
+   13.973463445867253
+  ],
+  "OR_per_mmHg": 1.431823968887329,
+  "prediction_interval": [
+   0.6026760801989718,
+   2.937170405786926
+  ],
+  "prob_new_study_positive": 0.99325,
+  "beta_by_stratum": {
+   "Ogura 2010 / mortality_or_graft_loss": {
+    "mean": 1.9447214603424072,
+    "ci": [
+     1.0848512649536133,
+     2.9137954711914062
+    ]
+   },
+   "Osman 2017 / SFSS_or_dysfunction": {
+    "mean": 1.8127754926681519,
+    "ci": [
+     0.8154025077819824,
+     2.852785587310791
+    ]
+   },
+   "Uemura 2016 / SFSS_or_dysfunction": {
+    "mean": 1.8100093603134155,
+    "ci": [
+     0.6136729121208191,
+     2.9576451778411865
+    ]
+   },
+   "Wang 2014 / SFSS_or_dysfunction": {
+    "mean": 1.7969633340835571,
+    "ci": [
+     0.880702018737793,
+     2.7195327281951904
+    ]
+   },
+   "Yagi 2005 / mortality_or_graft_loss": {
+    "mean": 1.7340182065963745,
+    "ci": [
+     0.8146526217460632,
+     2.6884138584136963
+    ]
+   }
+  },
+  "rhat": {
+   "mu_beta": 0.9999500513076782,
+   "tau_beta": 1.0001933574676514,
+   "max": 1.000892996788025
+  },
+  "ess": {
+   "mu_beta": 6554.541159845995,
+   "tau_beta": 6343.807004843931,
+   "min": 6343.807004843931
+  },
+  "divergences": 0,
+  "ppc_inside": 11,
+  "ppc_total": 11,
+  "ppc": [
+   {
+    "stratum": "Wang 2014 / SFSS_or_dysfunction",
+    "group": "splenectomy",
+    "observed": 15,
+    "predicted_median": 15.0,
+    "predicted_ci": [
+     7.0,
+     25.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Wang 2014 / SFSS_or_dysfunction",
+    "group": "no splenectomy",
+    "observed": 24,
+    "predicted_median": 24.0,
+    "predicted_ci": [
+     14.0,
+     36.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Osman 2017 / SFSS_or_dysfunction",
+    "group": "A: final PVP <15",
+    "observed": 1,
+    "predicted_median": 1.0,
+    "predicted_ci": [
+     0.0,
+     5.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Osman 2017 / SFSS_or_dysfunction",
+    "group": "B: final PVP 15-19",
+    "observed": 6,
+    "predicted_median": 6.0,
+    "predicted_ci": [
+     1.0,
+     13.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Ogura 2010 / mortality_or_graft_loss",
+    "group": "final PVP <15",
+    "observed": 6,
+    "predicted_median": 8.0,
+    "predicted_ci": [
+     2.0,
+     15.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Ogura 2010 / mortality_or_graft_loss",
+    "group": "final PVP >=15",
+    "observed": 14,
+    "predicted_median": 12.0,
+    "predicted_ci": [
+     5.0,
+     21.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Yagi 2005 / mortality_or_graft_loss",
+    "group": "L: PVP <20 (POD 1-3)",
+    "observed": 1,
+    "predicted_median": 0.0,
+    "predicted_ci": [
+     0.0,
+     3.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Yagi 2005 / mortality_or_graft_loss",
+    "group": "H: PVP >=20 (POD 1-3)",
+    "observed": 7,
+    "predicted_median": 7.0,
+    "predicted_ci": [
+     2.0,
+     13.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Uemura 2016 / SFSS_or_dysfunction",
+    "group": "S: GRWR <0.7",
+    "observed": 5,
+    "predicted_median": 4.0,
+    "predicted_ci": [
+     1.0,
+     9.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Uemura 2016 / SFSS_or_dysfunction",
+    "group": "M: GRWR 0.7-0.8",
+    "observed": 5,
+    "predicted_median": 5.0,
+    "predicted_ci": [
+     1.0,
+     10.0
+    ],
+    "inside": true
+   },
+   {
+    "stratum": "Uemura 2016 / SFSS_or_dysfunction",
+    "group": "L: GRWR >=0.8",
+    "observed": 20,
+    "predicted_median": 21.0,
+    "predicted_ci": [
+     11.0,
+     32.0
+    ],
+    "inside": true
+   }
+  ]
+ }
+}
