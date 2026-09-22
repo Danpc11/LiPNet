@@ -34,34 +34,6 @@ The derivation, the four predictions that follow from it and all the numbers are
 
 ---
 
-## Included clinical series
-
-Thirty-one groups from seventeen published series of adult living-donor liver transplantation. Every value in `data/series.tsv` carries its source table and page, and a provenance label.
-
-| Series | Journal | Link |
-|---|---|---|
-| Troisi 2003 | Liver Transpl 2003;9(9):S36–41 | [10.1053/jlts.2003.50200](https://doi.org/10.1053/jlts.2003.50200) |
-| Troisi 2005 | Am J Transplant 2005;5:1397–1404 | [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=Troisi+hemi-portocaval+shunts+inflow+modulation+small-for-size+2005) |
-| Yagi 2005 | Liver Transpl 2005;11(1):68–75 | [10.1002/lt.20317](https://doi.org/10.1002/lt.20317) |
-| Yagi 2006 | Transplantation 2006;81(3):373–378 | [10.1097/01.tp.0000198122.15235.a7](https://doi.org/10.1097/01.tp.0000198122.15235.a7) |
-| Yamada 2008 | Am J Transplant 2008;8(4):847–853 | [10.1111/j.1600-6143.2007.02144.x](https://doi.org/10.1111/j.1600-6143.2007.02144.x) |
-| Botha 2010 | Liver Transpl 2010;16(5):649–657 | [10.1002/lt.22043](https://doi.org/10.1002/lt.22043) |
-| Ogura 2010 | Liver Transpl 2010;16(6):718–728 | [10.1002/lt.22059](https://doi.org/10.1002/lt.22059) |
-| Ou 2010 | Transplant Proc 2010;42(3):876–878 | [10.1016/j.transproceed.2010.02.064](https://doi.org/10.1016/j.transproceed.2010.02.064) |
-| Chan 2011 | Liver Transpl 2011 | [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=Chan+Lo+portal+inflow+pressure+right+liver+living+donor+middle+hepatic+vein) |
-| Ishizaki 2012 | Liver Transpl 2012;18(3):305–314 | [10.1002/lt.22440](https://doi.org/10.1002/lt.22440) |
-| Vasavada 2014 | Exp Clin Transplant 2014;12(5):437–442 | [journal](https://www.ectrx.org/detail/archive/2014/12/5/0/437/society.php) |
-| Wang 2014 | Surg Today 2015;45(8):979–985 | [10.1007/s00595-014-0999-9](https://doi.org/10.1007/s00595-014-0999-9) |
-| Alim 2016 | Liver Transpl 2016 | [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=Alim+graft-to-recipient+weight+ratio+MELD+living+donor+liver+transplantation) |
-| Uemura 2016 | Surgery 2016;159(6):1623–1630 | [10.1016/j.surg.2016.01.009](https://doi.org/10.1016/j.surg.2016.01.009) |
-| Kanetkar 2017 | J Clin Exp Hepatol 2017;7(3):235–246 | [10.1016/j.jceh.2017.01.114](https://doi.org/10.1016/j.jceh.2017.01.114) |
-| Osman 2017 | Hepatol Res 2017;47(4):293–302 | [10.1111/hepr.12727](https://doi.org/10.1111/hepr.12727) |
-| Yao 2018 | Transplantation 2018;102(4):623–631 | [10.1097/TP.0000000000002047](https://doi.org/10.1097/TP.0000000000002047) |
-
-Three of these links are PubMed searches rather than DOIs, because the bibliographic record has not been re-verified; the extraction itself is sourced in `data/series.tsv`.
-
----
-
 ## Calculator
 
 A browser-based research calculator is available at:
@@ -228,6 +200,34 @@ run_all.sh
 
 ---
 
+## Included clinical series
+
+Thirty-one groups from seventeen published series of adult living-donor liver transplantation. Every value in `data/series.tsv` carries its source table and page, and a provenance label.
+
+| Series | Journal | Link |
+|---|---|---|
+| Troisi 2003 | Liver Transpl 2003;9(9):S36–41 | [10.1053/jlts.2003.50200](https://doi.org/10.1053/jlts.2003.50200) |
+| Troisi 2005 | Am J Transplant 2005;5:1397–1404 | [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=Troisi+hemi-portocaval+shunts+inflow+modulation+small-for-size+2005) |
+| Yagi 2005 | Liver Transpl 2005;11(1):68–75 | [10.1002/lt.20317](https://doi.org/10.1002/lt.20317) |
+| Yagi 2006 | Transplantation 2006;81(3):373–378 | [10.1097/01.tp.0000198122.15235.a7](https://doi.org/10.1097/01.tp.0000198122.15235.a7) |
+| Yamada 2008 | Am J Transplant 2008;8(4):847–853 | [10.1111/j.1600-6143.2007.02144.x](https://doi.org/10.1111/j.1600-6143.2007.02144.x) |
+| Botha 2010 | Liver Transpl 2010;16(5):649–657 | [10.1002/lt.22043](https://doi.org/10.1002/lt.22043) |
+| Ogura 2010 | Liver Transpl 2010;16(6):718–728 | [10.1002/lt.22059](https://doi.org/10.1002/lt.22059) |
+| Ou 2010 | Transplant Proc 2010;42(3):876–878 | [10.1016/j.transproceed.2010.02.064](https://doi.org/10.1016/j.transproceed.2010.02.064) |
+| Chan 2011 | Liver Transpl 2011 | [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=Chan+Lo+portal+inflow+pressure+right+liver+living+donor+middle+hepatic+vein) |
+| Ishizaki 2012 | Liver Transpl 2012;18(3):305–314 | [10.1002/lt.22440](https://doi.org/10.1002/lt.22440) |
+| Vasavada 2014 | Exp Clin Transplant 2014;12(5):437–442 | [journal](https://www.ectrx.org/detail/archive/2014/12/5/0/437/society.php) |
+| Wang 2014 | Surg Today 2015;45(8):979–985 | [10.1007/s00595-014-0999-9](https://doi.org/10.1007/s00595-014-0999-9) |
+| Alim 2016 | Liver Transpl 2016 | [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=Alim+graft-to-recipient+weight+ratio+MELD+living+donor+liver+transplantation) |
+| Uemura 2016 | Surgery 2016;159(6):1623–1630 | [10.1016/j.surg.2016.01.009](https://doi.org/10.1016/j.surg.2016.01.009) |
+| Kanetkar 2017 | J Clin Exp Hepatol 2017;7(3):235–246 | [10.1016/j.jceh.2017.01.114](https://doi.org/10.1016/j.jceh.2017.01.114) |
+| Osman 2017 | Hepatol Res 2017;47(4):293–302 | [10.1111/hepr.12727](https://doi.org/10.1111/hepr.12727) |
+| Yao 2018 | Transplantation 2018;102(4):623–631 | [10.1097/TP.0000000000002047](https://doi.org/10.1097/TP.0000000000002047) |
+
+Three of these links are PubMed searches rather than DOIs, because the bibliographic record has not been re-verified; the extraction itself is sourced in `data/series.tsv`.
+
+
+---
 ## Data
 
 The main clinical dataset is:
