@@ -5,6 +5,11 @@ All notable changes to this repository are documented here. The format follows [
 ## [Unreleased]
 
 ### Changed
+- The calculator now uses the estimate the paper reports: the slope and interval come from the hierarchical model (`results/bayes_main.json`), not from the stratified fit, so the page and the manuscript can no longer disagree. Lowering the gradient by 5 mmHg gives OR 0.17 (0.07-0.38) instead of 0.14 (0.05-0.30); on a 10% baseline at 8 mmHg a patient at 12 mmHg reads 31.8% instead of 34.7%. Per-series levels still come from the stratified fit, which is what provides them.
+- A demo card, "Send us this case", copies one tab-separated row with the same columns as `data/cohort_template.tsv`; nothing leaves the browser.
+
+
+### Changed
 - The accompanying article is titled *Vascular resistance modulates portal flow–pressure decoupling in partial liver grafts*; it is recorded in `CITATION.cff` as the preferred citation and in the README.
 - **The model has a name and the indices have a shared identity.** The repository is LiPNet, the Liver Perfusion Network model, and the three quantities it defines are now named as loads: zF the normalised portal flow load, zP the normalised portal pressure load and zR = zP/zF = R_graft/R_donor the normalised resistance load, with
 
