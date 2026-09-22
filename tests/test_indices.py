@@ -19,6 +19,15 @@ def test_sources_parse_on_older_python():
         except SyntaxError as e:
             raise AssertionError(f'{os.path.relpath(f, ROOT)}:{e.lineno} is not valid on Python 3.9: {e.msg}')
 
+def test_load_identity():
+    """The three LiPNet loads and their identity: pressure load = flow load x resistance load."""
+    import pandas as pd, numpy as np
+    d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
+    both = d.dropna(subset=['zP', 'zF', 'zR'])
+    assert len(both) == 5 and np.allclose(both.zF * both.zR, both.zP), 'zP = zF * zR must hold exactly'
+    assert abs(indices.zR(2.0, 2.0) - 1.0) < 1e-12, 'a donor-resistance graft has zR = 1'
+    assert all(both.zR < 1), 'every graft measured on both scales here had its outflow enlarged'
+
 def test_indices_and_baseline():
     assert indices.zP(15, 5) == 2.0                    # PVP 15 at CVP 5 is twice the normal gradient
     assert indices.zP(gradient=10) == 2.0              # a reported gradient is used directly
@@ -131,6 +140,14 @@ def test_model_predictions():
         assert r['ess']['min'] > 400, f'P3 {k}: effective sample size'
         assert r['ppc_inside'] == r['ppc_total'], f'P3 {k}: posterior predictive check'
     assert p3['all_specifications_positive'] and p3['mu_range_across_specifications'][0] > 0, 'P3: specification curve'
+    ic = p3['index_contrast']                                   # same model on each index, matched on outcome
+    assert ic['matched_on_outcome'], 'the two arms must be restricted to the same outcome definition'
+    assert ic['zP, pressure per lobule']['mu_beta_ci'][0] > 0, 'the pressure interval must exclude zero'
+    assert 'prob_pressure_slope_exceeds_flow_slope' in ic, 'the comparison must be reported as a probability'
+    assert ic['zF, flow per lobule']['events'] < ic['zP, pressure per lobule']['events'], 'and its weakness stated'
+    a = p3['accounting']                                        # the material must be reported in full
+    assert a['series'] == 17 and a['groups'] == 31 and a['series_with_a_within_study_contrast'] == 5
+    assert p3['with_cutoff_groups']['mu_beta_ci'][0] > 0, 'P3: adding cut-off groups must not overturn it'
     assert all(v['directions_correct'] and v['log_score_gain'] > 0 for v in p3['conditional_iecv']), 'P3: conditional validation'
     assert all(pr['prob_positive'] > 0.9 for pr in p3['prior_sensitivity']), 'P3: prior sensitivity'
     assert P['P4_thresholds']['all_at_two'], 'P4'
@@ -147,8 +164,10 @@ def test_readme_matches_results():
     assert f"{p['mu_beta']:+.2f}" in readme and f"{p['OR_per_zP']:.2f}" in readme, 'README must quote the primary analysis'
     assert f"{p['prob_mu_positive']:.3f}" in readme
     assert 'assets/graphical_abstract.png' in readme
+    assert 'LiPNet' in readme and 'zP = zF × zR' in readme, 'the README must carry the model name and the identity'
+    assert 'liver_pressure_index' not in readme, 'stale repository name'
 
 if __name__ == '__main__':
-    for t in (test_sources_parse_on_older_python, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
+    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
               test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
