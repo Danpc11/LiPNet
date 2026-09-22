@@ -2,8 +2,8 @@
 ### A perfusion-network model of the liver, and the predictions it makes about partial grafts
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-[![Tests](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/liver_pressure_index/actions/workflows/tests.yml)
-[![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/liver_pressure_index/)
+[![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
+[![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 ## The model
@@ -19,15 +19,20 @@ D* ∝ F² C^(−2/b) N^((2−b)/b) L³        the optimum, a space-filling tree
 A partial graft is the fraction `g` of that network that remains, perfused with `h` times the donor inflow, so each lobule receives `h/g` times its donor flow. Written in measurable quantities:
 
 ```
-zF = graft PVF per 100 g / donor PVF per 100 g      flow per lobule, relative to the donor
-zP = (PVP − CVP) / 5 mmHg                           sinusoidal pressure, relative to normal
-zP = zF · (R_graft / R_donor)                       they are the same variable only at donor outflow resistance
+zF = graft PVF per 100 g / donor PVF per 100 g      normalised portal flow load
+zP = (PVP − CVP) / 5 mmHg                           normalised portal pressure load
+zR = zP / zF = R_graft / R_donor                    normalised resistance load
+
+                    zP = zF × zR
+        pressure load = flow load × resistance load
 ```
+
+All three loads equal 1 in a healthy donor, and the identity is the point of the model: flow and pressure are the same variable only while zR = 1. Any manoeuvre that enlarges the venous outflow lowers zR, which is how a graft can carry three or four times the donor's flow without the pressure that would normally come with it. That product is the hepatic haemodynamic load, and the two clinical thresholds in use have been approximating it from opposite sides.
 
 The model contains haemodynamics and nothing else: no recipient severity, no donor age, no steatosis. That is what makes it falsifiable.
 
 <p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: the liver as a dissipation-optimal perfusion network; a partial graft is a fraction of that network, and the portocaval gradient normalised to its physiological value is the load per lobule" width="820">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: LiPNet, the liver as a dissipation-optimal perfusion network; a partial graft carries a flow load, a resistance load and their product, the pressure load" width="820">
 </p>
 
 ## Four predictions, and what the data say
@@ -36,7 +41,7 @@ Run `python src/predictions.py`; every number below comes from `results/predicti
 
 **P1. The shear set-point must be invariant across mammals.** Portal pressure is 6–11 mmHg from mouse to human, so if the network is at its optimum, τ0 cannot scale with body mass. With the measured scalings (portal flow ~ M^0.77, portocentral distance ~ M^0.10), the predicted exponent of τ0 is within ±0.08 of zero for every maintenance exponent, and the predicted vascular mass exponent is 0.89–0.90 at b = 0.85–1.0 against the 0.86 observed for hepatic blood volume. This uses no transplant data at all.
 
-**P2. Flow and pressure must separate when the outflow is enlarged.** Five published groups report both indices. The four whose outflow was reconstructed (middle hepatic vein included, venoplasty, left lobe with the middle and left hepatic vein trunk, splenectomy) have `zP/zF` of 0.31, 0.55, 0.54 and 0.74, all below one as predicted, and outcomes of 0–10% despite flows of three to four times the donor's. No flow threshold and no pressure threshold predicts this; the ratio does.
+**P2. Flow and pressure must separate when the outflow is enlarged.** Five published groups report both indices. The four whose outflow was reconstructed (middle hepatic vein included, venoplasty, left lobe with the middle and left hepatic vein trunk, splenectomy) have `zR` of 0.31, 0.55, 0.54 and 0.74, all below one as predicted, and outcomes of 0–10% despite flows of three to four times the donor's. No flow threshold and no pressure threshold predicts this; the ratio does.
 
 **P3. Within a cohort, outcome must rise with zP, with a common slope and a centre-specific level.** The primary analysis is a hierarchical binomial model with the pressure index centred within each study, so a study's level and its association are not traded off against each other:
 
@@ -58,7 +63,7 @@ An individual risk model. The level of risk is centre-specific: at a gradient ne
 
 ## Calculator
 
-**https://danpc11.github.io/liver_pressure_index/** — one HTML file, runs in the browser. Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and an anchor for the level (your cohort's overall rate and average gradient, your rate at the current gradient, or one of the fitted series). It returns zP, zF, their ratio, the odds ratio for the change and the absolute risks that anchor implies. Slope and intercepts come from the same model, so the curve passes through the anchor.
+**https://danpc11.github.io/LiPNet/** — one HTML file, runs in the browser. Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and an anchor for the level (your cohort's overall rate and average gradient, your rate at the current gradient, or one of the fitted series). It returns zP, zF, their ratio, the odds ratio for the change and the absolute risks that anchor implies. Slope and intercepts come from the same model, so the curve passes through the anchor.
 
 To obtain your own baseline, `indices.baseline_from_rate(rate, mean_zP, beta)` gives `alpha = logit(rate) − beta·mean(zP)`, and `indices.recalibrate(outcomes, zP, beta)` fits the intercept on an audit with the slope held fixed. This is recalibration in the large, the first step of prediction-model updating (Steyerberg; Vergouwe et al., Stat Med 2017;36:4529; Janssen et al., Can J Anesth 2009;56:194).
 
@@ -94,6 +99,10 @@ Series: Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, 
 ## Limitations
 
 P3 rests on aggregated group data: five series from four centres, 104 events, three of which report the primary outcome, with Kyoto series overlapping in time. Assumed CVP does not affect the slope (a constant shift within a study is absorbed by its intercept), but it does move where groups sit on the axis. Aggregated data allow the likelihood, the deviance and observed-to-expected ratios; they cannot give a c-statistic, an individual calibration curve, a Brier score or a decision curve. P1, P2 and P4 do not depend on that analysis. The calculator is a research tool, not a medical device.
+
+## Publication
+
+The article this repository accompanies is titled **Vascular resistance modulates portal flow–pressure decoupling in partial liver grafts** (in preparation). Until a preprint exists, cite the archived software.
 
 ## Citation and licence
 
