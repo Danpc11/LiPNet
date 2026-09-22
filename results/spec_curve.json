@@ -143,6 +143,19 @@
   "OR_per_zP": 5.737114906311035
  },
  {
+  "spec": "one stratum per centre, not per publication",
+  "groups": 13,
+  "strata": 4,
+  "events": 106,
+  "mu_beta": 0.9168986082077026,
+  "mu_beta_ci": [
+   0.19512535631656647,
+   1.6452324390411377
+  ],
+  "prob_positive": 0.9895833333333334,
+  "OR_per_zP": 2.5015203952789307
+ },
+ {
   "spec": "assumed CVP 3 mmHg",
   "groups": 11,
   "strata": 5,
