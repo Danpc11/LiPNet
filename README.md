@@ -26,6 +26,10 @@ zP = zF · (R_graft / R_donor)                       they are the same variable 
 
 The model contains haemodynamics and nothing else: no recipient severity, no donor age, no steatosis. That is what makes it falsifiable.
 
+<p align="center">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: the liver as a dissipation-optimal perfusion network; a partial graft is a fraction of that network, and the portocaval gradient normalised to its physiological value is the load per lobule" width="820">
+</p>
+
 ## Four predictions, and what the data say
 
 Run `python src/predictions.py`; every number below comes from `results/predictions.json`.
@@ -37,11 +41,6 @@ Run `python src/predictions.py`; every number below comes from `results/predicti
 **P3. Within a cohort, outcome must rise with zP, with a common slope and a centre-specific level.** In the eleven groups from five series that provide a within-cohort contrast, every pair moves in the predicted direction. The common slope is 1.96 (95% CI 1.22–3.02), OR 7.09 per unit of zP and 1.48 per mmHg; a hierarchical model with a random slope per study gives μ_β = 0.89 (95% CrI 0.23–1.57), P(effect > 0) = 0.99. The intercepts span 3.8 logits, exactly as the model implies, since it says nothing about what sets a centre's baseline. Leaving out one centre at a time and recalibrating only its intercept, the slope estimated without it (Cairo 1.95, Fukuoka 2.03, Kyoto 1.85) matches the slope inside it (2.00, 1.78, 2.04), with observed and expected events agreeing (O/E 1.00).
 
 **P4. Thresholds from three different fields must coincide on this scale.** Clinically significant portal hypertension (HVPG ≥ 10 mmHg), the graft threshold (PVP 15 mmHg at CVP 5) and the limit above which a cirrhotic remnant is pushed after resection are all zP = 2; variceal bleeding (HVPG ≥ 12) is 2.4. Three thresholds derived independently, in cirrhosis, transplantation and hepatic surgery, land on the same normalised value.
-
-
-<p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: the liver as a dissipation-optimal perfusion network; a partial graft is a fraction of that network, and the portocaval gradient normalised to its physiological value is the load per lobule" width="520">
-</p>
 
 ## What this is not
 
