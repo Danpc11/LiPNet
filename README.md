@@ -28,9 +28,7 @@ LiPNet approaches this problem by treating the liver as a vascular transport net
 
 The central result is:
 
-$$ \boxed{z_P = z_F z_R} $$ or, in words,
-
-$$\boxed{\text{pressure load}=\text{flow load}\times\text{resistance load}}$$
+$$\boxed{z_P = z_F z_R}$$ or, in words, $$\boxed{\text{pressure load}=\text{flow load}\times\text{resistance load}}$$
 
 The model therefore separates three components of hepatic haemodynamics:
 
