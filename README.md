@@ -27,7 +27,7 @@ All three loads equal 1 in a healthy donor, and the identity is the point of the
 The model contains haemodynamics and nothing else: no recipient severity, no donor age, no steatosis. That is what makes it falsifiable.
 
 <p align="center">
-  <img src="assets/graphical_abstract.png" alt="Graphical abstract: LiPNet, the liver as a dissipation-optimal perfusion network; a partial graft carries a flow load, a resistance load and their product, the pressure load" width="820">
+  <img src="assets/graphical_abstract.png" alt="Graphical abstract: LiPNet, the liver as a dissipation-optimal perfusion network; a partial graft carries a flow load, a resistance load and their product, the pressure load" width="520">
 </p>
 
 ## Four predictions, and what the data say
