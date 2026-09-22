@@ -54,9 +54,7 @@ The network is assumed to operate near an energetic optimum.
 
 We minimise dissipated power while keeping vascular maintenance cost fixed:
 
-$$
-\sum_e m_e^b
-$$
+$$\sum_e m_e^b$$
 
 where:
 
@@ -65,25 +63,15 @@ where:
 
 This gives:
 
-$$
-D^\* \propto
-F^{2}
-C^{-2/b}
-N^{(2-b)/b}
-L^{3},
-$$
+$$D^\* \proptoF^{2}C^{-2/b}N^{(2-b)/b}L^{3},$$
 
 together with a characteristic wall-shear set-point:
 
-$$
-\tau_0=\sqrt{D^\*/C},
-$$
+$$\tau_0=\sqrt{D^\*/C},$$
 
 and the pressure drop across a lobule:
 
-$$
-\Delta P=fR.
-$$
+$$\Delta P=fR.$$
 
 Here:
 
@@ -106,9 +94,7 @@ Consider a partial graft that contains a fraction $g$ of the donor liver network
 
 If the graft receives $h$ times the donor inflow, each remaining lobule receives approximately:
 
-$$
-\frac{h}{g}
-$$
+$$\frac{h}{g}$$
 
 times its original donor flow.
 
@@ -126,47 +112,29 @@ LiPNet expresses this behaviour using measurable clinical quantities.
 
 The normalized portal flow load is:
 
-$$
-z_F=
-\frac{
-\text{graft PVF per }100\,\text{g}
-}{
-\text{donor PVF per }100\,\text{g}
-}.
-$$
+$$z_F=\frac{\text{graft PVF per }100\,\text{g}}{\text{donor PVF per }100\,\text{g}}.$$
 
 Here, PVF is portal venous flow.
 
 A value of:
 
-$$
-z_F=1
-$$
+$$z_F=1$$
 
 means that the graft receives the same portal flow per unit mass as the healthy donor liver.
 
 A value of:
 
-$$
-z_F=3
-$$
+$$z_F=3$$
 
 means that each unit of graft tissue receives approximately three times the donor flow.
 
 ---
 
-### Pressure load
+#### Pressure load
 
 The normalized pressure load is:
 
-$$
-z_P=
-\frac{
-\text{PVP}-\text{CVP}
-}{
-5\ \text{mmHg}
-}.
-$$
+$$z_P=\frac{\text{PVP}-\text{CVP}}{5\ \text{mmHg}}.$$
 
 where:
 
@@ -177,86 +145,57 @@ The denominator of 5 mmHg represents a normal portal-to-central venous pressure 
 
 Therefore:
 
-$$
-z_P=1
-$$
+$$z_P=1$$
 
 represents the normal donor state.
 
 ---
 
-### Resistance load
+#### Resistance load
 
 The normalized resistance load is:
 
-$$
-z_R=
-\frac{z_P}{z_F}
-=
-\frac{
-R_{\text{graft}}
-}{
-R_{\text{donor}}
-}.
-$$
+$$z_R=\frac{z_P}{z_F}=\frac{R_{\text{graft}}}{R_{\text{donor}}}.$$
 
 This gives the central identity of LiPNet:
 
-$$
-\boxed{
-z_P=z_Fz_R
-}
-$$
+$$\boxed{z_P=z_Fz_R}$$
 
 All three quantities equal 1 in a healthy donor:
 
-$$
-z_F=z_P=z_R=1.
-$$
+$$z_F=z_P=z_R=1.$$
 
 This identity is the main point of the model.
 
 Flow and pressure are equivalent normalized loads only when:
 
-$$
-z_R=1.
-$$
+$$z_R=1.$$
 
 When graft resistance changes, flow and pressure separate.
 
 ---
 
-## Why resistance matters
+### Why resistance matters
 
 Suppose a partial graft receives three times the donor flow:
 
-$$
-z_F=3.
-$$
+$$z_F=3.$$
 
 If resistance remains equal to the donor value:
 
-$$
-z_R=1,
-$$
+$$z_R=1,$$
 
 then:
 
-$$
-z_P=3.
-$$
+$$z_P=3.$$
 
 But if venous reconstruction reduces effective resistance to:
 
-$$
-z_R=0.5,
-$$
+$$z_R=0.5,$$
 
 then:
 
-$$
-z_P=3\times0.5=1.5.
-$$
+$$z_P=3\times0.5=1.5.$$
 
 The graft therefore carries very high flow without developing the pressure expected from flow alone.
 
@@ -321,7 +260,7 @@ The four predictions test different parts of the model.
 
 ---
 
-## P1. The hepatic shear set-point should be nearly invariant across mammals
+### P1. The hepatic shear set-point should be nearly invariant across mammals
 
 The first prediction does not use transplant data.
 
@@ -331,23 +270,15 @@ If the liver vascular network operates near the predicted optimum, the character
 
 Using published allometric relationships:
 
-$$
-\text{portal flow}\sim M^{0.77}
-$$
+$$\text{portal flow}\sim M^{0.77}$$
 
 and:
 
-$$
-\text{portocentral distance}\sim M^{0.10},
-$$
+$$\text{portocentral distance}\sim M^{0.10},$$
 
 LiPNet predicts that the body-mass exponent of $\tau_0$ remains between:
 
-$$
--0.077
-\quad\text{and}\quad
-+0.071
-$$
+$$-0.077\quad\text{and}\quad+0.071$$
 
 over the full prespecified range of vascular maintenance exponents.
 
@@ -359,21 +290,17 @@ The vascular mass prediction provides a second, weaker test.
 
 Across the same range of maintenance exponents, the predicted vascular mass exponent is:
 
-$$
-0.89-1.08.
-$$
+$$0.89-1.08.$$
 
 The reported range for hepatic blood volume is approximately:
 
-$$
-0.80-0.92.
-$$
+$$0.80-0.92.$$
 
 About 18% of the prespecified model range overlaps with the observed range.
 
 No value of $b$ was selected to improve agreement with the observation.
 
-### Interpretation
+#### Interpretation
 
 The allometric analysis tests the physical structure of LiPNet independently of liver transplantation.
 
@@ -385,15 +312,11 @@ It asks whether the same network principle can remain physiologically reasonable
 
 The central mechanistic prediction follows directly from:
 
-$$
-z_P=z_Fz_R.
-$$
+$$z_P=z_Fz_R.$$
 
 If venous outflow is enlarged:
 
-$$
-z_R<1.
-$$
+$$z_R<1.$$
 
 Portal pressure should then be lower than expected from portal flow alone.
 
@@ -408,27 +331,17 @@ Four of these groups had reconstructed or functionally enlarged outflow:
 
 Their resistance loads were:
 
-$$
-z_R=
-0.31,\;
-0.55,\;
-0.54,\;
-0.74.
-$$
+$$z_R=0.31,\;0.55,\;0.54,\;0.74.$$
 
 All four values were below 1, as predicted.
 
 The exact sign test gives:
 
-$$
-p=0.06.
-$$
+$$p=0.06.$$
 
 When the reported uncertainty in flow and pressure is propagated, each reconstructed group remains below:
 
-$$
-z_R=1
-$$
+$$z_R=1$$
 
 with probability approximately 1.00.
 
@@ -448,7 +361,7 @@ The most direct evidence for flow-pressure separation therefore comes from graft
 
 ---
 
-## P3. Within a cohort, outcome should increase with pressure load
+### P3. Within a cohort, outcome should increase with pressure load
 
 If $z_P$ reflects the haemodynamic burden experienced by the graft, higher pressure load should be associated with worse outcomes within the same clinical cohort.
 
@@ -484,9 +397,7 @@ However, this does **not** prove that pressure is statistically superior to flow
 
 The probability that the pressure slope is larger than the flow slope is:
 
-$$
-P(\mu_{z_P}>\mu_{z_F})=0.77.
-$$
+$$P(\mu_{z_P}>\mu_{z_F})=0.77.$$
 
 The flow analysis also contains less information:
 
@@ -503,18 +414,13 @@ When the series defined by a pressure-gradient cut-off is added, the analysis co
 
 with:
 
-$$
-\mu_\beta=
-+1.96
-\quad
-(95\%\ \text{CrI }+1.13\text{ to }+2.81).
-$$
+$$\mu_\beta=+1.96\quad(95\%\ \text{CrI }+1.13\text{ to }+2.81).$$
 
 The main evidence that flow and pressure are not interchangeable remains Prediction 2, where both quantities are measured in the same graft groups.
 
 ---
 
-## Hierarchical model
+### Hierarchical model
 
 The main pressure analysis uses a hierarchical binomial model.
 
@@ -548,7 +454,7 @@ This is important because baseline outcome rates vary strongly across centres.
 
 ---
 
-## Primary clinical result
+### Primary clinical result
 
 For the primary outcome of small-for-size syndrome or early dysfunction:
 
@@ -559,55 +465,35 @@ For the primary outcome of small-for-size syndrome or early dysfunction:
 
 The estimated mean slope was:
 
-$$
-\mu_\beta=
-+1.55
-$$
+$$\mu_\beta=+1.55$$
 
 with:
 
-$$
-95\%\ \text{CrI}=
-+0.33\text{ to }+2.79.
-$$
+$$95\%\ \text{CrI}=+0.33\text{ to }+2.79.$$
 
 This corresponds to an odds ratio of:
 
-$$
-OR=4.70
-$$
+$$OR=4.70$$
 
 per unit increase in $z_P$.
 
 The posterior probability of a positive association was:
 
-$$
-P(\mu_\beta>0)=0.990.
-$$
+$$P(\mu_\beta>0)=0.990.$$
 
 For the secondary outcome of mortality or graft loss:
 
-$$
-\mu_\beta=
-+1.74
-\quad
-(95\%\ \text{CrI }+0.60\text{ to }+2.86).
-$$
+$$\mu_\beta=+1.74\quad(95\%\ \text{CrI }+0.60\text{ to }+2.86).$$
 
 When primary and secondary outcomes were combined:
 
-$$
-\mu_\beta=
-+1.79
-\quad
-(95\%\ \text{CrI }+0.97\text{ to }+2.64).
-$$
+$$\mu_\beta=+1.79\quad(95\%\ \text{CrI }+0.97\text{ to }+2.64).$$
 
 Every within-study comparison moved in the predicted direction.
 
 ---
 
-## Model diagnostics
+### Model diagnostics
 
 The hierarchical model was sampled using NUTS with four chains.
 
@@ -622,7 +508,7 @@ These results indicate stable sampling for the primary model.
 
 ---
 
-## Sensitivity analyses
+### Sensitivity analyses
 
 The pressure-load association was tested across 15 alternative specifications.
 
@@ -637,78 +523,47 @@ These included changes in:
 
 Across these specifications:
 
-$$
-\mu_\beta
-$$
+$$\mu_\beta$$
 
 remained between:
 
-$$
-+0.92
-\quad\text{and}\quad
-+1.93.
-$$
+$$+0.92\quad\text{and}\quad+1.93.$$
 
 The association remained positive in every specification.
 
 The most conservative analysis combined publications from the same centre into a single stratum:
 
-$$
-\mu_\beta=
-+0.92
-\quad
-(95\%\ \text{CrI }+0.20\text{ to }+1.65).
-$$
+$$\mu_\beta=+0.92\quad(95\%\ \text{CrI }+0.20\text{ to }+1.65).$$
 
 The prior on between-study variation has an effect, as expected with a small number of studies.
 
 Using:
 
-$$
-\tau\sim\text{HalfNormal}(0.25)
-$$
+$$\tau\sim\text{HalfNormal}(0.25)$$
 
 gives:
 
-$$
-\mu_\beta=+1.60,
-\qquad
-P(\mu_\beta>0)=0.998.
-$$
+$$\mu_\beta=+1.60,\qquadP(\mu_\beta>0)=0.998.$$
 
 Using:
 
-$$
-\tau\sim\text{HalfNormal}(1.0)
-$$
+$$\tau\sim\text{HalfNormal}(1.0)$$
 
 gives:
 
-$$
-\mu_\beta=
-+1.46
-\quad
-(-0.07,\,+2.84),
-$$
+$$\mu_\beta=+1.46\quad(-0.07,\,+2.84),$$
 
 with:
 
-$$
-P(\mu_\beta>0)=0.970.
-$$
+$$P(\mu_\beta>0)=0.970.$$
 
 When uncertainty in the calculated indices is propagated by drawing CVP values between 3 and 9 mmHg:
 
-$$
-\mu_\beta=
-+1.74
-\quad
-(95\%\ \text{CrI }+0.89\text{ to }+2.63).
-$$
+$$\mu_\beta=+1.74\quad(95\%\ \text{CrI }+0.89\text{ to }+2.63).$$
 
 ---
 
-## Internal-external validation
+### Internal-external validation
 
 Validation was performed by leaving out one centre at a time.
 
@@ -732,17 +587,13 @@ When the true effect was zero, the model did not incorrectly exclude zero.
 
 For:
 
-$$
-\mu=1,
-$$
+$$\mu=1,$$
 
 the interval excluded zero in approximately 60% of simulations.
 
 For:
 
-$$
-\mu=2,
-$$
+$$\mu=2,$$
 
 it excluded zero in all simulations.
 
@@ -750,53 +601,37 @@ The between-study variance $\tau_\beta$ cannot be estimated precisely with only 
 
 ---
 
-## P4. Clinical thresholds from different liver fields converge on the same scale
+### P4. Clinical thresholds from different liver fields converge on the same scale
 
 LiPNet predicts that haemodynamic thresholds developed independently in different clinical settings should become comparable when expressed as normalized pressure load.
 
 This is what is observed.
 
-### Portal hypertension
+#### Portal hypertension
 
 Clinically significant portal hypertension is defined by:
 
-$$
-HVPG\geq10\ \text{mmHg}.
-$$
+$$HVPG\geq10\ \text{mmHg}.$$
 
 On the LiPNet scale:
 
-$$
-z_P=
-\frac{10}{5}
-=
-2.
-$$
+$$z_P=\frac{10}{5}=2.$$
 
 ---
 
-### Partial liver grafts
+#### Partial liver grafts
 
 A commonly used graft threshold is:
 
-$$
-PVP=15\ \text{mmHg}
-$$
+$$PVP=15\ \text{mmHg}$$
 
 with:
 
-$$
-CVP=5\ \text{mmHg}.
-$$
+$$CVP=5\ \text{mmHg}.$$
 
 Therefore:
 
-$$
-z_P=
-\frac{15-5}{5}
-=
-2.
-$$
+$$z_P=\frac{15-5}{5}=2.$$
 
 ---
 
@@ -806,32 +641,23 @@ For a cirrhotic liver with a baseline pressure gradient of approximately 10 mmHg
 
 The same normalized threshold appears around:
 
-$$
-z_P=2.
-$$
+$$z_P=2.$$
 
 ---
 
-### Variceal bleeding
+#### Variceal bleeding
 
 A pressure gradient associated with variceal bleeding is approximately:
 
-$$
-HVPG\geq12\ \text{mmHg}.
-$$
+$$HVPG\geq12\ \text{mmHg}.$$
 
 This corresponds to:
 
-$$
-z_P=
-\frac{12}{5}
-=
-2.4.
-$$
+$$z_P=\frac{12}{5}=2.4.$$
 
 ---
 
-### Interpretation
+#### Interpretation
 
 Thresholds developed independently in:
 
@@ -844,15 +670,13 @@ map onto a similar normalized pressure-load scale.
 
 The repeated appearance of:
 
-$$
-z_P\approx2
-$$
+$$z_P\approx2$$
 
 suggests a common haemodynamic regime.
 
 ---
 
-# What LiPNet is not
+## What LiPNet is not
 
 LiPNet is **not an individual risk-prediction model**.
 
@@ -862,31 +686,19 @@ For example, at similar pressure gradients, different published series report ve
 
 A single logistic curve fitted across all centres gives little useful information:
 
-$$
-\text{slope}=0.11
-$$
+$$\text{slope}=0.11$$
 
 with:
 
-$$
-95\%\ \text{CI}=-0.25\text{ to }0.46.
-$$
+$$95\%\ \text{CI}=-0.25\text{ to }0.46.$$
 
 The across-series rank correlation between $z_P$ and outcome is also weak:
 
-$$
-\rho=0.23,
-\qquad
-p=0.399.
-$$
+$$\rho=0.23,\qquadp=0.399.$$
 
 For portal flow per gram:
 
-$$
-\rho=0.27,
-\qquad
-p=0.388.
-$$
+$$\rho=0.27,\qquadp=0.388.$$
 
 This is expected from the model.
 
@@ -896,7 +708,7 @@ The transferable quantity is the **change in risk associated with a change in ha
 
 ---
 
-# Whole-graft extension
+## Whole-graft extension
 
 The same framework can also be applied to whole grafts.
 
@@ -924,37 +736,29 @@ with possible collateral pathways.
 
 For the vascular anastomoses:
 
-$$
-R_{\text{in}}\propto d_{\text{in}}^{-4}
-$$
+$$R_{\text{in}}\propto d_{\text{in}}^{-4}$$
 
 and:
 
-$$
-R_{\text{out}}\propto d_{\text{out}}^{-4}.
-$$
+$$R_{\text{out}}\propto d_{\text{out}}^{-4}.$$
 
 This produces asymmetric haemodynamic effects.
 
-### Inlet narrowing
+#### Inlet narrowing
 
 If portal inflow is restricted, both:
 
-$$
-z_F
-$$
+$$z_F$$
 
 and:
 
-$$
-z_P
-$$
+$$z_P$$
 
 decrease together.
 
 This behaviour is consistent with low-flow states and portal steal.
 
-### Outlet narrowing
+#### Outlet narrowing
 
 If hepatic venous outflow is restricted, effective resistance increases.
 
@@ -962,23 +766,19 @@ Portal pressure therefore rises more strongly than portal flow.
 
 This produces:
 
-$$
-z_R>1
-$$
+$$z_R>1$$
 
 and is consistent with venous congestion or outflow obstruction.
 
 Thus, inlet and outlet lesions move the graft in different directions in the:
 
-$$
-(z_F,z_P)
-$$
+$$(z_F,z_P)$$
 
 plane.
 
 ---
 
-# Calculator
+## Calculator
 
 A browser-based research calculator is available at:
 
@@ -1005,32 +805,21 @@ The slope and uncertainty come from the hierarchical model described above.
 
 If a user provides a reference probability:
 
-$$
-p_{\mathrm{ref}}
-$$
+$$p_{\mathrm{ref}}$$
 
 at pressure load:
 
-$$
-z_{\mathrm{ref}},
-$$
+$$z_{\mathrm{ref}},$$
 
 the model uses:
 
-$$
-\operatorname{logit}p(z)
-=
-\operatorname{logit}p_{\mathrm{ref}}
-+
-\mu_\beta
-(z-z_{\mathrm{ref}}).
-$$
+$$\operatorname{logit}p(z)=\operatorname{logit}p_{\mathrm{ref}}+\mu_\beta(z-z_{\mathrm{ref}}).$$
 
 The resulting curve therefore passes through the supplied clinical anchor.
 
 ---
 
-## Recalibration
+### Recalibration
 
 A centre can estimate its own baseline using:
 
@@ -1056,7 +845,7 @@ This corresponds to recalibration-in-the-large, a standard first step in predict
 
 ---
 
-# Repository structure
+## Repository structure
 
 ```text
 src/model/
@@ -1098,7 +887,7 @@ run_all.sh
 
 ---
 
-# Reproduce the analysis
+## Reproduce the analysis
 
 Install the dependencies:
 
@@ -1155,7 +944,7 @@ run_all.sh
 
 ---
 
-# Data
+## Data
 
 The main clinical dataset is:
 
@@ -1211,7 +1000,7 @@ results/sensitivity.tsv
 
 ---
 
-## Included clinical series
+### Included clinical series
 
 The dataset includes the following published series:
 
@@ -1235,7 +1024,7 @@ The dataset includes the following published series:
 
 ---
 
-# Limitations
+## Limitations
 
 The main clinical analysis uses aggregated group-level data.
 
@@ -1279,7 +1068,7 @@ It is not a medical device and should not be used as a stand-alone tool for clin
 
 ---
 
-# Main interpretation
+## Main interpretation
 
 LiPNet proposes a simple physical interpretation of hepatic haemodynamics.
 
@@ -1289,11 +1078,7 @@ The same portal flow can produce different portal pressures depending on vascula
 
 The central relationship is:
 
-$$
-\boxed{
-z_P=z_Fz_R
-}
-$$
+$$\boxed{z_P=z_Fz_R}$$
 
 where:
 
@@ -1316,7 +1101,7 @@ LiPNet is therefore intended as a mechanistic framework rather than an individua
 
 ---
 
-# Publication
+## Publication
 
 The article associated with this repository is currently in preparation:
 
@@ -1326,7 +1111,7 @@ Until a preprint is available, please cite the archived software release.
 
 ---
 
-# Citation
+## Citation
 
 The software is archived on Zenodo:
 
@@ -1340,7 +1125,7 @@ CITATION.cff
 
 ---
 
-# Licence
+## Licence
 
 Source code is distributed under:
 
@@ -1350,11 +1135,3 @@ https://polyformproject.org/licenses/noncommercial/1.0.0
 
 Clinical values stored in `data/` remain the intellectual property of the authors of the original publications.
 
----
-
-# Funding
-
-This work was supported by:
-
-- **DGAPA-PAPIIT IN234029**
-- **SECIHTI CBF-2025-G-789**
