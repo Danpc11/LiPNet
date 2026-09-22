@@ -27,7 +27,8 @@ slope, fitted with one intercept per study and a common slope:
 
     logit(p) = alpha_study + beta * zP
 
-The primary estimate is this stratified fit; meta_slope() repeats it as a random-effects meta-analysis of the
+The primary estimate of the effect is the hierarchical model in src/bayes.py (NUTS, zP centred within study);
+this stratified fit provides the per-series levels used by the calculator and the descriptive views; meta_slope() repeats it as a random-effects meta-analysis of the
 per-stratum slopes (sensitivity, and a measure of the heterogeneity), overdispersion() checks for extra-binomial
 spread and centred() is a descriptive view on a common scale. beta is the transferable parameter (the change in odds per unit of zP, i.e. per 5 mmHg of gradient); alpha is
 not transferable and must be supplied by the user as their own baseline rate. The pooled common-intercept fit is
@@ -299,89 +300,6 @@ def risk_after(baseline_rate, delta_zP, beta):
     return odds / (1 + odds)
 
 # ---------------------------------------------------------------- hierarchical model and validation
-def bayes_hierarchical(s, draws=20000, burn=5000, thin=5, seed=0, primary_only=True):
-    """Hierarchical binomial model with a random slope per study.
-
-        E_gs ~ Binomial(N_gs, p_gs),  logit(p_gs) = alpha_{s,o} + beta_s * zP_gs,  beta_s ~ N(mu_beta, tau_beta^2)
-
-    alpha is free per stratum (study x outcome definition), beta varies by study around mu_beta. With five series a
-    classical estimate of tau2 collapses to zero; sampling the posterior keeps that uncertainty visible instead.
-    Weakly informative priors: alpha ~ N(0, 2.5^2), mu_beta ~ N(0, 1.5^2), tau_beta ~ half-normal(0.5).
-    Random-walk Metropolis within Gibbs; returns posterior summaries for mu_beta, tau_beta and each beta_s.
-    """
-    if primary_only: s = s[s.outcome_type == 'SFSS_or_dysfunction']
-    st = strata(s).values; studies = sorted(set(s.study)); strat = sorted(set(st))
-    Si = np.array([studies.index(x) for x in s.study]); Ai = np.array([strat.index(x) for x in st])
-    z = s.zP.values; ev = s.events.values.astype(float); n = s.n.values.astype(float)
-    ns, na = len(studies), len(strat)
-
-    def logpost(alpha, beta, mu, log_tau):
-        tau = np.exp(log_tau)
-        lp = alpha[Ai] + beta[Si] * z
-        p = np.clip(1 / (1 + np.exp(-lp)), 1e-12, 1 - 1e-12)
-        ll = np.sum(ev * np.log(p) + (n - ev) * np.log(1 - p))
-        pr = (-0.5 * np.sum((alpha / 2.5) ** 2) - 0.5 * np.sum(((beta - mu) / tau) ** 2) - ns * log_tau
-              - 0.5 * (mu / 1.5) ** 2 - 0.5 * (tau / 0.5) ** 2 + log_tau)     # half-normal on tau, Jacobian
-        return ll + pr
-
-    rng = np.random.default_rng(seed)
-    alpha = np.full(na, -2.0); beta = np.full(ns, 1.5); mu, log_tau = 1.5, np.log(0.3)
-    cur = logpost(alpha, beta, mu, log_tau); step = dict(a=0.35, b=0.35, m=0.3, t=0.3); keep = []
-    for it in range(draws):
-        for i in range(na):
-            prop = alpha.copy(); prop[i] += rng.normal(0, step['a']); new = logpost(prop, beta, mu, log_tau)
-            if np.log(rng.random()) < new - cur: alpha, cur = prop, new
-        for i in range(ns):
-            prop = beta.copy(); prop[i] += rng.normal(0, step['b']); new = logpost(alpha, prop, mu, log_tau)
-            if np.log(rng.random()) < new - cur: beta, cur = prop, new
-        prop = mu + rng.normal(0, step['m']); new = logpost(alpha, beta, prop, log_tau)
-        if np.log(rng.random()) < new - cur: mu, cur = prop, new
-        prop = log_tau + rng.normal(0, step['t']); new = logpost(alpha, beta, mu, prop)
-        if np.log(rng.random()) < new - cur: log_tau, cur = prop, new
-        if it >= burn and (it - burn) % thin == 0: keep.append(np.r_[mu, np.exp(log_tau), beta])
-    K = np.array(keep); q = lambda x: [float(np.percentile(x, 2.5)), float(np.percentile(x, 97.5))]
-    return dict(draws=int(len(K)), studies=studies, strata=strat, groups=int(len(s)), events=int(ev.sum()),
-                mu_beta=float(K[:, 0].mean()), mu_beta_ci=q(K[:, 0]),
-                OR_per_zP=float(np.exp(K[:, 0].mean())), OR_per_zP_ci=[float(np.exp(x)) for x in q(K[:, 0])],
-                OR_per_mmHg=float(np.exp(K[:, 0].mean() / NORMAL_GRADIENT)),
-                tau_beta=float(K[:, 1].mean()), tau_beta_ci=q(K[:, 1]),
-                prob_mu_positive=float((K[:, 0] > 0).mean()),
-                beta_by_study={st_: dict(mean=float(K[:, 2 + i].mean()), ci=q(K[:, 2 + i])) for i, st_ in enumerate(studies)},
-                prediction_interval=[float(np.percentile(K[:, 0] + K[:, 1] * np.random.default_rng(1).normal(size=len(K)), p)) for p in (2.5, 97.5)])
-
-
-def iecv(s, by='centre_id'):
-    """Internal-external cross-validation: leave one centre out, fit the slope on the rest, apply it to the held-out
-    centre recalibrating only its intercept, and compare observed with predicted events. Aggregated data allow the
-    binomial log-likelihood, the deviance and the observed-to-expected ratio; they do not allow a c-statistic, an
-    individual calibration curve, a Brier score or decision-curve analysis."""
-    out = []
-    for held in sorted(s[by].dropna().unique()):
-        train = contributing(s[s[by] != held]); test = s[s[by] == held]
-        test = test.groupby(strata(test).values).filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
-        if len(train) < 4 or len(test) < 2: continue
-        beta = within_study_fit(train, boot=0, _inner=True)['beta']
-        rows = []
-        for st_, g in test.groupby(strata(test).values):
-            z = g.zP.values; ev = g.events.values.astype(float); n = g.n.values.astype(float)
-            off = beta * z
-            f = lambda a: -np.sum(ev * np.log(np.clip(1 / (1 + np.exp(-(a[0] + off))), 1e-9, 1 - 1e-9))
-                                  + (n - ev) * np.log(np.clip(1 - 1 / (1 + np.exp(-(a[0] + off))), 1e-9, 1 - 1e-9)))
-            a = float(minimize(f, [-2.0]).x[0])
-            p = 1 / (1 + np.exp(-(a + off))); exp_ = n * p
-            ll = float(np.sum(ev * np.log(np.clip(p, 1e-9, 1)) + (n - ev) * np.log(np.clip(1 - p, 1e-9, 1))))
-            rows.append(dict(stratum=st_, alpha=a, observed=int(ev.sum()), expected=float(exp_.sum()), loglik=ll,
-                             max_abs_rate_error=float(np.max(np.abs(ev / n - p)) * 100)))
-        own = within_study_fit(test, boot=0, _inner=True)['beta'] if len(test) >= 2 else np.nan
-        out.append(dict(held_out=held, beta_from_others=float(beta), beta_in_held_out=float(own),
-                        groups=int(len(test)), observed=int(sum(r['observed'] for r in rows)),
-                        expected=float(sum(r['expected'] for r in rows)),
-                        OE=float(sum(r['observed'] for r in rows) / max(sum(r['expected'] for r in rows), 1e-9)),
-                        loglik=float(sum(r['loglik'] for r in rows)),
-                        max_abs_rate_error_pct=float(max(r['max_abs_rate_error'] for r in rows)), strata=rows))
-    return out
-
-
 def cvp_scenarios(d, values=(3.0, 5.0, 7.0, 9.0)):
     """How the effect moves if the assumed CVP is 3, 5, 7 or 9 mmHg instead of 5, for the groups where it was imputed."""
     out = []
@@ -442,24 +360,10 @@ def main(boot=2000, seed=0):
     print(f"  scenario analysis: assuming a within-group SD of {att['within_group_sd_mmHg']} mmHg, perturbing the reported "
           f"group means changes the slope by about {att['loss_pct']:.0f}%")
 
-    bay = {k: bayes_hierarchical(contrib, primary_only=(k == 'primary')) for k in ('primary', 'all')}
-    val = iecv(contrib); cvps = cvp_scenarios(d)
-    json.dump(dict(bayes=bay, iecv=val, cvp_scenarios=cvps), open(f'{OUT}/hierarchical.json', 'w'), indent=1)
-    b = bay['primary']; ba = bay['all']
-    print(f"\nHierarchical binomial model (random slope per study, weakly informative priors)")
-    print(f"  primary outcome (SFSS or early dysfunction): {b['groups']} groups from {len(b['studies'])} studies, {b['events']} events")
-    print(f"    mu_beta {b['mu_beta']:.2f} (95% CrI {b['mu_beta_ci'][0]:.2f} to {b['mu_beta_ci'][1]:.2f}), OR {b['OR_per_zP']:.2f} "
-          f"({b['OR_per_zP_ci'][0]:.2f}-{b['OR_per_zP_ci'][1]:.2f}) per unit zP, {b['OR_per_mmHg']:.2f} per mmHg; "
-          f"tau {b['tau_beta']:.2f}; P(effect > 0) = {b['prob_mu_positive']:.2f}")
-    print(f"  all outcomes: {ba['groups']} groups from {len(ba['studies'])} studies, {ba['events']} events; "
-          f"mu_beta {ba['mu_beta']:.2f} ({ba['mu_beta_ci'][0]:.2f} to {ba['mu_beta_ci'][1]:.2f}), P(effect > 0) = {ba['prob_mu_positive']:.2f}")
-    print(f"    prediction interval for the slope in a new study: {ba['prediction_interval'][0]:.2f} to {ba['prediction_interval'][1]:.2f}")
-    print("  internal-external cross-validation, leaving out one centre at a time:")
-    for r_ in val:
-        print(f"    {r_['held_out']:10s} slope from the others {r_['beta_from_others']:.2f}, in the held-out centre {r_['beta_in_held_out']:.2f}; "
-              f"observed {r_['observed']} vs expected {r_['expected']:.1f} (O/E {r_['OE']:.2f}), largest rate error {r_['max_abs_rate_error_pct']:.1f} points")
+    cvps = cvp_scenarios(d)
+    json.dump(dict(cvp_scenarios=cvps), open(f'{OUT}/cvp_scenarios.json', 'w'), indent=1)
     slopes = ", ".join("%.2f" % x["beta"] for x in cvps)
-    print("  assumed CVP of 3, 5, 7 or 9 mmHg: slope " + slopes +
+    print("\nAssumed CVP of 3, 5, 7 or 9 mmHg: slope " + slopes +
           "  (a constant shift within a study is absorbed by its intercept)")
 
     sf = m[(m.outcome_type == 'SFSS_or_dysfunction')]
