@@ -86,6 +86,9 @@ def p3_within_cohort(d):
     sensitivity to the prior on tau, the overlap analysis for the Kyoto series, and the conditional
     internal-external validation, which scores the slope without fitting anything on the held-out centre."""
     import bayes
+    missing = [f for f in ('fit', 'index_contrast', 'with_cutoff_groups', 'conditional_iecv', 'spec_curve',
+                           'prior_sensitivity', 'monte_carlo_measurement', 'recovery') if not hasattr(bayes, f)]
+    if missing: raise RuntimeError('src/bayes.py is out of date, missing: ' + ', '.join(missing))
     c = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]
     def read(name, make):
         f = f'{OUT}/{name}.json'
