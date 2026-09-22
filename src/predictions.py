@@ -54,12 +54,12 @@ def p1_allometry():
 
 def p2_discordance(d, draws=4000, seed=0):
     """Mechanistic contrast, kept apart from outcome. The quantity is the normalised resistance load
-    zR = zP / zF = R_graft / R_donor, the third term of the identity zP = zF * zR. The model predicts it below one
+    zR = R_graft / R_donor (R = dP / Q per 100 g), the third term of the identity zP = zF * zR. The model predicts it below one
     whenever the outflow was enlarged. Surgical configuration was taken from the methods of each paper, before
     looking at its results. Uncertainty comes from the reported spread of the pressures and flows; the direction is
     tested with an exact sign test, and outcome is reported separately, not as evidence for the mechanism."""
     from scipy.stats import binomtest
-    b = d.dropna(subset=['zP', 'zF']).copy(); b['ratio'] = indices.zR(b.zP, b.zF)
+    b = d.dropna(subset=['zP', 'zF', 'zR']).copy(); b['ratio'] = b.zR
     rng = np.random.default_rng(seed); detail = []
     for _, r in b.iterrows():
         sd_p = r.gradient_sd if pd.notna(r.gradient_sd) else 3.5
