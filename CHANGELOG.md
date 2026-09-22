@@ -5,6 +5,15 @@ All notable changes to this repository are documented here. The format follows [
 ## [Unreleased]
 
 ### Changed
+- The accompanying article is titled *Vascular resistance modulates portal flow–pressure decoupling in partial liver grafts*; it is recorded in `CITATION.cff` as the preferred citation and in the README.
+- **The model has a name and the indices have a shared identity.** The repository is LiPNet, the Liver Perfusion Network model, and the three quantities it defines are now named as loads: zF the normalised portal flow load, zP the normalised portal pressure load and zR = zP/zF = R_graft/R_donor the normalised resistance load, with
+
+      zP = zF x zR        pressure load = flow load x resistance load
+
+  `indices.zR()` and a `zR` column make the third load explicit, and a test asserts the identity holds exactly on every group measured on both scales (0.31, 0.54, 0.55, 0.72, 0.74, all below one). Calculator, README, figures and links renamed accordingly.
+
+
+### Changed
 - **The repository is now organised around the model, not around the meta-analysis.** `src/predictions.py` states the four predictions the perfusion-network model makes and tests each against data it was not fitted to: P1 the shear set-point invariant across mammals (exponent within 0.08 of zero; vascular mass 0.89-0.90 against the observed 0.86), P2 flow and pressure separating when outflow is enlarged (zP/zF of 0.31, 0.55, 0.54, 0.74, all below one, outcomes 0-10%), P3 a common within-cohort slope with a centre-specific level (every pair in the predicted direction; slope 1.96, hierarchical mu 0.89, P > 0 = 0.99; leave-one-centre-out agreement), P4 three fields meeting at zP = 2. The group-level analysis of published series is one of the four, not the result.
 - `data/series.tsv` gains an `outflow` column, which is what P2 is tested on.
 - New plot `predictions`: the four predictions on one page. README rewritten accordingly, with the limitations of the group-level analysis confined to P3.
