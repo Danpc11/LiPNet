@@ -188,12 +188,17 @@ def test_readme_matches_results():
     for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
         assert f"{int(r.groups)} groups" in readme and f"ρ = {r.spearman_rho:.2f}" in readme and f"p = {r.p:.3f}" in readme
     assert 'P1.' in readme and 'P2.' in readme and 'P3.' in readme and 'P4.' in readme, 'the README must state the predictions'
+    E = json.load(open(os.path.join(ROOT, 'results', 'bayes_extra.json')))['index_contrast']
+    assert f"{E['prob_pressure_slope_exceeds_flow_slope']:.2f}" in readme, 'the README must report the index comparison'
+    A = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))['P1_allometry']
+    assert f"{100*A['fraction_compatible']:.0f}%" in readme, 'the README must report P1 over the whole range of b'
+    assert '0.89–0.90 at b' not in readme, 'stale cherry-picked P1 claim'
     M = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))
     p = M['primary (SFSS or early dysfunction)']
     assert f"{p['mu_beta']:+.2f}" in readme and f"{p['OR_per_zP']:.2f}" in readme, 'README must quote the primary analysis'
     assert f"{p['prob_mu_positive']:.3f}" in readme
     assert 'assets/graphical_abstract.png' in readme
-    assert 'LiPNet' in readme and 'zP = zF × zR' in readme, 'the README must carry the model name and the identity'
+    assert 'LiPNet' in readme and 'z_P = z_F\\,z_R' in readme, 'the README must carry the model name and the identity'
     assert 'liver_pressure_index' not in readme, 'stale repository name'
 
 if __name__ == '__main__':
