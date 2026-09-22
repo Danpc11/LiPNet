@@ -93,6 +93,22 @@ def test_plots_and_calculator():
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
     assert 'const ZGRID=' in html and '"band"' in html and 'slope only' in html   # joint band for published strata
 
+def test_whole_graft_model():
+    """The whole-graft limit must reduce to the partial-graft formula and separate the two anastomoses."""
+    from model.whole_graft import whole_graft as wg
+    n = wg()
+    assert abs(n['zF'] - 1) < 1e-9 and abs(n['zP'] - 1) < 1e-9, 'an intact graft at donor inflow must give 1, 1'
+    for g, h in ((0.4, 1.5), (0.6, 1.0), (1.0, 2.0)):
+        assert abs(wg(h=h / g, r_coll=1e9)['zF'] - h / g) < 1e-9, 'zF must be h/g'
+    for d in (0.8, 0.6, 0.5):
+        o, i = wg(d_out=d, h=1.5), wg(d_in=d, h=1.5)
+        assert o['zP_over_zF'] > 1.05, 'outlet stenosis must raise pressure above flow'
+        assert abs(i['zP_over_zF'] - 1) < 1e-9, 'inlet stenosis is upstream of the lobule: the ratio stays at 1'
+        assert i['zP'] < 1.5 and i['portal_trunk_pressure'] > 1.5, 'and it lowers graft pressure while raising the trunk'
+        assert abs(o['zP_over_zF'] - (0.9 + 0.05 * d ** -4) / 0.95) < 1e-9, 'the ratio is the resistance ratio'
+    assert wg(d_in=0.5, h=1.5, r_coll=1e9)['collateral_steal'] < 1e-9, 'no collaterals, no steal'
+    assert wg(d_in=0.5, h=1.5)['collateral_steal'] > 0.02, 'with collaterals, an inlet stenosis diverts flow'
+
 def test_model_predictions():
     """The four predictions must hold with the committed data."""
     import json, subprocess
@@ -120,5 +136,5 @@ def test_readme_matches_results():
 
 if __name__ == '__main__':
     for t in (test_sources_parse_on_older_python, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
-              test_plots_and_calculator, test_model_predictions, test_readme_matches_results):
+              test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
