@@ -87,6 +87,21 @@ def test_hierarchical_and_validation():
     betas = {round(x['beta'], 3) for x in H['cvp_scenarios']}
     assert len(betas) == 1, 'a constant CVP shift must be absorbed by the intercept'
 
+def test_calculator_javascript_parses():
+    """The calculator is one HTML file with inline JavaScript: a stray apostrophe breaks the whole page silently.
+    Parse it with node when available."""
+    import re, shutil, subprocess, tempfile
+    html = open(os.path.join(ROOT, 'sfss_calculator.html'), encoding='utf-8').read()
+    js = re.search(r'<script>(.*)</script>', html, re.S)
+    assert js, 'the calculator must contain its script'
+    node = shutil.which('node')
+    if not node:
+        return                                              # nothing to check with
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
+        f.write(js.group(1)); path = f.name
+    r = subprocess.run([node, '--check', path], capture_output=True, text=True)
+    assert r.returncode == 0, 'the calculator JavaScript does not parse:\n' + r.stderr[-600:]
+
 def test_plots_and_calculator():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
     names = ['nomogram', 'within_study', 'forest', 'centred', 'risk_change', 'series_pressure', 'series_flow']
@@ -100,6 +115,8 @@ def test_plots_and_calculator():
     assert f"const BETA={W['beta']:.4f}" in html, 'slope and intercepts must come from the same model'
     assert f"BLO={W['beta_ci'][0]:.4f}" in html and f"{W['alphas'][W['studies'][0]]:.4f}" in html
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
+    assert 'id="copyrow"' in html and 'caseRow' in html, 'the demo needs the case-collection card'
+    assert 'never left this page' in html, 'and must say the data stay in the browser'
     assert 'const ZGRID=' in html and '"band"' in html and 'slope only' in html   # joint band for published strata
 
 def test_whole_graft_model():
@@ -169,5 +186,5 @@ def test_readme_matches_results():
 
 if __name__ == '__main__':
     for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
-              test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
+              test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
