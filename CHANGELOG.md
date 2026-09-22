@@ -32,7 +32,7 @@ All notable changes to this repository are documented here. The format follows [
 - `results/hierarchical.json` with all three analyses.
 
 
-## [0.3.0] – 2026-09-21
+## [0.2.3] – 2026-09-21
 
 ### Added
 - `indices.baseline_from_rate()` and `indices.recalibrate()`: calibration in the large, the standard first step of prediction-model updating (Steyerberg; Vergouwe et al., Stat Med 2017; Janssen et al., Can J Anesth 2009). The first gives the intercept from a centre's overall outcome rate and average gradient; the second fits only the intercept on a cohort with the slope held as an offset. README gains a section on how to obtain a baseline.
