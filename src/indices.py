@@ -2,11 +2,15 @@
 
     zF = normalised portal flow load      graft PVF per 100 g / donor PVF per 100 g
     zP = normalised portal pressure load  (PVP - CVP) / 5 mmHg
-    zR = zP / zF = R_graft / R_donor      normalised resistance load
+    zR = R_graft / R_donor                normalised resistance load, with R = dP / Q per 100 g
 
-so that
+Since zP / zF = (dP_graft / dP_donor) / (Q_graft / Q_donor) = R_graft / R_donor, it follows that
 
     zP = zF * zR        pressure load = flow load x resistance load
+
+R_donor uses the reference gradient (5 mmHg) and the donor reference flow. With clinical data R_graft is estimated
+as gradient / flow, so the identity is an exact decomposition of the pressure load, not an empirical test; the
+empirical content is which surgical configurations give zR < 1 (prediction P2).
 
 All three equal 1 in a healthy donor. The identity is why flow and pressure stop being interchangeable: they
 coincide only while zR = 1, and any manoeuvre that enlarges the venous outflow lowers zR, which is how a graft can
@@ -52,9 +56,14 @@ IMPUTED_BASES = ('imputed', 'threshold', 'group mean')
 def zF(pvf_per_100g, donor_ref=DEFAULT_DONOR_REF):
     return pvf_per_100g / donor_ref
 
-def zR(zP_value, zF_value):
-    """Normalised resistance load, zR = zP / zF = R_graft / R_donor, the third term of zP = zF * zR."""
-    return zP_value / zF_value
+def R(gradient_mmHg, pvf_per_100g):
+    """Specific portal resistance, R = dP / Q per 100 g (mmHg per mL/min/100 g)."""
+    return gradient_mmHg / pvf_per_100g
+
+def zR(R_graft, R_donor):
+    """Normalised resistance load, zR = R_graft / R_donor, with R = dP / Q per 100 g.
+    From clinical data R is estimated as gradient / flow, so zR equals zP / zF and zP = zF * zR follows."""
+    return R_graft / R_donor
 
 
 def zP(pvp=None, cvp=DEFAULT_CVP, gradient=None):
@@ -80,7 +89,9 @@ def compute(d):
     if len(bad): raise ValueError('gradient present but labelled not applicable: ' + ', '.join(bad.study + ' / ' + bad.group))
     d['zF'] = zF(d.PVF_per_100g, d.donor_PVF_per_100g_ref.fillna(DEFAULT_DONOR_REF))
     d['zP'] = np.where(has_g, zP(gradient=d.gradient_mmHg), zP(d.PVP, d.CVP.fillna(DEFAULT_CVP)))
-    d['zR'] = d.zP / d.zF                                      # resistance load, where both indices exist
+    d['R_graft'] = R(d.zP * NORMAL_GRADIENT, d.PVF_per_100g)       # gradient / flow, where both are available
+    d['R_donor'] = R(NORMAL_GRADIENT, d.donor_PVF_per_100g_ref.fillna(DEFAULT_DONOR_REF))
+    d['zR'] = zR(d.R_graft, d.R_donor)                          # resistance load, where both indices exist
     d['zP_imputed'] = np.where(has_g, d.gradient_basis.isin(IMPUTED_BASES),
                                d[['PVP_basis', 'CVP_basis']].isin(IMPUTED_BASES).any(axis=1) | cvp_filled)
     d['zF_imputed'] = d.PVF_basis.isin(IMPUTED_BASES) | ref_filled
