@@ -9,8 +9,8 @@ donor age or steatosis. Four predictions follow, and each is tested here against
 
   P1  Comparative anatomy. With portal pressure invariant across mammals, the set-point shear must be invariant with
       body mass and the vascular mass must scale close to the observed exponent of hepatic blood volume (0.86).
-  P2  Flow and pressure are the same variable only at donor outflow resistance. Grafts whose outflow was
-      reconstructed must sit below the diagonal (zP/zF < 1) and tolerate high flow.
+  P2  zP = zF * zR: flow and pressure are the same variable only while the resistance load zR equals 1. Grafts
+      whose outflow was enlarged must have zR < 1 and carry high flow without the matching pressure.
   P3  Within a cohort, the outcome must increase with zP, with a common slope and a centre-specific level.
   P4  The clinical thresholds of three different fields must coincide once normalised: HVPG 10 mmHg in cirrhosis,
       PVP 15 mmHg at CVP 5 in a graft, and the limit of safe resection all fall at zP = 2.
@@ -53,13 +53,13 @@ def p1_allometry():
 
 
 def p2_discordance(d, draws=4000, seed=0):
-    """Mechanistic contrast, kept apart from outcome. The ratio zP/zF is the graft's *relative effective
-    resistance*: what the pressure per unit of flow is, compared with the donor. The model predicts it below one
+    """Mechanistic contrast, kept apart from outcome. The quantity is the normalised resistance load
+    zR = zP / zF = R_graft / R_donor, the third term of the identity zP = zF * zR. The model predicts it below one
     whenever the outflow was enlarged. Surgical configuration was taken from the methods of each paper, before
     looking at its results. Uncertainty comes from the reported spread of the pressures and flows; the direction is
     tested with an exact sign test, and outcome is reported separately, not as evidence for the mechanism."""
     from scipy.stats import binomtest
-    b = d.dropna(subset=['zP', 'zF']).copy(); b['ratio'] = b.zP / b.zF
+    b = d.dropna(subset=['zP', 'zF']).copy(); b['ratio'] = indices.zR(b.zP, b.zF)
     rng = np.random.default_rng(seed); detail = []
     for _, r in b.iterrows():
         sd_p = r.gradient_sd if pd.notna(r.gradient_sd) else 3.5
@@ -104,6 +104,12 @@ def p3_within_cohort(d):
     for st, g in c.groupby(indices.strata(c).values):
         g = g.sort_values('zP')
         if len(g) >= 2: pairs.append(dict(stratum=st, higher_zP_worse=bool(g.pct.iloc[-1] >= g.pct.iloc[0])))
+    extra = read('bayes_extra', lambda: dict(index_contrast=bayes.index_contrast(d),
+                                             with_cutoff_groups=bayes.with_cutoff_groups(d)))
+    acc = dict(series=int(d.study.nunique()), centres=int(d.centre_id.nunique()), groups=int(len(d)),
+               groups_with_zP=int(d.zP.notna().sum()), groups_with_zF=int(d.zF.notna().sum()),
+               series_with_a_within_study_contrast=len(set(x.split(' / ')[0] for x in main['exploratory (all outcomes)']['strata'])),
+               series_with_one_group_only=int(sum(1 for _, g in d[d.zP.notna()].groupby('study') if len(g) == 1)))
     mus = [x['mu_beta'] for x in spec if x.get('mu_beta') is not None]
     return dict(primary=main['primary (SFSS or early dysfunction)'], secondary=main['secondary (mortality or graft loss)'],
                 exploratory=main['exploratory (all outcomes)'],
@@ -112,6 +118,7 @@ def p3_within_cohort(d):
                                         tau_beta=r['tau_beta'], prob_positive=r['prob_mu_positive']) for r in prio],
                 conditional_iecv=[dict(centre=v['held_out'], mu_from_others=v['mu_from_others'],
                                        log_score_gain=v['total_gain'], directions_correct=v['all_directions_correct']) for v in iecv_],
+                accounting=acc, index_contrast=extra['index_contrast'], with_cutoff_groups=extra['with_cutoff_groups'],
                 specification_curve=spec, mu_range_across_specifications=[float(min(mus)), float(max(mus))],
                 all_specifications_positive=bool(all(x['mu_beta'] > 0 for x in spec if x.get('mu_beta') is not None)),
                 measurement_monte_carlo=meas, design_recovery=recov)
@@ -144,11 +151,28 @@ def main():
     print(f"    vascular mass exponent spans {a['vascular_mass_exponent_range'][0]:.2f}-{a['vascular_mass_exponent_range'][1]:.2f}; "
           f"{100*a['fraction_compatible']:.0f}% of the range is compatible with the observed {a['observed_range']}")
     print('P2  flow-pressure discordance')
-    print(f"    relative effective resistance in the {b2['reconstructed']} reconstructed-outflow groups: "
+    print(f"    normalised resistance load zR in the {b2['reconstructed']} reconstructed-outflow groups: "
           f"{[round(x,2) for x in b2['ratio_reconstructed']]}, all below 1: {b2['all_below_one']} "
           f"(sign test p = {b2['sign_test_p']:.3f}; smallest posterior probability of being below 1: {b2['min_prob_below_one']:.2f})")
     print(f"    their outcomes, reported separately: {b2['outcome_reconstructed_pct']}%")
     print('P3  within-cohort ordering (primary analysis: hierarchical, zP centred within study)')
+    a = c3['accounting']
+    print(f"    material: {a['series']} series from {a['centres']} centres, {a['groups']} groups; {a['groups_with_zP']} with a pressure index "
+          f"and {a['groups_with_zF']} with a flow index. A slope needs two groups of the same outcome at different gradients, which "
+          f"{a['series_with_a_within_study_contrast']} series provide for pressure and 4 for flow; "
+          f"{a['series_with_one_group_only']} report a single group and inform the level, not the slope.")
+    ic = c3['index_contrast']
+    print('    the same model on each index, both restricted to the primary outcome:')
+    for k in ('zP, pressure per lobule', 'zF, flow per lobule'):
+        r = ic[k]
+        print(f"      {k:24s} {r['groups']:2d} groups / {len(r['strata'])} series: mu {r['mu_beta']:+.2f} "
+              f"({r['mu_beta_ci'][0]:+.2f} to {r['mu_beta_ci'][1]:+.2f}), P(mu>0) = {r['prob_positive']:.3f}")
+    print(f"      the pressure interval excludes zero and the flow interval does not, but P(slope_zP > slope_zF) is only "
+          f"{ic['prob_pressure_slope_exceeds_flow_slope']:.2f}; the flow arm rests on {ic['zF, flow per lobule']['events']} events "
+          f"in groups of median {ic['zF, flow per lobule']['median_group_size']:.0f}, so this is consistent with P2, not a substitute for it")
+    cg = c3['with_cutoff_groups']
+    print(f"    adding the series whose groups are defined by a gradient cut-off: {cg['groups']} groups / {len(cg['strata'])} strata, "
+          f"mu {cg['mu_beta']:+.2f} ({cg['mu_beta_ci'][0]:+.2f} to {cg['mu_beta_ci'][1]:+.2f})")
     for k in ('primary', 'secondary', 'exploratory'):
         r = c3[k]
         print(f"    {k:12s} {r['groups']:2d} groups / {len(r['strata'])} strata: mu {r['mu_beta']:+.2f} "
