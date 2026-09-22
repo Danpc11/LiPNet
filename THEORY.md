@@ -4,33 +4,39 @@ This document holds the physics and the four predictions. The [README](README.md
 
 ---
 
-## Overview
+## Contents
 
-Partial liver grafts receive portal blood through a smaller amount of tissue than a whole liver.
+- [The question](#the-question)
+- [The model](#the-model)
+- [Partial grafts](#partial-grafts)
+- [Three normalized haemodynamic loads](#three-normalized-haemodynamic-loads)
+  - [Flow load](#flow-load)
+  - [Pressure load](#pressure-load)
+  - [Resistance load](#resistance-load)
+  - [Why resistance matters](#why-resistance-matters)
+- [What the model includes](#what-the-model-includes)
+- [Four predictions](#four-predictions)
+  - [P1. The hepatic shear set-point should be nearly invariant across mammals](#p1-the-hepatic-shear-set-point-should-be-nearly-invariant-across-mammals)
+  - [P2. Flow and pressure should separate when outflow resistance decreases](#p2-flow-and-pressure-should-separate-when-outflow-resistance-decreases)
+  - [P3. Within a cohort, outcome should increase with pressure load](#p3-within-a-cohort-outcome-should-increase-with-pressure-load)
+  - [Hierarchical model](#hierarchical-model)
+  - [Primary clinical result](#primary-clinical-result)
+  - [Model diagnostics](#model-diagnostics)
+  - [Sensitivity analyses](#sensitivity-analyses)
+  - [Internal-external validation](#internal-external-validation)
+  - [P4. Clinical thresholds from different liver fields converge on the same scale](#p4-clinical-thresholds-from-different-liver-fields-converge-on-the-same-scale)
+- [What LiPNet is not](#what-lipnet-is-not)
+- [Whole-graft extension](#whole-graft-extension)
 
-As a result, portal flow per unit of liver mass can become several times higher than in the donor.
+---
 
-However, high portal flow does not always produce equally high portal pressure.
+## The question
 
-Some grafts can carry high flow while maintaining relatively low portal pressure, particularly when venous outflow is enlarged or reconstructed.
-
-This raises a simple question:
+Partial liver grafts receive portal blood through less tissue than a whole liver, so portal flow per unit of mass can be several times the donor's. High flow, however, does not always produce equally high pressure: some grafts carry it with a relatively low portal pressure, above all when the venous outflow is wide or reconstructed.
 
 > **What determines how portal flow is converted into portal pressure?**
 
-LiPNet approaches this problem by treating the liver as a vascular transport network.
-
-The central result is:
-
-$$\boxed{z_P = z_F \, z_R}$$ or, in words, $$\boxed{\text{pressure load}=\text{flow load}\times\text{resistance load}}$$
-
-The model therefore separates three components of hepatic haemodynamics:
-
-- portal flow,
-- vascular resistance,
-- portal pressure.
-
-This provides a simple framework for understanding why flow and pressure may become uncoupled in partial liver grafts.
+The three loads and the identity $z_P = z_F \, z_R$ are stated on the [front page](README.md#what-this-is). What follows is where they come from and what they predict.
 
 ---
 
@@ -228,11 +234,6 @@ The model is designed to isolate the physical contribution of portal flow, vascu
 
 This also makes its predictions falsifiable.
 
-<p align="center">
-  <img src="assets/graphical_abstract.png"
-       alt="Graphical abstract of LiPNet showing the liver as a perfusion network and the relation between flow load, resistance load and pressure load"
-       width="520">
-</p>
 
 ---
 
@@ -294,7 +295,7 @@ About 18% of the prespecified model range overlaps with the observed range.
 
 No value of $b$ was selected to improve agreement with the observation.
 
-#### Interpretation
+#### What P1 shows
 
 The allometric analysis tests the physical structure of LiPNet independently of liver transplantation.
 
@@ -341,7 +342,7 @@ with probability approximately 1.00.
 
 These grafts had portal flow loads approximately three to four times the donor value, while reported adverse outcome rates remained between 0% and 10%.
 
-### Interpretation
+#### What P2 shows
 
 The result shows why portal flow and portal pressure should not be treated as interchangeable measures.
 
@@ -651,7 +652,7 @@ $$z_P=\frac{12}{5}=2.4.$$
 
 ---
 
-#### Interpretation
+#### What P4 shows
 
 Thresholds developed independently in:
 
@@ -771,3 +772,7 @@ $$(z_F,z_P)$$
 plane.
 
 ---
+
+---
+
+Back to the [README](README.md) for the repository, the data and the calculator.
