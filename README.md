@@ -67,7 +67,7 @@ An individual risk model. The level of risk is centre-specific: at a gradient ne
 
 ## Calculator
 
-**https://danpc11.github.io/LiPNet/** — one HTML file, runs in the browser. Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and an anchor for the level (your cohort's overall rate and average gradient, your rate at the current gradient, or one of the fitted series). It returns zP, zF, their ratio, the odds ratio for the change and the absolute risks that anchor implies. Slope and intercepts come from the same model, so the curve passes through the anchor.
+**https://danpc11.github.io/LiPNet/** — one HTML file, runs in the browser. Enter the current PVP and CVP, the pressure expected after the planned manoeuvre, and an anchor for the level (your cohort's overall rate and average gradient, your rate at the current gradient, or one of the fitted series). It returns the three loads, the odds ratio for the change and the absolute risks that anchor implies. The slope and its interval are the primary hierarchical estimate reported above; the per-series levels come from the stratified fit of the same data. A user-supplied anchor enters as logit p(z) = logit p_ref + mu_beta (z − z_ref), so the curve and its band pass through it.
 
 To obtain your own baseline, `indices.baseline_from_rate(rate, mean_zP, beta)` gives `alpha = logit(rate) − beta·mean(zP)`, and `indices.recalibrate(outcomes, zP, beta)` fits the intercept on an audit with the slope held fixed. This is recalibration in the large, the first step of prediction-model updating (Steyerberg; Vergouwe et al., Stat Med 2017;36:4529; Janssen et al., Can J Anesth 2009;56:194).
 
