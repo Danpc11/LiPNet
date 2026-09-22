@@ -28,7 +28,7 @@ LiPNet approaches this problem by treating the liver as a vascular transport net
 
 The central result is:
 
-$$\boxed{z_P = z_F z_R}$$ or, in words, $$\boxed{\text{pressure load}=\text{flow load}\times\text{resistance load}}$$
+$$\boxed{z_P = z_F \, z_R}$$ or, in words, $$\boxed{\text{pressure load}=\text{flow load}\times\text{resistance load}}$$
 
 The model therefore separates three components of hepatic haemodynamics:
 
@@ -63,11 +63,11 @@ where:
 
 This gives:
 
-$$D^\* \proptoF^{2}C^{-2/b}N^{(2-b)/b}L^{3},$$
+$$D^* \propto F^{2}\,C^{-2/b}\,N^{(2-b)/b}\,L^{3},$$
 
 together with a characteristic wall-shear set-point:
 
-$$\tau_0=\sqrt{D^\*/C},$$
+$$\tau_0=\sqrt{D^*/C},$$
 
 and the pressure drop across a lobule:
 
@@ -75,7 +75,7 @@ $$\Delta P=fR.$$
 
 Here:
 
-- $D^\*$ is the minimum dissipation of the network,
+- $D^*$ is the minimum dissipation of the network,
 - $F$ is total flow,
 - $C$ represents vascular maintenance cost,
 - $N$ is the number of lobules,
@@ -130,7 +130,7 @@ means that each unit of graft tissue receives approximately three times the dono
 
 ---
 
-#### Pressure load
+### Pressure load
 
 The normalized pressure load is:
 
@@ -151,7 +151,7 @@ represents the normal donor state.
 
 ---
 
-#### Resistance load
+### Resistance load
 
 The normalized resistance load is:
 
@@ -159,7 +159,7 @@ $$z_R=\frac{z_P}{z_F}=\frac{R_{\text{graft}}}{R_{\text{donor}}}.$$
 
 This gives the central identity of LiPNet:
 
-$$\boxed{z_P=z_Fz_R}$$
+$$\boxed{z_P = z_F \, z_R}$$
 
 All three quantities equal 1 in a healthy donor:
 
@@ -242,7 +242,7 @@ This also makes its predictions falsifiable.
 
 ---
 
-# Four predictions
+## Four predictions
 
 All numerical results below are produced by:
 
@@ -308,7 +308,7 @@ It asks whether the same network principle can remain physiologically reasonable
 
 ---
 
-## P2. Flow and pressure should separate when outflow resistance decreases
+### P2. Flow and pressure should separate when outflow resistance decreases
 
 The central mechanistic prediction follows directly from:
 
@@ -331,7 +331,7 @@ Four of these groups had reconstructed or functionally enlarged outflow:
 
 Their resistance loads were:
 
-$$z_R=0.31,\;0.55,\;0.54,\;0.74.$$
+$$z_R=0.31,\;0.54,\;0.55,\;0.74.$$
 
 All four values were below 1, as predicted.
 
@@ -499,7 +499,7 @@ The hierarchical model was sampled using NUTS with four chains.
 
 Diagnostics were:
 
-- maximum $\hat R$: 1.001,
+- maximum $\hat{R}$: 1.001,
 - minimum effective sample size: 5114,
 - divergences: 0,
 - posterior predictive checks inside the expected interval: 7/7.
@@ -543,7 +543,7 @@ $$\tau\sim\text{HalfNormal}(0.25)$$
 
 gives:
 
-$$\mu_\beta=+1.60,\qquadP(\mu_\beta>0)=0.998.$$
+$$\mu_\beta=+1.60,\qquad P(\mu_\beta>0)=0.998.$$
 
 Using:
 
@@ -589,7 +589,7 @@ For:
 
 $$\mu=1,$$
 
-the interval excluded zero in approximately 60% of simulations.
+the interval excluded zero in about 63% of simulations.
 
 For:
 
@@ -635,7 +635,7 @@ $$z_P=\frac{15-5}{5}=2.$$
 
 ---
 
-### Hepatic resection
+#### Hepatic resection
 
 For a cirrhotic liver with a baseline pressure gradient of approximately 10 mmHg, reducing functional liver mass by resection increases the load carried by the remaining tissue.
 
@@ -692,13 +692,13 @@ with:
 
 $$95\%\ \text{CI}=-0.25\text{ to }0.46.$$
 
-The across-series rank correlation between $z_P$ and outcome is also weak:
+The across-series rank correlation between $z_P$ and outcome is also weak (16 groups):
 
-$$\rho=0.23,\qquadp=0.399.$$
+$$\rho=0.23,\qquad p=0.399.$$
 
-For portal flow per gram:
+For portal flow per gram (12 groups):
 
-$$\rho=0.27,\qquadp=0.388.$$
+$$\rho=0.27,\qquad p=0.388.$$
 
 This is expected from the model.
 
@@ -1078,7 +1078,7 @@ The same portal flow can produce different portal pressures depending on vascula
 
 The central relationship is:
 
-$$\boxed{z_P=z_Fz_R}$$
+$$\boxed{z_P = z_F \, z_R}$$
 
 where:
 
@@ -1134,4 +1134,3 @@ Source code is distributed under:
 https://polyformproject.org/licenses/noncommercial/1.0.0
 
 Clinical values stored in `data/` remain the intellectual property of the authors of the original publications.
-
