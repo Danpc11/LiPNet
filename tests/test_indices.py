@@ -193,7 +193,8 @@ def test_readme_matches_results():
     M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
     readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
     for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
-        assert f"{int(r.groups)} groups" in readme and f"ρ = {r.spearman_rho:.2f}" in readme and f"p = {r.p:.3f}" in readme
+        flat = re.sub(r'\s|\\\\[,;: ]|\\\\rho|ρ', '', readme)     # the README may write these in prose or in LaTeX
+        assert f"{int(r.groups)}groups" in flat and f"={r.spearman_rho:.2f}" in flat and f"p={r.p:.3f}" in flat
     assert 'P1.' in readme and 'P2.' in readme and 'P3.' in readme and 'P4.' in readme, 'the README must state the predictions'
     E = json.load(open(os.path.join(ROOT, 'results', 'bayes_extra.json')))['index_contrast']
     assert f"{E['prob_pressure_slope_exceeds_flow_slope']:.2f}" in readme, 'the README must report the index comparison'
