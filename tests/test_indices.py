@@ -117,10 +117,22 @@ def test_model_predictions():
     assert r.returncode == 0, r.stderr[-800:]
     P = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))
     assert P['P1_allometry']['tau0_invariant'], 'P1: the shear set-point must not scale with body mass'
-    assert P['P2_discordance']['all_below_one'] and P['P2_discordance']['reconstructed'] >= 4, 'P2'
-    assert max(P['P2_discordance']['outcome_reconstructed_pct']) <= 10, 'P2: those grafts did well'
-    assert P['P3_within_cohort']['every_pair_in_predicted_direction'], 'P3'
-    assert P['P3_within_cohort']['prob_positive'] > 0.95
+    assert 'best_b' not in P['P1_allometry'], 'P1 must not select a value of b that fits the observation'
+    p2 = P['P2_discordance']
+    assert p2['all_below_one'] and p2['reconstructed'] >= 4, 'P2: every reconstructed outflow below one'
+    assert p2['min_prob_below_one'] > 0.9, 'P2: with measurement uncertainty'
+    assert max(p2['outcome_reconstructed_pct']) <= 10, 'P2: those grafts did well (reported separately)'
+    p3 = P['P3_within_cohort']
+    assert p3['every_pair_in_predicted_direction'], 'P3: every within-study pair in the predicted direction'
+    for k in ('primary', 'secondary', 'exploratory'):           # the prespecified order
+        r = p3[k]
+        assert r['mu_beta'] > 0 and r['prob_mu_positive'] > 0.95, f'P3 {k}'
+        assert r['rhat']['max'] < 1.01 and r['divergences'] == 0, f'P3 {k}: sampler diagnostics'
+        assert r['ess']['min'] > 400, f'P3 {k}: effective sample size'
+        assert r['ppc_inside'] == r['ppc_total'], f'P3 {k}: posterior predictive check'
+    assert p3['all_specifications_positive'] and p3['mu_range_across_specifications'][0] > 0, 'P3: specification curve'
+    assert all(v['directions_correct'] and v['log_score_gain'] > 0 for v in p3['conditional_iecv']), 'P3: conditional validation'
+    assert all(pr['prob_positive'] > 0.9 for pr in p3['prior_sensitivity']), 'P3: prior sensitivity'
     assert P['P4_thresholds']['all_at_two'], 'P4'
 
 def test_readme_matches_results():
@@ -130,8 +142,10 @@ def test_readme_matches_results():
     for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
         assert f"{int(r.groups)} groups" in readme and f"ρ = {r.spearman_rho:.2f}" in readme and f"p = {r.p:.3f}" in readme
     assert 'P1.' in readme and 'P2.' in readme and 'P3.' in readme and 'P4.' in readme, 'the README must state the predictions'
-    W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
-    assert f"{W['OR_per_zP']:.2f}" in readme and f"{W['OR_per_mmHg']:.2f}" in readme
+    M = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))
+    p = M['primary (SFSS or early dysfunction)']
+    assert f"{p['mu_beta']:+.2f}" in readme and f"{p['OR_per_zP']:.2f}" in readme, 'README must quote the primary analysis'
+    assert f"{p['prob_mu_positive']:.3f}" in readme
     assert 'assets/graphical_abstract.png' in readme
 
 if __name__ == '__main__':
