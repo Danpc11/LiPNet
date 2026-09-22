@@ -97,7 +97,7 @@ $$z_{\mathrm{ref}},$$
 
 the model uses:
 
-$$\operatorname{logit}p(z)=\operatorname{logit}p_{\mathrm{ref}}+\mu_\beta(z-z_{\mathrm{ref}}).$$
+$$\mathrm{logit}\,p(z)=\mathrm{logit}\,p_{\mathrm{ref}}+\mu_\beta(z-z_{\mathrm{ref}}).$$
 
 The resulting curve therefore passes through the supplied clinical anchor.
 
@@ -282,29 +282,7 @@ They are reported separately in:
 results/sensitivity.tsv
 ```
 
----
-
-### Included clinical series
-
-The dataset includes the following published series:
-
-- Troisi 2003
-- Troisi 2005
-- Ou 2010
-- Vasavada 2014
-- Alim 2016
-- Chan 2011
-- Yagi 2005
-- Yagi 2006
-- Wang 2014
-- Osman 2017
-- Ogura 2010
-- Yamada 2008
-- Uemura 2016
-- Yao 2018
-- Kanetkar 2017
-- Ishizaki 2012
-- Botha 2010
+The seventeen series and their links are listed in [Included clinical series](#included-clinical-series) above.
 
 ---
 
@@ -352,36 +330,9 @@ It is not a medical device and should not be used as a stand-alone tool for clin
 
 ---
 
-## Main interpretation
+## Scope
 
-LiPNet proposes a simple physical interpretation of hepatic haemodynamics.
-
-Portal flow alone does not define the haemodynamic load of a liver graft.
-
-The same portal flow can produce different portal pressures depending on vascular resistance.
-
-The central relationship is:
-
-$$\boxed{z_P = z_F \, z_R}$$
-
-where:
-
-- $z_F$ describes flow load,
-- $z_R$ describes resistance load,
-- $z_P$ describes the resulting pressure load.
-
-This framework explains how a partial graft can carry three to four times the donor portal flow while maintaining a much smaller increase in portal pressure when effective vascular resistance is reduced.
-
-It also provides a common normalized language for:
-
-- portal hyperperfusion,
-- venous outflow reconstruction,
-- small-for-size graft physiology,
-- portal hypertension,
-- hepatic resection,
-- vascular obstruction.
-
-LiPNet is therefore intended as a mechanistic framework rather than an individual risk score.
+LiPNet is a mechanistic framework, not an individual risk score. It gives a common normalised language for portal hyperperfusion, venous outflow reconstruction, small-for-size physiology, portal hypertension, hepatic resection and vascular obstruction, and it says which part of that language transfers between centres: the change in risk with a change in load does, the baseline risk does not.
 
 ---
 
