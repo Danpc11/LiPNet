@@ -196,6 +196,52 @@ def monte_carlo_measurement(d, draws=200, seed=0, **kw):
                 prob_positive=float((mus > 0).mean()))
 
 
+def index_contrast(d, quick=True, match_outcome=True, seed=0):
+    """The model's sharpest claim, tested as a contrast between the two indices.
+
+    zP is the pressure per lobule, which the model says is the damaging variable; zF is the flow per lobule, which
+    tracks it only at donor outflow resistance. The same hierarchical model is fitted to each index on the series
+    that provide a within-study contrast for it. Two things must be kept in view when reading the comparison:
+      * the arms are matched on outcome definition (both restricted to SFSS or early dysfunction by default),
+        because otherwise the pressure arm would also carry the mortality series;
+      * they are not equally informative. The flow arm rests on much smaller groups, several with no events, so a
+        wide interval there is a statement about the material, not evidence that flow is irrelevant.
+    Wang 2014 contributes to both arms, so the two posteriors are not fully independent; the reported probability
+    that the pressure slope exceeds the flow slope treats them as independent and is therefore approximate.
+    """
+    kw = dict(warmup=800, samples=1200, chains=2) if quick else {}
+    out = {}; draws = {}
+    for name, col in (('zP, pressure per lobule', 'zP'), ('zF, flow per lobule', 'zF')):
+        sub = d[d.in_main_analysis & d[col].notna() & d.events.notna()].copy()
+        if match_outcome: sub = sub[sub.outcome_type == 'SFSS_or_dysfunction']
+        sub['zP'] = sub[col]
+        f = fit(sub, keep_draws=2000, **kw)
+        p_, _, _, _ = _prep(sub)
+        out[name] = dict(index=col, groups=f['groups'], strata=f['strata'], events=f['events'], patients=f['patients'],
+                         groups_with_no_events=int((p_.events == 0).sum()), median_group_size=float(p_.n.median()),
+                         zP_span=float((p_.zP - p_.groupby('stratum').zP.transform('mean')).abs().max() * 2),
+                         mu_beta=f['mu_beta'], mu_beta_ci=f['mu_beta_ci'], prob_positive=f['prob_mu_positive'],
+                         OR=f['OR_per_zP'], tau_beta=f['tau_beta'])
+        draws[col] = np.array(f['mu_draws'])
+    rng = np.random.default_rng(seed)
+    a = rng.choice(draws['zP'], 20000); b = rng.choice(draws['zF'], 20000)
+    out['matched_on_outcome'] = bool(match_outcome)
+    out['prob_pressure_slope_exceeds_flow_slope'] = float((a > b).mean())
+    out['shared_series'] = sorted(set(x.split(' / ')[0] for x in out['zP, pressure per lobule']['strata'])
+                                  & set(x.split(' / ')[0] for x in out['zF, flow per lobule']['strata']))
+    out['pressure_carries_the_association'] = bool(out['zP, pressure per lobule']['mu_beta_ci'][0] > 0
+                                                   and out['zF, flow per lobule']['mu_beta_ci'][0] <= 0)
+    return out
+
+
+def with_cutoff_groups(d, **kw):
+    """Sensitivity that uses more of the published material: series whose groups are defined by a cut-off on the
+    gradient (Yao 2018) enter with the cut-off as their value, which is a lower bound on the contrast."""
+    plus = d[d.zP.notna() & d.events.notna() & (d.in_main_analysis | d.study.isin(['Yao 2018']))]
+    plus = plus[~((plus.study == 'Wang 2014') & plus.group.str.startswith('PVP at closure'))]
+    return fit(plus, **kw)
+
+
 def spec_curve(d, quick=True):
     """One table instead of many scattered sensitivities: the same quantity, mu_beta, under every reasonable
     specification. The message should not depend on any single one of them."""
@@ -213,6 +259,7 @@ def spec_curve(d, quick=True):
              ('tau prior HalfNormal(0.25)', d, dict(tau_scale=0.25)),
              ('tau prior HalfNormal(1.0)', d, dict(tau_scale=1.0)),
              ('one stratum per centre, not per publication', d, dict(by_centre=True))]
+
     for cvp in (3.0, 7.0, 9.0):
         e = d.copy(); m = e.CVP_basis.eq('imputed')
         e.loc[m, 'zP'] = e.loc[m, 'zP'] + (5.0 - cvp) / 5.0
@@ -246,6 +293,8 @@ def main():
         json.dump(res, open(f'{out}/{name}.json', 'w'), indent=1); print('wrote', name)
     json.dump(monte_carlo_measurement(c, draws=40), open(f'{out}/bayes_measurement.json', 'w'), indent=1); print('wrote bayes_measurement')
     json.dump(recovery(c, mu_true=(0.0, 1.0, 2.0), reps=10), open(f'{out}/bayes_recovery.json', 'w'), indent=1); print('wrote bayes_recovery')
+    json.dump(dict(index_contrast=index_contrast(d), with_cutoff_groups=with_cutoff_groups(d)),
+              open(f'{out}/bayes_extra.json', 'w'), indent=1); print('wrote bayes_extra')
     r = main_['primary (SFSS or early dysfunction)']
     print(f"primary: mu {r['mu_beta']:+.2f} ({r['mu_beta_ci'][0]:+.2f} to {r['mu_beta_ci'][1]:+.2f}), "
           f"P(mu>0) = {r['prob_mu_positive']:.3f}, R-hat {r['rhat']['max']:.3f}, divergences {r['divergences']}")
