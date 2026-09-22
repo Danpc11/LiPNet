@@ -1,4 +1,16 @@
-"""Single source of the two indices, the correlations and the risk models.
+"""LiPNet indices: the three loads a partial liver graft carries, and the models fitted to them.
+
+    zF = normalised portal flow load      graft PVF per 100 g / donor PVF per 100 g
+    zP = normalised portal pressure load  (PVP - CVP) / 5 mmHg
+    zR = zP / zF = R_graft / R_donor      normalised resistance load
+
+so that
+
+    zP = zF * zR        pressure load = flow load x resistance load
+
+All three equal 1 in a healthy donor. The identity is why flow and pressure stop being interchangeable: they
+coincide only while zR = 1, and any manoeuvre that enlarges the venous outflow lowers zR, which is how a graft can
+carry three or four times the donor's flow without the pressure that would normally come with it.
 
     python src/indices.py     -> results/series_with_indices.tsv, results/within_study_fit.json,
                                  results/meta_slope.json, results/sensitivity.tsv, results/pooled_fit.json
@@ -39,6 +51,11 @@ IMPUTED_BASES = ('imputed', 'threshold', 'group mean')
 def zF(pvf_per_100g, donor_ref=DEFAULT_DONOR_REF):
     return pvf_per_100g / donor_ref
 
+def zR(zP_value, zF_value):
+    """Normalised resistance load, zR = zP / zF = R_graft / R_donor, the third term of zP = zF * zR."""
+    return zP_value / zF_value
+
+
 def zP(pvp=None, cvp=DEFAULT_CVP, gradient=None):
     """zP from the portocaval gradient. Pass `gradient` when the paper reports it directly; otherwise it is
     PVP - CVP, with CVP defaulting to 5 mmHg."""
@@ -62,6 +79,7 @@ def compute(d):
     if len(bad): raise ValueError('gradient present but labelled not applicable: ' + ', '.join(bad.study + ' / ' + bad.group))
     d['zF'] = zF(d.PVF_per_100g, d.donor_PVF_per_100g_ref.fillna(DEFAULT_DONOR_REF))
     d['zP'] = np.where(has_g, zP(gradient=d.gradient_mmHg), zP(d.PVP, d.CVP.fillna(DEFAULT_CVP)))
+    d['zR'] = d.zP / d.zF                                      # resistance load, where both indices exist
     d['zP_imputed'] = np.where(has_g, d.gradient_basis.isin(IMPUTED_BASES),
                                d[['PVP_basis', 'CVP_basis']].isin(IMPUTED_BASES).any(axis=1) | cvp_filled)
     d['zF_imputed'] = d.PVF_basis.isin(IMPUTED_BASES) | ref_filled
