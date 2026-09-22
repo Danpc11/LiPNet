@@ -8,6 +8,17 @@ import numpy as np, pandas as pd
 ROOT = os.path.join(os.path.dirname(__file__), '..'); sys.path.insert(0, os.path.join(ROOT, 'src'))
 import indices
 
+def test_sources_parse_on_older_python():
+    """Every source file must parse under the oldest Python the CI uses (3.9 grammar), so nested-quote f-strings
+    and other 3.12-only syntax cannot slip in."""
+    import ast, glob
+    files = glob.glob(os.path.join(ROOT, 'src', '**', '*.py'), recursive=True) + [__file__]
+    for f in files:
+        try:
+            ast.parse(open(f, encoding='utf-8').read(), feature_version=(3, 9))
+        except SyntaxError as e:
+            raise AssertionError(f'{os.path.relpath(f, ROOT)}:{e.lineno} is not valid on Python 3.9: {e.msg}')
+
 def test_indices_and_baseline():
     assert indices.zP(15, 5) == 2.0                    # PVP 15 at CVP 5 is twice the normal gradient
     assert indices.zP(gradient=10) == 2.0              # a reported gradient is used directly
@@ -108,6 +119,6 @@ def test_readme_matches_results():
     assert 'assets/graphical_abstract.png' in readme
 
 if __name__ == '__main__':
-    for t in (test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
+    for t in (test_sources_parse_on_older_python, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
               test_plots_and_calculator, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
