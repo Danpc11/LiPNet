@@ -21,7 +21,7 @@ $$z_F=\frac{\text{graft PVF per }100\,\text{g}}{\text{donor PVF per }100\,\text{
 z_P=\frac{\text{PVP}-\text{CVP}}{5\ \text{mmHg}},\qquad
 z_R=\frac{z_P}{z_F}=\frac{R_{\text{graft}}}{R_{\text{donor}}}$$
 
-$$\boxed{ z_P = z_F z_R }\qquad\text{pressure load}=\text{flow load}\times\text{resistance load}$$
+$$\boxed{ z_P = z_F\,z_R }\qquad\text{pressure load}=\text{flow load}\times\text{resistance load}$$
 
 All three loads equal 1 in a healthy donor, and the identity is the point of the model: flow and pressure are the same variable only while $z_R=1$. Any manoeuvre that enlarges the venous outflow lowers $z_R$, which is how a graft can carry three or four times the donor's flow without the pressure that would normally come with it. That product is the hepatic haemodynamic load, and the two clinical thresholds in use have been approximating it from opposite sides.
 
