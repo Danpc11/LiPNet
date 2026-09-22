@@ -37,6 +37,8 @@ def test_data_and_provenance():
             pass
 
 def test_fitted_effect():
+    for name in ('bayes_hierarchical', 'iecv', 'cvp_scenarios', 'centred', 'meta_slope'):
+        assert hasattr(indices, name), f'src/indices.py is out of date: no {name}()'
     indices.main()                                      # full run, so the JSONs match the committed calculator
     W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
     M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
@@ -51,7 +53,10 @@ def test_fitted_effect():
 def test_hierarchical_and_validation():
     """The hierarchical model, the leave-one-centre-out validation and the CVP scenarios must run and agree in sign."""
     import json
-    H = json.load(open(os.path.join(ROOT, 'results', 'hierarchical.json')))
+    assert hasattr(indices, 'bayes_hierarchical'), 'src/indices.py is out of date: no bayes_hierarchical()'
+    f = os.path.join(ROOT, 'results', 'hierarchical.json')
+    if not os.path.exists(f): indices.main()            # tests must not depend on the order they run in
+    H = json.load(open(f))
     b, ba = H['bayes']['primary'], H['bayes']['all']
     assert b['groups'] == 7 and len(b['studies']) == 3 and ba['groups'] == 11 and len(ba['studies']) == 5
     assert 0.5 < b['mu_beta'] < 1.2 and b['mu_beta_ci'][0] < 0 < b['mu_beta_ci'][1]    # honest uncertainty
@@ -81,7 +86,8 @@ def test_model_predictions():
     """The four predictions must hold with the committed data."""
     import json, subprocess
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
-    assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'predictions.py')], env=env, capture_output=True).returncode == 0
+    r = subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'predictions.py')], env=env, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr[-800:]
     P = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))
     assert P['P1_allometry']['tau0_invariant'], 'P1: the shear set-point must not scale with body mass'
     assert P['P2_discordance']['all_below_one'] and P['P2_discordance']['reconstructed'] >= 4, 'P2'
