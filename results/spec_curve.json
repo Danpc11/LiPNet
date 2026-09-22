@@ -1,0 +1,184 @@
+[
+ {
+  "spec": "primary outcome (SFSS or early dysfunction)",
+  "groups": 7,
+  "strata": 3,
+  "events": 76,
+  "mu_beta": 1.555848240852356,
+  "mu_beta_ci": [
+   0.3490765392780304,
+   2.812110424041748
+  ],
+  "prob_positive": 0.9925,
+  "OR_per_zP": 4.739104270935059
+ },
+ {
+  "spec": "secondary outcome (mortality or graft loss)",
+  "groups": 4,
+  "strata": 2,
+  "events": 28,
+  "mu_beta": 1.7102333307266235,
+  "mu_beta_ci": [
+   0.5397918224334717,
+   2.8296988010406494
+  ],
+  "prob_positive": 0.99375,
+  "OR_per_zP": 5.530251502990723
+ },
+ {
+  "spec": "all outcomes",
+  "groups": 11,
+  "strata": 5,
+  "events": 104,
+  "mu_beta": 1.8027937412261963,
+  "mu_beta_ci": [
+   0.9795576930046082,
+   2.6096608638763428
+  ],
+  "prob_positive": 1.0,
+  "OR_per_zP": 6.066572189331055
+ },
+ {
+  "spec": "gradients reported or derived only",
+  "groups": 5,
+  "strata": 2,
+  "events": 50,
+  "mu_beta": 1.9284354448318481,
+  "mu_beta_ci": [
+   0.43181338906288147,
+   3.3079335689544678
+  ],
+  "prob_positive": 0.9925,
+  "OR_per_zP": 6.878739833831787
+ },
+ {
+  "spec": "no imputed CVP",
+  "groups": 5,
+  "strata": 2,
+  "events": 50,
+  "mu_beta": 1.9284354448318481,
+  "mu_beta_ci": [
+   0.43181338906288147,
+   3.3079335689544678
+  ],
+  "prob_positive": 0.9925,
+  "OR_per_zP": 6.878739833831787
+ },
+ {
+  "spec": "events reported only (no counts from percentages)",
+  "groups": 7,
+  "strata": 3,
+  "events": 76,
+  "mu_beta": 1.555848240852356,
+  "mu_beta_ci": [
+   0.3490765392780304,
+   2.812110424041748
+  ],
+  "prob_positive": 0.9925,
+  "OR_per_zP": 4.739104270935059
+ },
+ {
+  "spec": "one Kyoto publication (Ogura 2010)",
+  "groups": 6,
+  "strata": 3,
+  "events": 66,
+  "mu_beta": 1.886274814605713,
+  "mu_beta_ci": [
+   0.8717257380485535,
+   2.8556935787200928
+  ],
+  "prob_positive": 0.9995833333333334,
+  "OR_per_zP": 6.594756603240967
+ },
+ {
+  "spec": "one Kyoto publication (Uemura 2016)",
+  "groups": 7,
+  "strata": 3,
+  "events": 76,
+  "mu_beta": 1.555848240852356,
+  "mu_beta_ci": [
+   0.3490765392780304,
+   2.812110424041748
+  ],
+  "prob_positive": 0.9925,
+  "OR_per_zP": 4.739104270935059
+ },
+ {
+  "spec": "one Kyoto publication (Yagi 2005)",
+  "groups": 6,
+  "strata": 3,
+  "events": 54,
+  "mu_beta": 1.4924418926239014,
+  "mu_beta_ci": [
+   0.5649789571762085,
+   2.4385695457458496
+  ],
+  "prob_positive": 0.9991666666666666,
+  "OR_per_zP": 4.447943687438965
+ },
+ {
+  "spec": "tau prior HalfNormal(0.25)",
+  "groups": 11,
+  "strata": 5,
+  "events": 104,
+  "mu_beta": 1.824058175086975,
+  "mu_beta_ci": [
+   1.0778781175613403,
+   2.62551212310791
+  ],
+  "prob_positive": 1.0,
+  "OR_per_zP": 6.196956157684326
+ },
+ {
+  "spec": "tau prior HalfNormal(1.0)",
+  "groups": 11,
+  "strata": 5,
+  "events": 104,
+  "mu_beta": 1.7469565868377686,
+  "mu_beta_ci": [
+   0.7647045254707336,
+   2.6657583713531494
+  ],
+  "prob_positive": 0.99625,
+  "OR_per_zP": 5.737114906311035
+ },
+ {
+  "spec": "assumed CVP 3 mmHg",
+  "groups": 11,
+  "strata": 5,
+  "events": 104,
+  "mu_beta": 1.8027937412261963,
+  "mu_beta_ci": [
+   0.9795576930046082,
+   2.6096608638763428
+  ],
+  "prob_positive": 1.0,
+  "OR_per_zP": 6.066572189331055
+ },
+ {
+  "spec": "assumed CVP 7 mmHg",
+  "groups": 11,
+  "strata": 5,
+  "events": 104,
+  "mu_beta": 1.8027937412261963,
+  "mu_beta_ci": [
+   0.9795576930046082,
+   2.6096608638763428
+  ],
+  "prob_positive": 1.0,
+  "OR_per_zP": 6.066572189331055
+ },
+ {
+  "spec": "assumed CVP 9 mmHg",
+  "groups": 11,
+  "strata": 5,
+  "events": 104,
+  "mu_beta": 1.8027937412261963,
+  "mu_beta_ci": [
+   0.9795576930046082,
+   2.6096608638763428
+  ],
+  "prob_positive": 1.0,
+  "OR_per_zP": 6.066572189331055
+ }
+]
