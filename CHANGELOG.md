@@ -4,18 +4,18 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
-### Fixed
-- `risk_change` used the centred slope while everything else used the stratified one; it now loads `within_study_fit.json`, and its legend says "bootstrap interval for the slope" instead of calling it a band.
-- The band for a published reference in the calculator is now a joint bootstrap prediction interval (intercept and slope from the same replicate); for a user-supplied anchor the level is given, so the band is labelled "slope only".
-- The meta-analysis reports a Hartung-Knapp interval (OR 6.69, 2.27-19.7) and is documented as exploratory sensitivity; the I2 = 0% is qualified by the low power of five estimates.
-- The attenuation result is stated as a scenario with an assumed within-group SD, not as an observed loss.
-- The pressure after the planned change is validated like the current pressure: negative values are rejected.
-- README: "104 events across groups with a summed denominator of 734 recipients", and transportability is stated as consistency compatible with a common effect, pending external validation.
-- **The calculator mixed two models.** The intercepts came from the stratified fit (slope 1.96) while the predictions used the centred slope (1.66), so the curve did not reproduce the series it was anchored on. Slope, interval and intercepts now come from the same stratified model, and a user-supplied reference enters as logit p(z) = logit p_ref + beta·(z − z_ref), so the curve and its band pass through the anchor: at the reference gradient the band is exactly the rate given. Each fitted stratum now reproduces its own observed events (Wang 39, Ogura 20, Osman 7, Uemura 30, Yagi 8).
-- **The centred analysis is no longer presented as equivalent to the stratified fit.** It works on transformed proportions and its interval ignores the dependence induced by centring within a study, so it is documented and used as a descriptive view on a common scale; the effect is taken from the stratified fit, with the meta-analysis as sensitivity.
-- **The per-patient extrapolation is gone.** `attenuation()` no longer reports an "implied individual slope" from an assumed within-group SD; recovering an individual-level relation from group means is not possible here, and the claim that aggregation understates the effect has been removed from the README.
-- Provenance labels now match the stored values: rows that carry only a gradient have `not applicable` in `PVP_basis` and `CVP_basis`, and the Uemura and Botha notes no longer mention a derived CVP that is not stored. A test asserts that no basis claims a value that is absent.
-- `.zenodo.json` updated to 31 groups from 17 series; the calculator footer lists all 17; `0.2..2` in this file; `risk_curve` removed from the `plots.py` usage line; `recalibrate()` documented as taking individual outcomes only.
+### Changed
+- **The repository is now organised around the model, not around the meta-analysis.** `src/predictions.py` states the four predictions the perfusion-network model makes and tests each against data it was not fitted to: P1 the shear set-point invariant across mammals (exponent within 0.08 of zero; vascular mass 0.89-0.90 against the observed 0.86), P2 flow and pressure separating when outflow is enlarged (zP/zF of 0.31, 0.55, 0.54, 0.74, all below one, outcomes 0-10%), P3 a common within-cohort slope with a centre-specific level (every pair in the predicted direction; slope 1.96, hierarchical mu 0.89, P > 0 = 0.99; leave-one-centre-out agreement), P4 three fields meeting at zP = 2. The group-level analysis of published series is one of the four, not the result.
+- `data/series.tsv` gains an `outflow` column, which is what P2 is tested on.
+- New plot `predictions`: the four predictions on one page. README rewritten accordingly, with the limitations of the group-level analysis confined to P3.
+
+
+### Added
+- `indices.bayes_hierarchical()`: hierarchical binomial model, logit(p) = alpha_{study x outcome} + beta_study * zP with beta_study ~ N(mu_beta, tau_beta^2), weakly informative priors and a random-walk Metropolis sampler. With five series the classical tau2 collapses to zero; the posterior keeps that uncertainty. Primary outcome only: mu_beta 0.76 (95% CrI -0.24 to 1.73), P(effect > 0) = 0.94. All outcomes: 0.89 (0.23 to 1.57), P = 0.99, prediction interval for a new study -0.21 to 2.07.
+- `indices.iecv()`: internal-external cross-validation leaving out one centre (not one publication) at a time, with observed versus expected events after recalibrating only the held-out intercept. Cairo, Fukuoka and Kyoto all give slopes close to those estimated without them.
+- `indices.cvp_scenarios()`: the slope under an assumed CVP of 3, 5, 7 and 9 mmHg. It does not move, because within a study a constant shift of zP is absorbed by the intercept.
+- `data/series.tsv` gains the structural columns the analysis needs to separate study, centre and cohort: `centre_id`, `cohort_id`, `recruitment_start`, `recruitment_end`, `overlap_set`, `modulation_strategy`, `gradient_timing`, `gradient_sd`, `outcome_definition`, `outcome_horizon`.
+- `results/hierarchical.json` with all three analyses.
 
 
 ## [0.3.0] – 2026-09-21
