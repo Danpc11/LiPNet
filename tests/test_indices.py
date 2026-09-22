@@ -3,7 +3,7 @@ the data cannot drift out of step with the provenance labels, and the calculator
 
     python -m pytest tests -q        or        python tests/test_indices.py
 """
-import json, os, subprocess, sys
+import json, os, re, subprocess, sys
 import numpy as np, pandas as pd
 ROOT = os.path.join(os.path.dirname(__file__), '..'); sys.path.insert(0, os.path.join(ROOT, 'src'))
 import indices
@@ -205,7 +205,9 @@ def test_readme_matches_results():
     assert f"{p['mu_beta']:+.2f}" in readme and f"{p['OR_per_zP']:.2f}" in readme, 'README must quote the primary analysis'
     assert f"{p['prob_mu_positive']:.3f}" in readme
     assert 'assets/graphical_abstract.png' in readme
-    assert 'LiPNet' in readme and 'z_P = z_F\\,z_R' in readme, 'the README must carry the model name and the identity'
+    assert 'LiPNet' in readme, 'the README must carry the model name'
+    identity = re.sub(r'\s|\\[,;: ]', '', readme)                      # LaTeX spacing must not matter
+    assert 'z_P=z_Fz_R' in identity, 'the README must carry the identity zP = zF zR'
     assert 'liver_pressure_index' not in readme, 'stale repository name'
 
 if __name__ == '__main__':
