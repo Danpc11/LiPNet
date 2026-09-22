@@ -192,24 +192,26 @@ def test_readme_matches_results():
     sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t')
     M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
     readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
+    theory = open(os.path.join(ROOT, 'THEORY.md'), encoding='utf-8').read()
+    docs = readme + '\n' + theory                      # the numbers live in THEORY.md, the identity in both
     for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
-        flat = re.sub(r'\s|\\\\[,;: ]|\\\\rho|ρ', '', readme)     # the README may write these in prose or in LaTeX
+        flat = re.sub(r'\s|\\[,;: ]|\\rho|ρ', '', docs)   # prose or LaTeX, README or THEORY
         assert f"{int(r.groups)}groups" in flat and f"={r.spearman_rho:.2f}" in flat and f"p={r.p:.3f}" in flat
-    assert 'P1.' in readme and 'P2.' in readme and 'P3.' in readme and 'P4.' in readme, 'the README must state the predictions'
+    assert 'P1.' in docs and 'P2.' in docs and 'P3.' in docs and 'P4.' in docs, 'the README must state the predictions'
     E = json.load(open(os.path.join(ROOT, 'results', 'bayes_extra.json')))['index_contrast']
-    assert f"{E['prob_pressure_slope_exceeds_flow_slope']:.2f}" in readme, 'the README must report the index comparison'
+    assert f"{E['prob_pressure_slope_exceeds_flow_slope']:.2f}" in docs, 'the docs must report the index comparison'
     A = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))['P1_allometry']
-    assert f"{100*A['fraction_compatible']:.0f}%" in readme, 'the README must report P1 over the whole range of b'
-    assert '0.89–0.90 at b' not in readme, 'stale cherry-picked P1 claim'
+    assert f"{100*A['fraction_compatible']:.0f}%" in docs, 'the docs must report P1 over the whole range of b'
+    assert '0.89–0.90 at b' not in docs, 'stale cherry-picked P1 claim'
     M = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))
     p = M['primary (SFSS or early dysfunction)']
-    assert f"{p['mu_beta']:+.2f}" in readme and f"{p['OR_per_zP']:.2f}" in readme, 'README must quote the primary analysis'
-    assert f"{p['prob_mu_positive']:.3f}" in readme
+    assert f"{p['mu_beta']:+.2f}" in docs and f"{p['OR_per_zP']:.2f}" in docs, 'the docs must quote the primary analysis'
+    assert f"{p['prob_mu_positive']:.3f}" in docs
     assert 'assets/graphical_abstract.png' in readme
     assert 'LiPNet' in readme, 'the README must carry the model name'
     identity = re.sub(r'\s|\\(?:[,;: ]|cdot|times)', '', readme)   # LaTeX spacing/product must not matter
     assert 'z_P=z_Fz_R' in identity, 'the README must carry the identity zP = zF zR'
-    assert 'liver_pressure_index' not in readme, 'stale repository name'
+    assert 'liver_pressure_index' not in docs, 'stale repository name'
 
 if __name__ == '__main__':
     for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_readme_matches_results):
