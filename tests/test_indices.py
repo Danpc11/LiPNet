@@ -57,7 +57,7 @@ def test_data_and_provenance():
             pass
 
 def test_fitted_effect():
-    for name in ('bayes_hierarchical', 'iecv', 'cvp_scenarios', 'centred', 'meta_slope'):
+    for name in ('cvp_scenarios', 'centred', 'meta_slope', 'within_study_fit'):
         assert hasattr(indices, name), f'src/indices.py is out of date: no {name}()'
     indices.main()                                      # full run, so the JSONs match the committed calculator
     W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
@@ -70,22 +70,15 @@ def test_fitted_effect():
     assert M['overdispersion']['se_scale'] == 1.0 and M['attenuation']['loss_pct'] < 10
     assert 'beta_individual_implied' not in M['attenuation']          # no per-patient extrapolation
 
-def test_hierarchical_and_validation():
-    """The hierarchical model, the leave-one-centre-out validation and the CVP scenarios must run and agree in sign."""
+def test_cvp_scenarios_and_single_source():
+    """The assumed CVP must not move the slope, and there must be exactly one hierarchical implementation."""
     import json
-    assert hasattr(indices, 'bayes_hierarchical'), 'src/indices.py is out of date: no bayes_hierarchical()'
-    f = os.path.join(ROOT, 'results', 'hierarchical.json')
-    if not os.path.exists(f): indices.main()            # tests must not depend on the order they run in
-    H = json.load(open(f))
-    b, ba = H['bayes']['primary'], H['bayes']['all']
-    assert b['groups'] == 7 and len(b['studies']) == 3 and ba['groups'] == 11 and len(ba['studies']) == 5
-    assert 0.5 < b['mu_beta'] < 1.2 and b['mu_beta_ci'][0] < 0 < b['mu_beta_ci'][1]    # honest uncertainty
-    assert ba['prob_mu_positive'] > 0.95 and ba['tau_beta'] > 0
-    centres = {r['held_out'] for r in H['iecv']}
-    assert centres == {'Cairo', 'Fukuoka', 'Kyoto'} and all(r['beta_from_others'] > 1 for r in H['iecv'])
-    assert all(abs(r['OE'] - 1) < 0.05 for r in H['iecv'])                              # intercept recalibration works
-    betas = {round(x['beta'], 3) for x in H['cvp_scenarios']}
-    assert len(betas) == 1, 'a constant CVP shift must be absorbed by the intercept'
+    f = os.path.join(ROOT, 'results', 'cvp_scenarios.json')
+    if not os.path.exists(f): indices.main()
+    betas = {round(x['beta'], 3) for x in json.load(open(f))['cvp_scenarios']}
+    assert len(betas) == 1, 'a constant CVP shift within a study must be absorbed by its intercept'
+    assert not hasattr(indices, 'bayes_hierarchical'), 'the superseded sampler must not coexist with bayes.fit'
+    assert not hasattr(indices, 'iecv'), 'the O/E validation was replaced by bayes.conditional_iecv'
 
 def test_calculator_javascript_parses():
     """The calculator is one HTML file with inline JavaScript: a stray apostrophe breaks the whole page silently.
@@ -136,6 +129,18 @@ def test_whole_graft_model():
         assert abs(o['zP_over_zF'] - (0.9 + 0.05 * d ** -4) / 0.95) < 1e-9, 'the ratio is the resistance ratio'
     assert wg(d_in=0.5, h=1.5, r_coll=1e9)['collateral_steal'] < 1e-9, 'no collaterals, no steal'
     assert wg(d_in=0.5, h=1.5)['collateral_steal'] > 0.02, 'with collaterals, an inlet stenosis diverts flow'
+
+def test_modules_are_in_step():
+    """Every function the analysis calls must exist, so a half-updated checkout fails here with a clear message
+    instead of crashing inside a subprocess."""
+    import bayes
+    for f in ('fit', 'index_contrast', 'with_cutoff_groups', 'conditional_iecv', 'spec_curve', 'prior_sensitivity',
+              'monte_carlo_measurement', 'recovery', 'overlap_sets', 'main'):
+        assert hasattr(bayes, f), f'src/bayes.py is out of date: no bayes.{f}()'
+    for f in ('zP', 'zF', 'zR', 'compute', 'recalibrate', 'baseline_from_rate'):
+        assert hasattr(indices, f), f'src/indices.py is out of date: no indices.{f}()'
+    for name in ('bayes_main', 'bayes_extra', 'spec_curve', 'bayes_iecv', 'bayes_priors'):
+        assert os.path.exists(os.path.join(ROOT, 'results', f'{name}.json')), f'results/{name}.json is missing'
 
 def test_modules_are_in_step():
     """Every function the analysis calls must exist, so a half-updated checkout fails here with a clear message
@@ -204,6 +209,5 @@ def test_readme_matches_results():
     assert 'liver_pressure_index' not in readme, 'stale repository name'
 
 if __name__ == '__main__':
-    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
-              test_modules_are_in_step, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
+    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
