@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "liver_pressure_index: indices of haemodynamic load on a partial liver graft"
+title: "LiPNet: a liver perfusion network model of haemodynamic load in partial grafts"
 message: "If you use this code or data, please cite the repository and the associated article."
 authors:
   - family-names: Vázquez-Victorio
@@ -14,7 +14,7 @@ authors:
     given-names: Hugo
   - family-names: Pérez-Calixto
     given-names: Daniel
-repository-code: "https://github.com/Danpc11/liver_pressure_index"
+repository-code: "https://github.com/Danpc11/LiPNet"
 doi: 10.5281/zenodo.22861276
 date-released: 2026-09-20
 license: PolyForm-Noncommercial-1.0.0
