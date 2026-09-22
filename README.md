@@ -1,4 +1,4 @@
-# Liver pressure index
+# Liver Perfusion Network model
 ### A perfusion-network model of the liver, and the predictions it makes about partial grafts
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
