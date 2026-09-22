@@ -153,9 +153,17 @@ represents the normal donor state.
 
 ### Resistance load
 
-The normalized resistance load is:
+Vascular resistance per unit mass is:
 
-$$z_R=\frac{z_P}{z_F}=\frac{R_{\text{graft}}}{R_{\text{donor}}}.$$
+$$R=\frac{\Delta P}{Q}\quad\text{(per 100 g)}.$$
+
+The normalized resistance load is defined as the graft resistance relative to the donor:
+
+$$z_R=\frac{R_{\text{graft}}}{R_{\text{donor}}}.$$
+
+$R_{\text{donor}}$ uses the reference gradient of 5 mmHg and the donor reference flow. Dividing the two other loads:
+
+$$\frac{z_P}{z_F}=\frac{\Delta P_{\text{graft}}/\Delta P_{\text{donor}}}{Q_{\text{graft}}/Q_{\text{donor}}}=\frac{R_{\text{graft}}}{R_{\text{donor}}}=z_R.$$
 
 This gives the central identity of LiPNet:
 
@@ -329,6 +337,14 @@ Their resistance loads were:
 $$z_R=0.31,\;0.54,\;0.55,\;0.74.$$
 
 All four values were below 1, as predicted.
+
+The only group with standard outflow and both loads reported (Wang 2014, no splenectomy) had:
+
+$$z_R=0.72.$$
+
+It is also below 1, so these five groups show that partial grafts can carry high flow at reduced resistance, but they do not yet separate reconstructed from standard outflow. That contrast needs more series reporting both loads.
+
+Because $R_{\text{graft}}$ is estimated here from the measured gradient and flow, the identity itself is an exact decomposition, not an empirical test. The empirical content of P2 is the sign of $z_R-1$ under each surgical configuration.
 
 The exact sign test gives:
 
