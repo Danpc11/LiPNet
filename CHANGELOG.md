@@ -4,33 +4,30 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
-### Changed
-- The calculator now uses the estimate the paper reports: the slope and interval come from the hierarchical model (`results/bayes_main.json`), not from the stratified fit, so the page and the manuscript can no longer disagree. Lowering the gradient by 5 mmHg gives OR 0.17 (0.07-0.38) instead of 0.14 (0.05-0.30); on a 10% baseline at 8 mmHg a patient at 12 mmHg reads 31.8% instead of 34.7%. Per-series levels still come from the stratified fit, which is what provides them.
-- A demo card, "Send us this case", copies one tab-separated row with the same columns as `data/cohort_template.tsv`; nothing leaves the browser.
+## [0.3.0] – 2026-09-22
 
+The release that turns the repository into the model it is named after.
 
-### Changed
-- The accompanying article is titled *Vascular resistance modulates portal flow–pressure decoupling in partial liver grafts*; it is recorded in `CITATION.cff` as the preferred citation and in the README.
-- **The model has a name and the indices have a shared identity.** The repository is LiPNet, the Liver Perfusion Network model, and the three quantities it defines are now named as loads: zF the normalised portal flow load, zP the normalised portal pressure load and zR = zP/zF = R_graft/R_donor the normalised resistance load, with
+### The model
+- **LiPNet**, the Liver Perfusion Network model, with its three normalised loads and their identity:
 
       zP = zF x zR        pressure load = flow load x resistance load
 
-  `indices.zR()` and a `zR` column make the third load explicit, and a test asserts the identity holds exactly on every group measured on both scales (0.31, 0.54, 0.55, 0.72, 0.74, all below one). Calculator, README, figures and links renamed accordingly.
+  `indices.zR()`, a `zR` column and a test that asserts the identity holds exactly on every group measured on both scales (0.31, 0.54, 0.55, 0.72, 0.74, all below one).
+- `src/predictions.py` states the model's predictions and tests each against data it was not fitted to: P1 the shear set-point invariant across mammals, P2 the loads separating when the outflow is enlarged, P3 the within-cohort ordering, P4 three clinical thresholds meeting on one scale.
+- `src/model/whole_graft.py` extends the model to a whole graft: inlet and outlet anastomoses in series, with the prediction that they fail in opposite directions (outlet stenosis raises zR above 1, inlet stenosis leaves it at 1 while both loads fall).
 
+### The analysis
+- `src/bayes.py`: the primary analysis, a hierarchical binomial model with zP centred within study, fitted by NUTS with four chains, R-hat, effective sample size, divergences and posterior predictive checks; sensitivity to the prior on tau; the Kyoto overlap sets; a conditional internal-external validation that scores the slope without fitting anything on the held-out centre; a Monte Carlo that propagates the uncertainty of the indices; a specification curve over 15 analysis choices; and a recovery simulation that shows what this design can and cannot identify.
+- The superseded implementations are gone: the hand-written Metropolis sampler and the observed-to-expected validation that recalibrated the held-out intercept, which was not an independent evaluation.
+- The calculator uses the estimate the paper reports, so page and manuscript cannot disagree, and carries a card that copies one case as a row for the cohort that is still missing.
 
-### Changed
-- **The repository is now organised around the model, not around the meta-analysis.** `src/predictions.py` states the four predictions the perfusion-network model makes and tests each against data it was not fitted to: P1 the shear set-point invariant across mammals (exponent within 0.08 of zero; vascular mass 0.89-0.90 against the observed 0.86), P2 flow and pressure separating when outflow is enlarged (zP/zF of 0.31, 0.55, 0.54, 0.74, all below one, outcomes 0-10%), P3 a common within-cohort slope with a centre-specific level (every pair in the predicted direction; slope 1.96, hierarchical mu 0.89, P > 0 = 0.99; leave-one-centre-out agreement), P4 three fields meeting at zP = 2. The group-level analysis of published series is one of the four, not the result.
-- `data/series.tsv` gains an `outflow` column, which is what P2 is tested on.
-- New plot `predictions`: the four predictions on one page. README rewritten accordingly, with the limitations of the group-level analysis confined to P3.
+### Data
+- 31 groups from 17 series with provenance per cell, structural columns (centre, cohort, recruitment period, overlap set, outflow, gradient timing, outcome definition and horizon) and a `gradient_mmHg` column for the series that report the gradient itself.
 
-
-### Added
-- `indices.bayes_hierarchical()`: hierarchical binomial model, logit(p) = alpha_{study x outcome} + beta_study * zP with beta_study ~ N(mu_beta, tau_beta^2), weakly informative priors and a random-walk Metropolis sampler. With five series the classical tau2 collapses to zero; the posterior keeps that uncertainty. Primary outcome only: mu_beta 0.76 (95% CrI -0.24 to 1.73), P(effect > 0) = 0.94. All outcomes: 0.89 (0.23 to 1.57), P = 0.99, prediction interval for a new study -0.21 to 2.07.
-- `indices.iecv()`: internal-external cross-validation leaving out one centre (not one publication) at a time, with observed versus expected events after recalibrating only the held-out intercept. Cairo, Fukuoka and Kyoto all give slopes close to those estimated without them.
-- `indices.cvp_scenarios()`: the slope under an assumed CVP of 3, 5, 7 and 9 mmHg. It does not move, because within a study a constant shift of zP is absorbed by the intercept.
-- `data/series.tsv` gains the structural columns the analysis needs to separate study, centre and cohort: `centre_id`, `cohort_id`, `recruitment_start`, `recruitment_end`, `overlap_set`, `modulation_strategy`, `gradient_timing`, `gradient_sd`, `outcome_definition`, `outcome_horizon`.
-- `results/hierarchical.json` with all three analyses.
-
+### Documentation
+- README rewritten around the model, with the equations as rendered mathematics, the full accounting of what enters each analysis, and the limitations confined to the prediction they belong to.
+- The accompanying article is *Vascular resistance modulates portal flow-pressure decoupling in partial liver grafts*, recorded in `CITATION.cff` as the preferred citation.
 
 ## [0.2.3] – 2026-09-21
 
