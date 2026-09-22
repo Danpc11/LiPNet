@@ -86,8 +86,9 @@ def predictions():
     ax.axvspan(1, 2, color='0.92', lw=0); ax.set_xlim(0.8, 4); ax.set_ylim(0, 60)
     ax.set_xlabel('z$_P$'); ax.set_ylabel('Outcome (%)')
     p3 = P['P3_within_cohort']
-    ax.text(0.03, 0.97, f"OR {p3['OR_per_zP']:.2f} per unit z$_P$\nhierarchical {np.exp(p3['hierarchical_mu']):.2f}, P(>0) = {p3['prob_positive']:.2f}\n"
-                        f"intercepts span {p3['intercept_range'][1]-p3['intercept_range'][0]:.1f} logits",
+    pr = p3['primary']; ex = p3['exploratory']
+    ax.text(0.03, 0.97, f"primary outcome: OR {pr['OR_per_zP']:.2f} per unit z$_P$\n"
+                        f"P($\\mu_\\beta$ > 0) = {pr['prob_mu_positive']:.2f}; all outcomes {ex['OR_per_zP']:.2f}",
             transform=ax.transAxes, va='top', fontsize=6)
     # P4 thresholds
     ax = axs[1, 1]; lab(ax, 'P4  three fields, one threshold')
