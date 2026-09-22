@@ -35,10 +35,13 @@ def _model(S, z_c, n, events=None, n_studies=1, tau_scale=0.5, alpha_scale=2.5, 
     numpyro.sample('obs', dist.BinomialLogits(logit, total_count=n), obs=events)
 
 
-def _prep(d, by_outcome=True):
-    """Return the design: one stratum per study (or per study and outcome), zP centred within stratum."""
+def _prep(d, by_outcome=True, by_centre=False):
+    """Return the design: one stratum per study (or per centre), optionally split by outcome definition, with zP
+    centred within stratum. by_centre=True pools publications from the same centre, which is the right unit when
+    their recruitment periods overlap (Kyoto)."""
     d = d.copy()
-    d['stratum'] = d.study.astype(str) + ((' / ' + d.outcome_type.astype(str)) if by_outcome else '')
+    unit = d.centre_id.astype(str) if by_centre else d.study.astype(str)
+    d['stratum'] = unit + ((' / ' + d.outcome_type.astype(str)) if by_outcome else '')
     d = d.groupby('stratum').filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
     strata = sorted(d.stratum.unique())
     S = np.array([strata.index(s) for s in d.stratum])
@@ -46,8 +49,8 @@ def _prep(d, by_outcome=True):
     return d, strata, S, z_c
 
 
-def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcome=True, quiet=True):
-    d, strata, S, z_c = _prep(d, by_outcome)
+def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcome=True, by_centre=False, quiet=True, keep_draws=0):
+    d, strata, S, z_c = _prep(d, by_outcome, by_centre)
     n = d.n.values.astype(int); ev = d.events.values.astype(int)
     kernel = NUTS(_model, target_accept_prob=0.95)
     mcmc = MCMC(kernel, num_warmup=warmup, num_samples=samples, num_chains=chains, progress_bar=not quiet)
@@ -76,6 +79,7 @@ def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcom
                 OR_per_mmHg=float(np.exp(mu.mean() / 5.0)),
                 prediction_interval=q(pred_new), prob_new_study_positive=float((pred_new > 0).mean()),
                 beta_by_stratum={s: dict(mean=float(flat['beta'][:, i].mean()), ci=q(flat['beta'][:, i])) for i, s in enumerate(strata)},
+                mu_draws=(np.asarray(mu)[np.linspace(0, len(mu) - 1, keep_draws).astype(int)].tolist() if keep_draws else None),
                 rhat=dict(mu_beta=float(summ['mu_beta']['r_hat']), tau_beta=float(summ['tau_beta']['r_hat']),
                           max=float(max(np.max(summ[k]['r_hat']) for k in summ))),
                 ess=dict(mu_beta=float(summ['mu_beta']['n_eff']), tau_beta=float(summ['tau_beta']['n_eff']),
@@ -106,9 +110,10 @@ def overlap_sets(d, **kw):
 def recovery(d, mu_true=(0.0, 0.5, 1.0, 2.0), tau_true=0.3, reps=40, seed=0, **kw):
     """Can this design recover the effect? Keep the real sizes, gradients and strata, simulate outcomes with a
     known mu_beta and tau_beta, refit, and report bias, coverage and the power to exclude zero."""
-    d0, strata, S, z_c = _prep(d, kw.get('by_outcome', True))
+    d0, strata, S, z_c = _prep(d, kw.get('by_outcome', True), kw.get('by_centre', False))
     n = d0.n.values.astype(int); rng = np.random.default_rng(seed)
-    base = np.log(np.clip(d0.events.values / n, 1e-3, 1 - 1e-3)).mean()
+    p_obs = np.clip(d0.events.values / n, 1e-3, 1 - 1e-3)
+    base = float(np.log(p_obs / (1 - p_obs)).mean())          # logit of the observed rates, not log
     rows = []
     for mt in mu_true:
         est, cov, pos = [], [], []
@@ -145,8 +150,8 @@ def conditional_iecv(d, by='centre_id', **kw):
     out = []
     for held in sorted(d[by].dropna().unique()):
         train, test = d[d[by] != held], d[d[by] == held]
-        tr, strata, S, z_c = _prep(train, kw.get('by_outcome', True))
-        te, strata_t, _, _ = _prep(test, kw.get('by_outcome', True))
+        tr, strata, S, z_c = _prep(train, kw.get('by_outcome', True), kw.get('by_centre', False))
+        te, strata_t, _, _ = _prep(test, kw.get('by_outcome', True), kw.get('by_centre', False))
         if len(tr) < 4 or len(te) < 2: continue
         f = fit(train, warmup=800, samples=1200, chains=2, **kw); mu = f['mu_beta']
         rows = []
@@ -175,14 +180,17 @@ def monte_carlo_measurement(d, draws=200, seed=0, **kw):
     for _ in range(draws):
         e = d.copy()
         sd = e.gradient_sd.fillna(3.5).values                     # reported SD where available
-        se = sd / np.sqrt(e.n.values.astype(float))               # error of the group mean
+        se = sd / np.sqrt(e.n.values.astype(float))               # error of each group's mean
         shift = rng.normal(0, se)
-        cvp_imp = e.CVP_basis.eq('imputed').values                # CVP assumed: sample 3-9 mmHg instead of fixing 5
-        shift = shift + np.where(cvp_imp, rng.uniform(-2, 4, len(e)), 0.0)
+        # The assumed CVP is a property of the study, not of the group: draw one value per study over 3-9 mmHg.
+        # zP = (PVP - CVP)/5, so a CVP of 3 raises the gradient by 2 and a CVP of 9 lowers it by 4.
+        cvp_imp = e.CVP_basis.eq('imputed').values
+        per_study = {st: 5.0 - rng.uniform(3.0, 9.0) for st in e.study.unique()}
+        shift = shift + np.where(cvp_imp, e.study.map(per_study).values, 0.0)
         e['zP'] = e.zP + shift / 5.0
-        f = fit(e, warmup=400, samples=600, chains=2, quiet=True, **kw)
-        mus.append(f['mu_beta'])
-    mus = np.array(mus)
+        f = fit(e, warmup=400, samples=600, chains=2, quiet=True, keep_draws=200, **kw)
+        mus.extend(f['mu_draws'])                 # pool the posteriors, not their means, so the reported
+    mus = np.array(mus)                           # interval carries measurement AND statistical uncertainty
     return dict(draws=int(draws), mu_beta=float(mus.mean()),
                 mu_beta_ci=[float(np.percentile(mus, 2.5)), float(np.percentile(mus, 97.5))],
                 prob_positive=float((mus > 0).mean()))
@@ -203,7 +211,8 @@ def spec_curve(d, quick=True):
              ('one Kyoto publication (Uemura 2016)', d[(d.centre_id != 'Kyoto') | (d.study == 'Uemura 2016')], {}),
              ('one Kyoto publication (Yagi 2005)', d[(d.centre_id != 'Kyoto') | (d.study == 'Yagi 2005')], {}),
              ('tau prior HalfNormal(0.25)', d, dict(tau_scale=0.25)),
-             ('tau prior HalfNormal(1.0)', d, dict(tau_scale=1.0))]
+             ('tau prior HalfNormal(1.0)', d, dict(tau_scale=1.0)),
+             ('one stratum per centre, not per publication', d, dict(by_centre=True))]
     for cvp in (3.0, 7.0, 9.0):
         e = d.copy(); m = e.CVP_basis.eq('imputed')
         e.loc[m, 'zP'] = e.loc[m, 'zP'] + (5.0 - cvp) / 5.0
@@ -211,7 +220,7 @@ def spec_curve(d, quick=True):
     out = []
     for name, sub, extra in specs:
         try:
-            s2 = _prep(sub, True)[0]
+            s2 = _prep(sub, True, extra.get('by_centre', False))[0]
             if len(s2) < 4: out.append(dict(spec=name, groups=int(len(s2)), mu_beta=None)); continue
             f = fit(sub, **{**kw, **extra})
             out.append(dict(spec=name, groups=f['groups'], strata=len(f['strata']), events=f['events'],
