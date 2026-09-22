@@ -440,8 +440,9 @@ def main(boot=2000, seed=0):
     for r_ in val:
         print(f"    {r_['held_out']:10s} slope from the others {r_['beta_from_others']:.2f}, in the held-out centre {r_['beta_in_held_out']:.2f}; "
               f"observed {r_['observed']} vs expected {r_['expected']:.1f} (O/E {r_['OE']:.2f}), largest rate error {r_['max_abs_rate_error_pct']:.1f} points")
-    print(f"  assumed CVP of 3, 5, 7 or 9 mmHg: slope {', '.join(f'{x[chr(39)+chr(39)] if False else x['beta']:.2f}' for x in cvps)} "
-          f"(a constant shift within a study is absorbed by its intercept)")
+    slopes = ", ".join("%.2f" % x["beta"] for x in cvps)
+    print("  assumed CVP of 3, 5, 7 or 9 mmHg: slope " + slopes +
+          "  (a constant shift within a study is absorbed by its intercept)")
 
     sf = m[(m.outcome_type == 'SFSS_or_dysfunction')]
     pf = pooled_fit(sf, boot, seed); json.dump(pf, open(f'{OUT}/pooled_fit.json', 'w'), indent=1)
