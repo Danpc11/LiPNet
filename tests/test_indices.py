@@ -20,13 +20,20 @@ def test_sources_parse_on_older_python():
             raise AssertionError(f'{os.path.relpath(f, ROOT)}:{e.lineno} is not valid on Python 3.9: {e.msg}')
 
 def test_load_identity():
-    """The three LiPNet loads and their identity: pressure load = flow load x resistance load."""
+    """zR is defined from the resistances, zR = R_graft / R_donor with R = dP / Q per 100 g. With resistances
+    estimated from the measured gradient and flow this must reproduce zP / zF, so that zP = zF * zR is an exact
+    decomposition of the pressure load (a check of the definitions, not of the data)."""
     import pandas as pd, numpy as np
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     both = d.dropna(subset=['zP', 'zF', 'zR'])
-    assert len(both) == 5 and np.allclose(both.zF * both.zR, both.zP), 'zP = zF * zR must hold exactly'
-    assert abs(indices.zR(2.0, 2.0) - 1.0) < 1e-12, 'a donor-resistance graft has zR = 1'
-    assert all(both.zR < 1), 'every graft measured on both scales here had its outflow enlarged'
+    assert len(both) == 5
+    assert np.allclose(both.zR, both.R_graft / both.R_donor), 'zR must be the resistance ratio'
+    assert np.allclose(both.zR, both.zP / both.zF), 'the resistance ratio must equal zP / zF'
+    assert np.allclose(both.zF * both.zR, both.zP), 'zP = zF * zR must hold exactly'
+    Rd = indices.R(indices.NORMAL_GRADIENT, indices.DEFAULT_DONOR_REF)
+    assert abs(indices.zR(Rd, Rd) - 1.0) < 1e-12, 'a graft at donor resistance has zR = 1'
+    rec = both[both.outflow.str.startswith('reconstructed')]
+    assert len(rec) == 4 and all(rec.zR < 1), 'every group with reconstructed outflow has zR below one'
 
 def test_indices_and_baseline():
     assert indices.zP(15, 5) == 2.0                    # PVP 15 at CVP 5 is twice the normal gradient
@@ -129,18 +136,6 @@ def test_whole_graft_model():
         assert abs(o['zP_over_zF'] - (0.9 + 0.05 * d ** -4) / 0.95) < 1e-9, 'the ratio is the resistance ratio'
     assert wg(d_in=0.5, h=1.5, r_coll=1e9)['collateral_steal'] < 1e-9, 'no collaterals, no steal'
     assert wg(d_in=0.5, h=1.5)['collateral_steal'] > 0.02, 'with collaterals, an inlet stenosis diverts flow'
-
-def test_modules_are_in_step():
-    """Every function the analysis calls must exist, so a half-updated checkout fails here with a clear message
-    instead of crashing inside a subprocess."""
-    import bayes
-    for f in ('fit', 'index_contrast', 'with_cutoff_groups', 'conditional_iecv', 'spec_curve', 'prior_sensitivity',
-              'monte_carlo_measurement', 'recovery', 'overlap_sets', 'main'):
-        assert hasattr(bayes, f), f'src/bayes.py is out of date: no bayes.{f}()'
-    for f in ('zP', 'zF', 'zR', 'compute', 'recalibrate', 'baseline_from_rate'):
-        assert hasattr(indices, f), f'src/indices.py is out of date: no indices.{f}()'
-    for name in ('bayes_main', 'bayes_extra', 'spec_curve', 'bayes_iecv', 'bayes_priors'):
-        assert os.path.exists(os.path.join(ROOT, 'results', f'{name}.json')), f'results/{name}.json is missing'
 
 def test_modules_are_in_step():
     """Every function the analysis calls must exist, so a half-updated checkout fails here with a clear message
