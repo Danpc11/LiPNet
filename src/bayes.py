@@ -220,3 +220,27 @@ def spec_curve(d, quick=True):
         except Exception as e:                                   # a specification that leaves too little data
             out.append(dict(spec=name, groups=None, mu_beta=None, error=str(e)[:80]))
     return out
+
+
+def main():
+    """Fit and cache everything the primary analysis needs (a few minutes)."""
+    import json, os, indices
+    root = os.path.join(os.path.dirname(__file__), '..'); out = f'{root}/results'; os.makedirs(out, exist_ok=True)
+    d = indices.compute(pd.read_csv(f'{root}/data/series.tsv', sep='\t'))
+    c = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]
+    pri = c[c.outcome_type == 'SFSS_or_dysfunction']; sec = c[c.outcome_type != 'SFSS_or_dysfunction']
+    main_ = {'primary (SFSS or early dysfunction)': fit(pri), 'secondary (mortality or graft loss)': fit(sec),
+             'exploratory (all outcomes)': fit(c)}
+    json.dump(main_, open(f'{out}/bayes_main.json', 'w'), indent=1)
+    for name, res in (('bayes_priors', prior_sensitivity(pri)), ('bayes_overlap', overlap_sets(c)),
+                      ('bayes_iecv', conditional_iecv(c)), ('spec_curve', spec_curve(c))):
+        json.dump(res, open(f'{out}/{name}.json', 'w'), indent=1); print('wrote', name)
+    json.dump(monte_carlo_measurement(c, draws=40), open(f'{out}/bayes_measurement.json', 'w'), indent=1); print('wrote bayes_measurement')
+    json.dump(recovery(c, mu_true=(0.0, 1.0, 2.0), reps=10), open(f'{out}/bayes_recovery.json', 'w'), indent=1); print('wrote bayes_recovery')
+    r = main_['primary (SFSS or early dysfunction)']
+    print(f"primary: mu {r['mu_beta']:+.2f} ({r['mu_beta_ci'][0]:+.2f} to {r['mu_beta_ci'][1]:+.2f}), "
+          f"P(mu>0) = {r['prob_mu_positive']:.3f}, R-hat {r['rhat']['max']:.3f}, divergences {r['divergences']}")
+
+
+if __name__ == '__main__':
+    main()
