@@ -206,7 +206,7 @@ def test_readme_matches_results():
     assert f"{p['prob_mu_positive']:.3f}" in readme
     assert 'assets/graphical_abstract.png' in readme
     assert 'LiPNet' in readme, 'the README must carry the model name'
-    identity = re.sub(r'\s|\\[,;: ]', '', readme)                      # LaTeX spacing must not matter
+       identity = re.sub(r'\s|\\(?:[,;: ]|cdot|times)', '', readme)   # LaTeX spacing/product must not matter
     assert 'z_P=z_Fz_R' in identity, 'the README must carry the identity zP = zF zR'
     assert 'liver_pressure_index' not in readme, 'stale repository name'
 
