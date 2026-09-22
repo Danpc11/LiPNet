@@ -135,6 +135,18 @@ def test_whole_graft_model():
     assert wg(d_in=0.5, h=1.5, r_coll=1e9)['collateral_steal'] < 1e-9, 'no collaterals, no steal'
     assert wg(d_in=0.5, h=1.5)['collateral_steal'] > 0.02, 'with collaterals, an inlet stenosis diverts flow'
 
+def test_modules_are_in_step():
+    """Every function the analysis calls must exist, so a half-updated checkout fails here with a clear message
+    instead of crashing inside a subprocess."""
+    import bayes
+    for f in ('fit', 'index_contrast', 'with_cutoff_groups', 'conditional_iecv', 'spec_curve', 'prior_sensitivity',
+              'monte_carlo_measurement', 'recovery', 'overlap_sets', 'main'):
+        assert hasattr(bayes, f), f'src/bayes.py is out of date: no bayes.{f}()'
+    for f in ('zP', 'zF', 'zR', 'compute', 'recalibrate', 'baseline_from_rate'):
+        assert hasattr(indices, f), f'src/indices.py is out of date: no indices.{f}()'
+    for name in ('bayes_main', 'bayes_extra', 'spec_curve', 'bayes_iecv', 'bayes_priors'):
+        assert os.path.exists(os.path.join(ROOT, 'results', f'{name}.json')), f'results/{name}.json is missing'
+
 def test_model_predictions():
     """The four predictions must hold with the committed data."""
     import json, subprocess
@@ -186,5 +198,5 @@ def test_readme_matches_results():
 
 if __name__ == '__main__':
     for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_hierarchical_and_validation,
-              test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
+              test_modules_are_in_step, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_model_predictions, test_readme_matches_results):
         t(); print('ok', t.__name__)
