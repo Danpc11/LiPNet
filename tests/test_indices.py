@@ -188,6 +188,20 @@ def test_model_predictions():
     assert all(pr['prob_positive'] > 0.9 for pr in p3['prior_sensitivity']), 'P3: prior sensitivity'
     assert P['P4_thresholds']['all_at_two'], 'P4'
 
+BLOCKED_MACROS = ('operatorname', 'newcommand', 'def', 'require', 'label', 'includegraphics')
+
+
+def test_docs_math_renders_on_github():
+    """GitHub renders README maths with a restricted KaTeX: a blocked macro silently kills the whole expression."""
+    docs = {f: open(os.path.join(ROOT, f), encoding='utf-8').read() for f in ('README.md', 'THEORY.md')}
+    for name, s in docs.items():
+        exprs = re.findall(r'\$\$(.+?)\$\$', s, re.S) + re.findall(r'(?<!\$)\$([^$\n]+)\$(?!\$)', s)
+        for e in exprs:
+            for m in BLOCKED_MACROS:
+                assert '\\' + m not in e, f'{name}: \\{m} is not allowed by GitHub maths: {e.strip()[:60]}'
+            assert '\\\\' not in e, f'{name}: a double backslash breaks the expression: {e.strip()[:60]}'
+
+
 def test_readme_matches_results():
     sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t')
     M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
@@ -214,5 +228,5 @@ def test_readme_matches_results():
     assert 'liver_pressure_index' not in docs, 'stale repository name'
 
 if __name__ == '__main__':
-    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_readme_matches_results):
+    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_docs_math_renders_on_github, test_readme_matches_results):
         t(); print('ok', t.__name__)
