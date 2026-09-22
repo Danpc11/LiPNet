@@ -1,0 +1,78 @@
+[
+ {
+  "held_out": "Cairo",
+  "mu_from_others": 1.757839322090149,
+  "mu_ci": [
+   0.8499212265014648,
+   2.7054221630096436
+  ],
+  "strata": [
+   {
+    "stratum": "Osman 2017 / SFSS_or_dysfunction",
+    "dzP": 0.9979999999999998,
+    "loglik_model": -0.9212766221744779,
+    "loglik_null": -3.1827265296248655,
+    "gain": 2.2614499074503875,
+    "observed_high_zP_rate": 16.22,
+    "observed_low_zP_rate": 2.56,
+    "direction_correct": true
+   }
+  ],
+  "total_gain": 2.2614499074503875,
+  "all_directions_correct": true
+ },
+ {
+  "held_out": "Fukuoka",
+  "mu_from_others": 1.7968822717666626,
+  "mu_ci": [
+   0.8735640048980713,
+   2.7933645248413086
+  ],
+  "strata": [
+   {
+    "stratum": "Wang 2014 / SFSS_or_dysfunction",
+    "dzP": 0.4599999999999995,
+    "loglik_model": -1.9632119306490665,
+    "loglik_null": -4.705627628738739,
+    "gain": 2.7424156980896726,
+    "observed_high_zP_rate": 19.67,
+    "observed_low_zP_rate": 9.74,
+    "direction_correct": true
+   }
+  ],
+  "total_gain": 2.7424156980896726,
+  "all_directions_correct": true
+ },
+ {
+  "held_out": "Kyoto",
+  "mu_from_others": 1.5231989622116089,
+  "mu_ci": [
+   0.2856421172618866,
+   2.741286277770996
+  ],
+  "strata": [
+   {
+    "stratum": "Ogura 2010 / mortality_or_graft_loss",
+    "dzP": 0.74,
+    "loglik_model": -2.5318734180166587,
+    "loglik_null": -8.253983754838671,
+    "gain": 5.722110336822013,
+    "observed_high_zP_rate": 32.56,
+    "observed_low_zP_rate": 6.98,
+    "direction_correct": true
+   },
+   {
+    "stratum": "Yagi 2005 / mortality_or_graft_loss",
+    "dzP": 1.6599999999999997,
+    "loglik_model": -0.9031303549056346,
+    "loglik_null": -3.5850774381593027,
+    "gain": 2.681947083253668,
+    "observed_high_zP_rate": 41.18,
+    "observed_low_zP_rate": 6.67,
+    "direction_correct": true
+   }
+  ],
+  "total_gain": 8.40405742007568,
+  "all_directions_correct": true
+ }
+]

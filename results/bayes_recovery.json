@@ -1,0 +1,26 @@
+[
+ {
+  "mu_true": 0.0,
+  "mean_estimate": 0.05950191095471382,
+  "bias": 0.05950191095471382,
+  "coverage": 1.0,
+  "power_to_exclude_zero": 0.0,
+  "reps": 10
+ },
+ {
+  "mu_true": 1.0,
+  "mean_estimate": 0.7874958395957947,
+  "bias": -0.21250416040420528,
+  "coverage": 1.0,
+  "power_to_exclude_zero": 0.5,
+  "reps": 10
+ },
+ {
+  "mu_true": 2.0,
+  "mean_estimate": 1.712745225429535,
+  "bias": -0.287254774570465,
+  "coverage": 1.0,
+  "power_to_exclude_zero": 1.0,
+  "reps": 10
+ }
+]
