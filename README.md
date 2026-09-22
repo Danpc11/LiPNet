@@ -1,4 +1,4 @@
-# Liver Perfusion Network model
+# LiPNet - Liver Perfusion Network model
 ### A perfusion-network model of the liver, and the predictions it makes about partial grafts
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
@@ -10,24 +10,19 @@
 
 The liver is treated as a transport network: a portal tree feeding a very large number of near-identical lobules, and a hepatic venous tree collecting from them. Minimising dissipated power at a fixed vascular maintenance cost `Σ m_e^b` gives, with no free parameters,
 
-```
-D* ∝ F² C^(−2/b) N^((2−b)/b) L³        the optimum, a space-filling tree with one sinusoid per lobule
-τ0 = √(D*/C)                            a wall shear set-point fixed by the whole network
-ΔP = f · R                              the pressure drop across a lobule
-```
+$$D^\* \propto F^{2}\,C^{-2/b}\,N^{(2-b)/b}\,L^{3},\qquad \tau_0=\sqrt{D^\*/C},\qquad \Delta P = f\,R$$
+
+the optimum (a space-filling tree with one sinusoid per lobule), the wall-shear set-point it fixes, and the pressure drop across a single lobule.
 
 A partial graft is the fraction `g` of that network that remains, perfused with `h` times the donor inflow, so each lobule receives `h/g` times its donor flow. Written in measurable quantities:
 
-```
-zF = graft PVF per 100 g / donor PVF per 100 g      normalised portal flow load
-zP = (PVP − CVP) / 5 mmHg                           normalised portal pressure load
-zR = zP / zF = R_graft / R_donor                    normalised resistance load
+$$z_F=\frac{\text{graft PVF per }100\,\text{g}}{\text{donor PVF per }100\,\text{g}},\qquad
+z_P=\frac{\text{PVP}-\text{CVP}}{5\ \text{mmHg}},\qquad
+z_R=\frac{z_P}{z_F}=\frac{R_{\text{graft}}}{R_{\text{donor}}}$$
 
-                    zP = zF × zR
-        pressure load = flow load × resistance load
-```
+$$\boxed{\,z_P = z_F\,z_R\,}\qquad\text{pressure load}=\text{flow load}\times\text{resistance load}$$
 
-All three loads equal 1 in a healthy donor, and the identity is the point of the model: flow and pressure are the same variable only while zR = 1. Any manoeuvre that enlarges the venous outflow lowers zR, which is how a graft can carry three or four times the donor's flow without the pressure that would normally come with it. That product is the hepatic haemodynamic load, and the two clinical thresholds in use have been approximating it from opposite sides.
+All three loads equal 1 in a healthy donor, and the identity is the point of the model: flow and pressure are the same variable only while $z_R=1$. Any manoeuvre that enlarges the venous outflow lowers $z_R$, which is how a graft can carry three or four times the donor's flow without the pressure that would normally come with it. That product is the hepatic haemodynamic load, and the two clinical thresholds in use have been approximating it from opposite sides.
 
 The model contains haemodynamics and nothing else: no recipient severity, no donor age, no steatosis. That is what makes it falsifiable.
 
@@ -39,11 +34,20 @@ The model contains haemodynamics and nothing else: no recipient severity, no don
 
 Run `python src/predictions.py`; every number below comes from `results/predictions.json`.
 
-**P1. The shear set-point must be invariant across mammals.** Portal pressure is 6–11 mmHg from mouse to human, so if the network is at its optimum, τ0 cannot scale with body mass. With the measured scalings (portal flow ~ M^0.77, portocentral distance ~ M^0.10), the predicted exponent of τ0 is within ±0.08 of zero for every maintenance exponent, and the predicted vascular mass exponent is 0.89–0.90 at b = 0.85–1.0 against the 0.86 observed for hepatic blood volume. This uses no transplant data at all.
+**P1. The shear set-point must be invariant across mammals.** Portal pressure is 6–11 mmHg from mouse to human, so if the network is at its optimum, τ0 cannot scale with body mass. With the measured scalings (portal flow ~ M^0.77, portocentral distance ~ M^0.10), the predicted exponent of $\tau_0$ stays within [-0.077, +0.071] over the whole prespecified range of maintenance exponents, so the set-point is invariant as the model requires. The vascular mass is a weaker test: over the same range the predicted exponent spans 0.89–1.08, of which 18% falls inside the observed 0.80–0.92 for hepatic blood volume; no value of $b$ was chosen for agreeing with it. This prediction uses no transplant data at all.
 
-**P2. Flow and pressure must separate when the outflow is enlarged.** Five published groups report both indices. The four whose outflow was reconstructed (middle hepatic vein included, venoplasty, left lobe with the middle and left hepatic vein trunk, splenectomy) have `zR` of 0.31, 0.55, 0.54 and 0.74, all below one as predicted, and outcomes of 0–10% despite flows of three to four times the donor's. No flow threshold and no pressure threshold predicts this; the ratio does.
+**P2. Flow and pressure must separate when the outflow is enlarged.** Five published groups report both indices. The four whose outflow was reconstructed (middle hepatic vein included, venoplasty, left lobe with the middle and left hepatic vein trunk, splenectomy) have `zR` of 0.31, 0.55, 0.54 and 0.74, all below one as predicted (exact sign test on the four, p = 0.06; with the reported spread of pressures and flows propagated, each stays below one with probability 1.00). Their outcomes, reported separately from the mechanism, were 0–10% despite flows of three to four times the donor's. No flow threshold and no pressure threshold predicts this; the ratio does.
 
-**P3. Within a cohort, outcome must rise with zP, with a common slope and a centre-specific level.** The primary analysis is a hierarchical binomial model with the pressure index centred within each study, so a study's level and its association are not traded off against each other:
+**P3. Within a cohort, outcome must rise with the pressure load.** The material is 17 series from 10 centres and 31 groups, 21 of them with a pressure load and 14 with a flow load. A slope needs two groups of the same outcome measured at different gradients, which 5 series provide for $z_P$ and 4 for $z_F$; 6 series report a single group and inform the level rather than the slope. Fitting the **same** model to each load, both restricted to the primary outcome so the arms are comparable:
+
+| load | groups / series | events / patients | $\mu_\beta$ (95% CrI) | P($\mu_\beta>0$) |
+|---|---|---|---|---|
+| $z_P$, pressure | 7 / 3 | 76 / 573 | +1.56 (+0.35, +2.81) | 0.993 |
+| $z_F$, flow | 8 / 4 | 48 / 321 | +0.86 (-0.58, +2.36) | 0.885 |
+
+The pressure interval excludes zero and the flow interval does not, but that is not the same as showing the two loads differ: P($\mu_{z_P}>\mu_{z_F}$) is only 0.77, and the flow arm rests on much thinner material (48 events, median group of 10 patients, 2 groups with no events). Wang 2014 contributes to both. The decisive evidence that the loads are not interchangeable is P2, where the same grafts are measured on both scales at once. Adding the series whose groups are defined by a cut-off on the gradient (Yao 2018) gives 13 groups from 6 strata, $\mu_\beta$ +1.96 (+1.13, +2.81).
+
+The primary analysis is a hierarchical binomial model with the pressure index centred within each study, so a study's level and its association are not traded off against each other:
 
 ```
 E_gs ~ Binomial(n_gs, p_gs),  logit(p_gs) = alpha_s + beta_s (zP_gs − mean zP_s),  beta_s ~ N(mu_beta, tau_beta²)
