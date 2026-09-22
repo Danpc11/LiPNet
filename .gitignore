@@ -1,3 +1,5 @@
-results/
+results/*
+!results/bayes_*.json
+!results/spec_curve.json
 __pycache__/
 *.pyc
