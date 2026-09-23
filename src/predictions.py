@@ -20,7 +20,6 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(__file__))
 import indices
 from model import scaling as sc
-import json as _json
 
 ROOT = os.path.join(os.path.dirname(__file__), '..'); OUT = f'{ROOT}/results'
 
