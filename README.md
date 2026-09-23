@@ -87,7 +87,7 @@ The calculator returns:
 - the estimated odds ratio associated with a pressure change,
 - an absolute risk estimate anchored to the user-provided baseline.
 
-The slope and its interval are the **primary analysis** of the paper: the hierarchical model fitted to small-for-size syndrome or early graft dysfunction, $\mu_\beta$ = +1.55 (95% CrI +0.33 to +2.79), an odds ratio of 4.70 per unit of $z_P$ and 1.36 per mmHg of gradient, from 7 groups in 3 series (76 events in 573 recipients). The reference series it offers are the same three, so the outcome you anchor on matches the outcome the slope was fitted on.
+The slope, its interval, the per-series levels and the prediction bands all come from the same posterior, the **primary analysis** of the paper: the hierarchical model fitted to small-for-size syndrome or early graft dysfunction, $\mu_\beta$ = +1.55 (95% CrI +0.33 to +2.79), an odds ratio of 4.70 per unit of $z_P$ and 1.36 per mmHg of gradient, from 7 groups in 3 series (76 events in 573 recipients). The reference series it offers are the same three, so the outcome you anchor on matches the outcome the slope was fitted on. Anchoring on a cohort's overall rate and average gradient is an approximation, because the average risk of a spread-out cohort is not the risk at its average gradient; anchoring on a rate measured at one gradient has no such error, and the page says so.
 
 If a user provides a reference probability:
 
