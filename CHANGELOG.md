@@ -2,7 +2,7 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
-## [0.3.1]
+## [0.3.1] – 2026-09-23
 
 ### Fixed
 - The case export still rebuilt its own values, so an input the page rejected (a graft weight of zero or a negative one) could reach the file. `calc()` now publishes exactly what it validated and `caseRow()` reads only that; a rejected field is exported blank.
@@ -11,12 +11,6 @@ All notable changes to this repository are documented here. The format follows [
 - The calculator mixed two models: it used the Bayesian slope (1.547) with the intercepts and bands of the stratified fit (1.959), so a reference series could show a curve and a band that disagreed. `bayes.fit()` now returns the intercept of each stratum on the absolute zP scale and the prediction band implied by the same draws, and `build_app.py` takes slope, interval, intercepts, bands and counts from that one posterior. Wang 2014 at zP 2.40 now reads 11.4% with a band of 9.5 to 17.4%, against 14.1% observed.
 - `caseRow()` rebuilt the row from raw fields, so a rejected input could still be exported (an empty portal pressure gave a gradient of -5 and zP -1). It now reuses only validated values, exports blanks for anything the page rejected, and writes the 21 columns of `data/cohort_template.tsv` in order rather than 13 of its own.
 - The cohort-average anchor is labelled as an approximation, and the exact option (a rate measured at one gradient) is offered first.
-
-## [0.3.1] – 2026-09-22
-
-Consistency release, cut for the clinical demo and for the version cited by the paper.
-
-### Fixed
 - The calculator was applying the exploratory slope (all outcomes combined, OR 6.02) while the paper reports the primary analysis; it now uses the primary estimate (OR 4.70 per unit of zP, 1.36 per mmHg, 7 groups from 3 series) and offers only the three SFSS series as reference levels, so page and manuscript state the same effect for the same outcome.
 - `src/build_app.py` had duplicate placeholder keys, so the counts shown in the page came from a different fit than the slope.
 - `THEORY.md` had been overwritten with the changelog; the theory document is restored, and a test now checks that each document is the document it claims to be.
