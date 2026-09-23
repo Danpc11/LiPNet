@@ -1,6 +1,6 @@
 """Liver as a perfusion network: hilum -> portal tree -> hexagonal lobules -> hepatic venous tree -> outlet.
 
-Formulation (same conventions as vascular-shear-setpoint/src/flows.py):
+Formulation:
     conductance  w_e = r_e^4 / l_e          (Poiseuille, viscosity absorbed)
     shear        tau_e = |f_e| / r_e^3
     cost         C_b = sum_e a_e w_e^alpha,  alpha = b/2,  a_e = l_e^{3b/2}
@@ -17,7 +17,6 @@ Geometry from Lorente, Hautefeuille & Sanchez-Cedillo, Sci. Rep. 10, 16194 (2020
 """
 import numpy as np, networkx as nx
 from scipy.linalg import solve
-from scipy.optimize import minimize
 
 LN3 = np.log(3.0)
 
