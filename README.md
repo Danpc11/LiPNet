@@ -87,7 +87,7 @@ The calculator returns:
 - the estimated odds ratio associated with a pressure change,
 - an absolute risk estimate anchored to the user-provided baseline.
 
-The slope and uncertainty come from the hierarchical model described above.
+The slope and its interval are the **primary analysis** of the paper: the hierarchical model fitted to small-for-size syndrome or early graft dysfunction, $\mu_\beta$ = +1.55 (95% CrI +0.33 to +2.79), an odds ratio of 4.70 per unit of $z_P$ and 1.36 per mmHg of gradient, from 7 groups in 3 series (76 events in 573 recipients). The reference series it offers are the same three, so the outcome you anchor on matches the outcome the slope was fitted on.
 
 If a user provides a reference probability:
 
