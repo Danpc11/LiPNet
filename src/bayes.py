@@ -70,6 +70,18 @@ def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcom
                 predicted_ci=[float(np.percentile(rep[:, i], 2.5)), float(np.percentile(rep[:, i], 97.5))],
                 inside=bool(np.percentile(rep[:, i], 2.5) <= ev[i] <= np.percentile(rep[:, i], 97.5))) for i in range(len(ev))]
     q = lambda x: [float(np.percentile(x, 2.5)), float(np.percentile(x, 97.5))]
+    # everything the calculator needs, from this posterior and no other: the intercept of each stratum on the
+    # absolute zP scale, and the band of predicted risk that the same draws imply
+    zbar = d.groupby('stratum').zP.mean()
+    zgrid = np.round(np.arange(0.6, 4.001, 0.05), 3)
+    A, Bd = flat['alpha'], flat['beta']
+    alphas_abs, pred_band = {}, {}
+    for i, st in enumerate(strata):
+        a_abs = A[:, i] - Bd[:, i] * float(zbar[st])
+        alphas_abs[st] = float(np.mean(a_abs))
+        p_draw = 1 / (1 + np.exp(-(a_abs[:, None] + Bd[:, i][:, None] * zgrid[None, :])))
+        pred_band[st] = dict(lo=np.percentile(p_draw, 2.5, axis=0).round(5).tolist(),
+                             hi=np.percentile(p_draw, 97.5, axis=0).round(5).tolist())
     rng = np.random.default_rng(seed)
     pred_new = mu + tau * rng.standard_normal(len(mu))              # a new study's slope
     return dict(tau_prior=tau_scale, strata=strata, groups=int(len(d)), events=int(ev.sum()), patients=int(n.sum()),
@@ -79,6 +91,10 @@ def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcom
                 OR_per_mmHg=float(np.exp(mu.mean() / 5.0)),
                 prediction_interval=q(pred_new), prob_new_study_positive=float((pred_new > 0).mean()),
                 beta_by_stratum={s: dict(mean=float(flat['beta'][:, i].mean()), ci=q(flat['beta'][:, i])) for i, s in enumerate(strata)},
+                alphas=alphas_abs, zgrid=zgrid.tolist(), pred_band=pred_band,
+                group_counts={s: dict(n=int(d[d.stratum == s].n.sum()), events=int(d[d.stratum == s].events.sum()),
+                                      zmin=float(d[d.stratum == s].zP.min()), zmax=float(d[d.stratum == s].zP.max()))
+                              for s in strata},
                 mu_draws=(np.asarray(mu)[np.linspace(0, len(mu) - 1, keep_draws).astype(int)].tolist() if keep_draws else None),
                 rhat=dict(mu_beta=float(summ['mu_beta']['r_hat']), tau_beta=float(summ['tau_beta']['r_hat']),
                           max=float(max(np.max(summ[k]['r_hat']) for k in summ))),
