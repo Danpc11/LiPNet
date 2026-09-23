@@ -4,10 +4,15 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
-### Fixed
-- The calculator was applying the exploratory slope (all outcomes combined, OR 6.02) while the paper reports the primary analysis, and it offered mortality series as reference levels for a small-for-size risk. It now uses the primary estimate (OR 4.70 per unit of zP, 1.36 per mmHg, 7 groups from 3 series) and offers only the three SFSS series as references, so page and manuscript state the same effect for the same outcome. A test asserts both.
-- `src/build_app.py` had duplicate placeholder keys, so the group, event and patient counts shown in the page came from a different fit than the slope.
+## [0.3.1] – 2026-09-22
 
+Consistency release, cut for the clinical demo and for the version cited by the paper.
+
+### Fixed
+- The calculator was applying the exploratory slope (all outcomes combined, OR 6.02) while the paper reports the primary analysis; it now uses the primary estimate (OR 4.70 per unit of zP, 1.36 per mmHg, 7 groups from 3 series) and offers only the three SFSS series as reference levels, so page and manuscript state the same effect for the same outcome.
+- `src/build_app.py` had duplicate placeholder keys, so the counts shown in the page came from a different fit than the slope.
+- `THEORY.md` had been overwritten with the changelog; the theory document is restored, and a test now checks that each document is the document it claims to be.
+- `index.html`, the GitHub Pages redirect, still pointed at the old repository name.
 
 ## [0.3.0] – 2026-09-22
 
