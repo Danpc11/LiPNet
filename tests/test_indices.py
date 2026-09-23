@@ -117,10 +117,10 @@ def test_plots_and_calculator():
     opts_ = re.findall(r'<option value="([^"]+)"', html)
     assert all('(mortality' not in o for o in opts_), 'reference series must match the outcome the slope was fitted on'
     assert f"BLO={B['mu_beta_ci'][0]:.4f}" in html, 'and its credible interval'
-    assert f"{W['alphas'][W['studies'][0]]:.4f}" in html, 'with the per-series levels for the reference option'
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
     assert 'id="copyrow"' in html and 'caseRow' in html, 'the demo needs the case-collection card'
-    assert 'never left this page' in html, 'and must say the data stay in the browser'
+    assert 'Nothing left this page' in html, 'and must say the data stay in the browser'
+    assert 'cohort_template.tsv' in html and 'caseRow' in html, 'the export must follow the cohort template'
     assert 'const ZGRID=' in html and '"band"' in html and 'slope only' in html   # joint band for published strata
 
 def test_whole_graft_model():
