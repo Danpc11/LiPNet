@@ -69,7 +69,11 @@ small{color:var(--muted)}
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Send us this case</h2>
  <p style="font-size:.9rem;margin:0 0 8px">LiPNet needs individual measurements to be validated. If you keep PVP, CVP, flow and outcome for your recipients, five columns are enough. Nothing here leaves your browser: the button copies one tab-separated line you can paste into a spreadsheet.</p>
  <label>Case identifier <small>(your own code, no patient data)</small><input id="caseid" type="text" placeholder="e.g. LDLT-2026-014"></label>
- <label>Outcome <select id="outcome"><option value="">not yet known</option><option value="none">no SFSS or early dysfunction</option><option value="sfss">SFSS or early graft dysfunction</option><option value="death90">death or graft loss within 90 days</option></select></label>
+ <label>Outcome <small>(leave any box unticked if not known)</small></label>
+ <label style="font-weight:400"><input type="checkbox" id="o_sfss"> SFSS or early graft dysfunction</label>
+ <label style="font-weight:400"><input type="checkbox" id="o_loss"> graft loss within 90 days</label>
+ <label style="font-weight:400"><input type="checkbox" id="o_death"> death within 90 days</label>
+ <label style="font-weight:400"><input type="checkbox" id="o_known"> outcome known and none of the above occurred</label>
  <button id="copyrow" style="margin-top:10px;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font-size:1rem;cursor:pointer">Copy this case as a row</button>
  <p id="copied" style="font-size:.85rem;color:var(--muted);margin:8px 0 0"></p>
  <pre id="rowout" style="font-size:.75rem;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;color:var(--muted)"></pre>
@@ -142,6 +146,9 @@ function calc(){
   if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
  if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF;msg.push('Resistance load z<sub>R</sub> = z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': the graft\u2019s effective resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor\u2019s).'));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available. In the published series flow per gram did not order outcomes once outflow was reconstructed; measure PVP and CVP.');
+ LAST = {pvp: pvp, cvp: cvp, cvpAssumed: cvpAssumed, pvf: pvf, gw: gw,
+         grwr: (R.state === 'ok' ? R.v : NaN), rw: (W.state === 'ok' ? W.v : NaN), dref: dref,
+         zP: zP, zF: zF, zR: (isFinite(zP) && isFinite(zF) && zF > 0) ? zP / zF : NaN};
  $('read').innerHTML='<p>'+msg.join('</p><p>')+'</p>';
  // anchor for the curve: {alpha} in logit(p) = alpha + BETA*zP, from whichever reference is selected
  let anchor=null;
@@ -205,43 +212,40 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
  }
  $('plot').innerHTML=s;}
 
+let LAST = null;                       // the values calc() accepted, so the export can never disagree with the screen
+
 function caseRow(){
- // one row in the columns of data/cohort_template.tsv, built only from values the calculator has validated;
- // anything the page rejected is exported empty, so the file can never disagree with the screen
- const num=(id,min)=>{const v=$(id).value; const x=+v; return (v!==''&&isFinite(x)&&(min===undefined||x>=min))?x:null;};
- const pvp=num('pvp',0), cvpRaw=$('cvp').value, cvp=(cvpRaw===''?null:num('cvp',0)), pvf=num('pvf',0);
- const gw=num('gw',0), grwr=num('grwr',0), rw=num('rw',0), dref=num('dref',0);
- const weight = gw!==null ? gw : ((grwr!==null&&rw!==null) ? grwr/100*rw*1000 : null);
- const cvpUsed = cvp!==null ? cvp : DEFAULT_CVP;
- const grad = pvp!==null ? pvp - cvpUsed : null;
- const zp = (grad!==null&&grad>=0) ? grad/GN : null;
- const zf = (pvf!==null&&weight!==null&&weight>0&&dref!==null&&dref>0) ? (pvf/weight*100)/dref : null;
- const zr = (zp!==null&&zf!==null&&zf>0) ? zp/zf : null;
- const f=(x,d)=>x===null?'':x.toFixed(d===undefined?2:d);
+ calc();                               // refresh, then export only what the page itself validated
+ const V = LAST || {};
+ const f=(x,d)=>(x===undefined||x===null||!isFinite(x))?'':x.toFixed(d===undefined?2:d);
+ const g=(x)=>(x===undefined||x===null||!isFinite(x))?'':String(x);
+ const ck=id=>$(id).checked;
+ const known = ck('o_known') || ck('o_sfss') || ck('o_loss') || ck('o_death');
+ const flag = id => known ? (ck(id) ? '1' : '0') : '';
  const cells=[
-   $('caseid').value||'',                      // patient_id
-   '',                                         // centre
-   new Date().toISOString().slice(0,10),       // date
-   '',                                         // graft_type
-   weight===null?'':Math.round(weight),        // graft_weight_g
-   rw===null?'':rw,                            // recipient_weight_kg
-   f(grwr,2),                                  // GRWR
-   '',                                         // MHV_included
-   '',                                         // donor_PVF_mL_min
-   '',                                         // donor_graft_weight_g
-   '',                                         // PVF_reperfusion_mL_min
-   '',                                         // PVP_reperfusion_mmHg
-   '',                                         // CVP_reperfusion_mmHg
-   '',                                         // modulation
-   pvf===null?'':pvf,                          // PVF_final_mL_min
-   pvp===null?'':pvp,                          // PVP_final_mmHg
-   cvp===null?(pvp===null?'':DEFAULT_CVP+' (assumed)'):cvp,   // CVP_final_mmHg
-   $('outcome').value==='sfss'?'1':($('outcome').value==='none'?'0':''),      // SFSS_ILTS2023
-   $('outcome').value==='death90'?'1':($('outcome').value==='none'?'0':''),   // graft_loss_90d
-   $('outcome').value==='death90'?'1':($('outcome').value==='none'?'0':''),   // death_90d
-   ''                                          // regenerated_volume_2w_mL
+   $('caseid').value||'',                                   // patient_id
+   '',                                                      // centre
+   new Date().toISOString().slice(0,10),                    // date
+   '',                                                      // graft_type
+   isFinite(V.gw)?String(Math.round(V.gw)):'',              // graft_weight_g
+   g(V.rw),                                                 // recipient_weight_kg
+   f(V.grwr,2),                                             // GRWR
+   '',                                                      // MHV_included
+   '',                                                      // donor_PVF_mL_min
+   '',                                                      // donor_graft_weight_g
+   '',                                                      // PVF_reperfusion_mL_min
+   '',                                                      // PVP_reperfusion_mmHg
+   '',                                                      // CVP_reperfusion_mmHg
+   '',                                                      // modulation
+   g(V.pvf),                                                // PVF_final_mL_min
+   g(V.pvp),                                                // PVP_final_mmHg
+   V.cvpAssumed ? '' : g(V.cvp),                            // CVP_final_mmHg, blank when it was assumed
+   flag('o_sfss'),                                          // SFSS_ILTS2023
+   flag('o_loss'),                                          // graft_loss_90d
+   flag('o_death'),                                         // death_90d
+   ''                                                       // regenerated_volume_2w_mL
  ];
- return {row: cells.join('\t'), zp: f(zp), zf: f(zf), zr: f(zr)};}
+ return {row: cells.join('\t'), zp: f(V.zP), zf: f(V.zF), zr: f(V.zR)};}
 document.getElementById('copyrow').addEventListener('click',()=>{const r=caseRow(); const row=r.row; $('rowout').textContent=row;
  const note=(r.zp===''?' The pressure load could not be computed from what you entered, so those fields are blank.':' Computed loads: z_P '+r.zp+(r.zf?', z_F '+r.zf+', z_R '+r.zr:'')+'.');
  if(navigator.clipboard) navigator.clipboard.writeText(row).then(()=>{$('copied').textContent='Copied.'+note+' Nothing left this page.';},()=>{$('copied').textContent='Select the line below and copy it.'+note;});
