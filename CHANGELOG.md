@@ -2,7 +2,7 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
-## [Unreleased]
+## [0.3.1]
 
 ### Fixed
 - The case export still rebuilt its own values, so an input the page rejected (a graft weight of zero or a negative one) could reach the file. `calc()` now publishes exactly what it validated and `caseRow()` reads only that; a rejected field is exported blank.
