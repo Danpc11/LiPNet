@@ -1,794 +1,140 @@
-# LiPNet: the model and its predictions
+# Changelog
 
-This document holds the physics and the four predictions. The [README](README.md) covers what the repository contains and how to use it.
+All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
----
+## [Unreleased]
 
-## Contents
+### Fixed
+- The calculator was applying the exploratory slope (all outcomes combined, OR 6.02) while the paper reports the primary analysis, and it offered mortality series as reference levels for a small-for-size risk. It now uses the primary estimate (OR 4.70 per unit of zP, 1.36 per mmHg, 7 groups from 3 series) and offers only the three SFSS series as references, so page and manuscript state the same effect for the same outcome. A test asserts both.
+- `src/build_app.py` had duplicate placeholder keys, so the group, event and patient counts shown in the page came from a different fit than the slope.
 
-- [The question](#the-question)
-- [The model](#the-model)
-- [Partial grafts](#partial-grafts)
-- [Three normalized haemodynamic loads](#three-normalized-haemodynamic-loads)
-  - [Flow load](#flow-load)
-  - [Pressure load](#pressure-load)
-  - [Resistance load](#resistance-load)
-  - [Why resistance matters](#why-resistance-matters)
-- [What the model includes](#what-the-model-includes)
-- [Four predictions](#four-predictions)
-  - [P1. The hepatic shear set-point should be nearly invariant across mammals](#p1-the-hepatic-shear-set-point-should-be-nearly-invariant-across-mammals)
-  - [P2. Flow and pressure should separate when outflow resistance decreases](#p2-flow-and-pressure-should-separate-when-outflow-resistance-decreases)
-  - [P3. Within a cohort, outcome should increase with pressure load](#p3-within-a-cohort-outcome-should-increase-with-pressure-load)
-  - [Hierarchical model](#hierarchical-model)
-  - [Primary clinical result](#primary-clinical-result)
-  - [Model diagnostics](#model-diagnostics)
-  - [Sensitivity analyses](#sensitivity-analyses)
-  - [Internal-external validation](#internal-external-validation)
-  - [P4. Clinical thresholds from different liver fields converge on the same scale](#p4-clinical-thresholds-from-different-liver-fields-converge-on-the-same-scale)
-- [What LiPNet is not](#what-lipnet-is-not)
-- [Whole-graft extension](#whole-graft-extension)
 
----
+## [0.3.0] – 2026-09-22
 
-## The question
+The release that turns the repository into the model it is named after.
 
-Partial liver grafts receive portal blood through less tissue than a whole liver, so portal flow per unit of mass can be several times the donor's. High flow, however, does not always produce equally high pressure: some grafts carry it with a relatively low portal pressure, above all when the venous outflow is wide or reconstructed.
+### The model
+- **LiPNet**, the Liver Perfusion Network model, with its three normalised loads and their identity:
 
-> **What determines how portal flow is converted into portal pressure?**
+      zP = zF x zR        pressure load = flow load x resistance load
 
-The three loads and the identity $z_P = z_F \, z_R$ are stated on the [front page](README.md#what-this-is). What follows is where they come from and what they predict.
+  `indices.zR()`, a `zR` column and a test that asserts the identity holds exactly on every group measured on both scales (0.31, 0.54, 0.55, 0.72, 0.74, all below one).
+- `src/predictions.py` states the model's predictions and tests each against data it was not fitted to: P1 the shear set-point invariant across mammals, P2 the loads separating when the outflow is enlarged, P3 the within-cohort ordering, P4 three clinical thresholds meeting on one scale.
+- `src/model/whole_graft.py` extends the model to a whole graft: inlet and outlet anastomoses in series, with the prediction that they fail in opposite directions (outlet stenosis raises zR above 1, inlet stenosis leaves it at 1 while both loads fall).
 
----
+### The analysis
+- `src/bayes.py`: the primary analysis, a hierarchical binomial model with zP centred within study, fitted by NUTS with four chains, R-hat, effective sample size, divergences and posterior predictive checks; sensitivity to the prior on tau; the Kyoto overlap sets; a conditional internal-external validation that scores the slope without fitting anything on the held-out centre; a Monte Carlo that propagates the uncertainty of the indices; a specification curve over 15 analysis choices; and a recovery simulation that shows what this design can and cannot identify.
+- The superseded implementations are gone: the hand-written Metropolis sampler and the observed-to-expected validation that recalibrated the held-out intercept, which was not an independent evaluation.
+- The calculator uses the estimate the paper reports, so page and manuscript cannot disagree, and carries a card that copies one case as a row for the cohort that is still missing.
 
-## The model
+### Data
+- 31 groups from 17 series with provenance per cell, structural columns (centre, cohort, recruitment period, overlap set, outflow, gradient timing, outcome definition and horizon) and a `gradient_mmHg` column for the series that report the gradient itself.
 
-The liver is represented as a transport network with three main components:
+### Documentation
+- README rewritten around the model, with the equations as rendered mathematics, the full accounting of what enters each analysis, and the limitations confined to the prediction they belong to.
+- The accompanying article is *Vascular resistance modulates portal flow-pressure decoupling in partial liver grafts*, recorded in `CITATION.cff` as the preferred citation.
 
-1. a portal venous tree that delivers blood,
-2. a large number of approximately similar liver lobules,
-3. a hepatic venous tree that collects blood.
+## [0.2.3] – 2026-09-21
 
-The portal and hepatic venous trees form a **canopy-to-canopy transport network**, with the liver lobules acting as the functional units between both vascular trees.
+### Added
+- `indices.baseline_from_rate()` and `indices.recalibrate()`: calibration in the large, the standard first step of prediction-model updating (Steyerberg; Vergouwe et al., Stat Med 2017; Janssen et al., Can J Anesth 2009). The first gives the intercept from a centre's overall outcome rate and average gradient; the second fits only the intercept on a cohort with the slope held as an offset. README gains a section on how to obtain a baseline.
+- The graphical abstract, lost from the README in an earlier rewrite, is back.
+- `indices.meta_slope()`: random-effects (DerSimonian-Laird) meta-analysis of the per-stratum slopes, with tau2, Q and I2. Result: OR 6.69 per unit of zP (95% CI 3.12-14.4), tau2 = 0, Q = 1.47 on 4 df (p = 0.83), I2 = 0%, i.e. the five series estimate one common effect. It agrees with the stratified fit and does not spend degrees of freedom on the intercepts.
+- `indices.overdispersion()`: Pearson chi2/df of the stratified fit (0.31 on 5 df), with the quasi-binomial interval; there is no extra-binomial spread.
+- `indices.attenuation()`: regression dilution. The sampling error of the group means costs 3% of the slope; the within-group spread of the gradient implies a per-patient slope of about 3.3 (lambda 0.59), so aggregation understates rather than inflates the effect.
+- `indices.centred()`: the within (fixed-effects) transformation. Subtracting each cohort's own mean log-odds and mean zP cancels the stratum intercept exactly and puts all 11 groups on one scale; they fall on a single line (weighted R2 = 0.91, slope 1.66 +- 0.32, OR 5.25 per unit of zP, 1.39 per mmHg), with plot `centred`.
+- The calculator now uses the intercept-free centred slope and offers a **cohort-average anchor**: enter your cohort's overall outcome rate and its average portocaval gradient, and it places the patient relative to that average, which is the quantity the centring defines and the pair of numbers a centre can actually state.
+- The calculator's plot is one curve now, not five: with a reference chosen it shows the absolute risk implied by that anchor with its 95% band and two markers (current gradient and gradient after the change), with the y axis scaled to the range in use; without an anchor it shows the published groups centred on their own cohort, which is the relation the slope comes from. The five-curve version is gone.
+- `within_study` simplified: curves labelled at their right end, no legend box and no statistics box (those live in `forest` and `centred`); `risk_change` now uses the same centred slope as the calculator, so the two no longer disagree.
+- Plot `forest`: per-stratum slope with its interval and the pooled estimate.
+- `results/meta_slope.json`; three more rows in `results/sensitivity.tsv`; tests for all three.
 
-The network is assumed to operate near an energetic optimum.
+## [0.2.2] – 2026-09-21
 
-We minimise dissipated power while keeping vascular maintenance cost fixed:
+Code and methodology audit: three corrections that change the estimated effect.
 
-$$\sum_e m_e^b$$
+### Fixed
+- **A cohort was counted twice.** The Wang 2014 pressure groups (PVP at closure ≥20 / <20, 292 patients) are a second partition of the same cohort as its splenectomy groups (276 patients); both entered the model, inflating that study to 568 patients. The pressure partition is now excluded from the main analysis, and a test asserts that the Wang cohort contributes 276 patients once.
+- **Intercepts are now per study AND outcome definition.** A series reporting two outcomes (primary graft dysfunction and graft loss) no longer shares a single intercept.
+- **The denominator of Ishizaki 2012** is the outcome denominator (42, no SFSS), not the 31 recipients in whom pressure was measured.
+- Bootstrap replicates that fail to converge are retried with Nelder-Mead and discarded if they still fail; the count is reported (`bootstrap_failures`, currently 0 of 2000). A profile-likelihood interval is computed as an independent check on the bootstrap.
 
-where:
+### Added
+- The calculator lets you choose the **reference level**: your own rate at the starting gradient, or any of the fitted strata (study x outcome), with its number of recipients, events and the zP range its groups actually span. Choosing a series shows the risk it would go from and to, warns when the entered gradient is outside that range, and highlights its curve.
 
-- $m_e$ is the vascular material associated with vessel segment $e$,
-- $b$ is the vascular maintenance exponent.
+### Changed
+- The long disclaimer moved from the top of the calculator to a short note under the risk curve, and the field hints were trimmed.
+- README cut roughly in half: results first, caveats collected at the end instead of scattered through the text.
+- Twelve tests folded into five that check the things worth checking (indices and baseline, data and provenance, the fitted effect, plots and calculator, README against results).
+- With these corrections the within-stratum effect is larger and less precise: **OR 7.09 per unit of zP (95% CI 3.37–20.5), 1.48 per mmHg** (slope 1.96, bootstrap 1.22–3.02, profile likelihood 1.18–2.83), on 11 groups, 104 events in 734 recipients. It holds by outcome (1.87 for SFSS, 2.03 for mortality) and dropping any study (1.67–2.16).
+- `data/series.tsv` gains `gradient_mmHg` and `gradient_basis`: the series that report the portocaval gradient itself (Uemura 2016, Ishizaki 2012, Botha 2010, Ogura 2010, Chan 2011, Yamada 2008) no longer carry invented PVP/CVP pairs, and `indices.zP()` accepts a gradient directly.
+- The redundant `CVP_measured` column is removed; `CVP_basis` is the single provenance field.
 
-This gives:
 
-$$D^* \propto F^{2}\,C^{-2/b}\,N^{(2-b)/b}\,L^{3},$$
+## [0.2.1] – 2026-09-21
 
-together with a characteristic wall-shear set-point:
+Five series with measured portocaval gradients were added; they refute the pooled common-intercept model and replace it with a within-study effect.
 
-$$\tau_0=\sqrt{D^*/C},$$
+### Added
+- `data/series.tsv` grows to 31 groups from 17 series: Uemura 2016 (Surgery 159:1623, three GRWR groups with the final PVP−CVP gradient and SFSS counts), Yao 2018 (Transplantation 102:623), Kanetkar 2017 (J Clin Exp Hepatol 7:235, PVP by direct portal cannulation), Ishizaki 2012 (Liver Transpl 18:305, left lobes without modulation, gradient 12.4 mmHg and no SFSS in 42) and Botha 2010 (Liver Transpl 16:649, hemiportocaval shunt, gradient 18 → 5 mmHg).
+- `indices.within_study_fit()`: one intercept per study and a common slope, with a bootstrap interval for the slope and a leave-one-study-out check. Result: logit(p) = alpha_study + 1.34·zP, OR 3.81 per unit of zP (95% CI 2.44–6.37), OR 1.31 per mmHg of gradient; the slope stays between 1.13 and 2.03 when any study is dropped.
+- `indices.risk_after(baseline_rate, delta_zP, beta)`: converts a change of gradient into an absolute risk given the user's own baseline rate.
+- Plots `within_study` (observed groups and one fitted curve per study) and `risk_change` (odds ratio and absolute risk against the change of gradient, for several baseline rates).
+- Tests for the fitted effect, the leave-one-study-out stability, the odds shift, and the absence of an absolute-risk claim in the calculator.
 
-and the pressure drop across a lobule:
+### Changed
+- The calculator no longer reports a pooled absolute risk. It asks for the pressure after the planned manoeuvre and returns the odds ratio with its interval, and an absolute risk only when the user supplies their own outcome rate at the starting gradient. Its plot now shows one curve per study.
+- Main analysis excludes the groups defined only by a cut-off (now Vasavada 2014, Yao 2018 and Kanetkar 2017).
+- README rewritten around what the data support: the absolute level is centre-specific (0% to 17% at the same gradient), the effect of changing the gradient is transferable.
 
-$$\Delta P=fR.$$
+### Fixed
+- The `threshold` provenance is now counted as imputed in the sensitivity filters.
+- `within_study_fit(boot=0)` no longer fails (used by the leave-one-study-out loop).
 
-Here:
 
-- $D^*$ is the minimum dissipation of the network,
-- $F$ is total flow,
-- $C$ represents vascular maintenance cost,
-- $N$ is the number of lobules,
-- $L$ is a characteristic transport length,
-- $\tau_0$ is the wall-shear set-point,
-- $f$ is lobular flow,
-- $R$ is vascular resistance.
+## [0.2.0] – 2026-09-20
 
-The optimum corresponds to a space-filling vascular network in which portal blood reaches the lobular bed and then drains through the hepatic venous network.
+Methodological and calculator fixes after two rounds of code review.
 
----
-
-## Partial grafts
-
-Consider a partial graft that contains a fraction $g$ of the donor liver network.
-
-If the graft receives $h$ times the donor inflow, each remaining lobule receives approximately:
-
-$$\frac{h}{g}$$
-
-times its original donor flow.
-
-This is the basic reason why small grafts can experience very high haemodynamic load.
-
-For example, a graft containing half of the original liver mass but receiving the full donor inflow has approximately twice the flow per remaining lobule.
-
-LiPNet expresses this behaviour using measurable clinical quantities.
-
----
-
-## Three normalized haemodynamic loads
-
-### Flow load
-
-The normalized portal flow load is:
-
-$$z_F=\frac{\text{graft PVF per }100\,\text{g}}{\text{donor PVF per }100\,\text{g}}.$$
-
-Here, PVF is portal venous flow.
-
-A value of:
-
-$$z_F=1$$
-
-means that the graft receives the same portal flow per unit mass as the healthy donor liver.
-
-A value of:
-
-$$z_F=3$$
-
-means that each unit of graft tissue receives approximately three times the donor flow.
-
----
-
-### Pressure load
-
-The normalized pressure load is:
-
-$$z_P=\frac{\text{PVP}-\text{CVP}}{5\ \text{mmHg}}.$$
-
-where:
-
-- PVP is portal venous pressure,
-- CVP is central venous pressure.
-
-The denominator of 5 mmHg represents a normal portal-to-central venous pressure gradient.
-
-Therefore:
-
-$$z_P=1$$
-
-represents the normal donor state.
-
----
-
-### Resistance load
-
-Vascular resistance per unit mass is:
-
-$$R=\frac{\Delta P}{Q}\quad\text{(per 100 g)}.$$
-
-The normalized resistance load is defined as the graft resistance relative to the donor:
-
-$$z_R=\frac{R_{\text{graft}}}{R_{\text{donor}}}.$$
-
-$R_{\text{donor}}$ uses the reference gradient of 5 mmHg and the donor reference flow. Dividing the two other loads:
-
-$$\frac{z_P}{z_F}=\frac{\Delta P_{\text{graft}}/\Delta P_{\text{donor}}}{Q_{\text{graft}}/Q_{\text{donor}}}=\frac{R_{\text{graft}}}{R_{\text{donor}}}=z_R.$$
-
-This gives the central identity of LiPNet:
-
-$$\boxed{z_P = z_F \, z_R}$$
-
-All three quantities equal 1 in a healthy donor:
-
-$$z_F=z_P=z_R=1.$$
-
-This identity is the main point of the model.
-
-Flow and pressure are equivalent normalized loads only when:
-
-$$z_R=1.$$
-
-When graft resistance changes, flow and pressure separate.
-
----
-
-### Why resistance matters
-
-Suppose a partial graft receives three times the donor flow:
-
-$$z_F=3.$$
-
-If resistance remains equal to the donor value:
-
-$$z_R=1,$$
-
-then:
-
-$$z_P=3.$$
-
-But if venous reconstruction reduces effective resistance to:
-
-$$z_R=0.5,$$
-
-then:
-
-$$z_P=3\times0.5=1.5.$$
-
-The graft therefore carries very high flow without developing the pressure expected from flow alone.
-
-This is the mechanism behind **portal flow-pressure decoupling** in LiPNet.
-
-Any intervention that enlarges effective outflow can lower $z_R$.
-
-Examples include:
-
-- middle hepatic vein reconstruction,
-- venoplasty,
-- enlarged hepatic venous drainage,
-- haemodynamic interventions that increase effective compliance.
-
-The model therefore interprets pressure as the combined result of flow and resistance.
-
----
-
-## What the model includes
-
-LiPNet contains haemodynamics only.
-
-It does not include:
-
-- recipient severity,
-- donor age,
-- steatosis,
-- inflammation,
-- graft quality,
-- immunological injury,
-- metabolic dysfunction.
-
-This is intentional.
-
-The model is designed to isolate the physical contribution of portal flow, vascular resistance and portal pressure.
-
-This also makes its predictions falsifiable.
-
-
----
-
-## Four predictions
-
-All numerical results below are produced by:
-
-```bash
-python src/predictions.py
-```
-
-and stored in:
-
-```text
-results/predictions.json
-```
-
-The four predictions test different parts of the model.
-
----
-
-### P1. The hepatic shear set-point should be nearly invariant across mammals
-
-The first prediction does not use transplant data.
-
-Portal pressure remains within a relatively narrow physiological range across mammals despite large differences in body mass.
-
-If the liver vascular network operates near the predicted optimum, the characteristic wall-shear set-point $\tau_0$ should therefore change very little with body size.
-
-Using published allometric relationships:
-
-$$\text{portal flow}\sim M^{0.77}$$
-
-and:
-
-$$\text{portocentral distance}\sim M^{0.10},$$
-
-LiPNet predicts that the body-mass exponent of $\tau_0$ remains between:
-
-$$-0.077\quad\text{and}\quad+0.071$$
-
-over the full prespecified range of vascular maintenance exponents.
-
-This range is close to zero.
-
-The result therefore supports an approximately invariant hepatic shear set-point across mammals.
-
-The vascular mass prediction provides a second, weaker test.
-
-Across the same range of maintenance exponents, the predicted vascular mass exponent is:
-
-$$0.89-1.08.$$
-
-The reported range for hepatic blood volume is approximately:
-
-$$0.80-0.92.$$
-
-About 18% of the prespecified model range overlaps with the observed range.
-
-No value of $b$ was selected to improve agreement with the observation.
-
-#### What P1 shows
-
-The allometric analysis tests the physical structure of LiPNet independently of liver transplantation.
-
-It asks whether the same network principle can remain physiologically reasonable from small mammals to humans.
-
----
-
-### P2. Flow and pressure should separate when outflow resistance decreases
-
-The central mechanistic prediction follows directly from:
-
-$$z_P=z_Fz_R.$$
-
-If venous outflow is enlarged:
-
-$$z_R<1.$$
-
-Portal pressure should then be lower than expected from portal flow alone.
-
-Five published clinical groups reported both flow load and pressure load.
-
-Four of these groups had reconstructed or functionally enlarged outflow:
-
-- right lobe with middle hepatic vein reconstruction,
-- outflow venoplasty,
-- left lobe with middle and left hepatic vein trunk,
-- splenectomy associated with increased haemodynamic compliance.
-
-Their resistance loads were:
-
-$$z_R=0.31,\;0.54,\;0.55,\;0.74.$$
-
-All four values were below 1, as predicted.
-
-The only group with standard outflow and both loads reported (Wang 2014, no splenectomy) had:
-
-$$z_R=0.72.$$
-
-It is also below 1, so these five groups show that partial grafts can carry high flow at reduced resistance, but they do not yet separate reconstructed from standard outflow. That contrast needs more series reporting both loads.
-
-Because $R_{\text{graft}}$ is estimated here from the measured gradient and flow, the identity itself is an exact decomposition, not an empirical test. The empirical content of P2 is the sign of $z_R-1$ under each surgical configuration.
-
-The exact sign test gives:
-
-$$p=0.06.$$
-
-When the reported uncertainty in flow and pressure is propagated, each reconstructed group remains below:
-
-$$z_R=1$$
-
-with probability approximately 1.00.
-
-These grafts had portal flow loads approximately three to four times the donor value, while reported adverse outcome rates remained between 0% and 10%.
-
-#### What P2 shows
-
-The result shows why portal flow and portal pressure should not be treated as interchangeable measures.
-
-The same graft can have:
-
-- very high flow,
-- relatively moderate pressure,
-- low effective resistance.
-
-The most direct evidence for flow-pressure separation therefore comes from grafts in which both quantities were measured.
-
----
-
-### P3. Within a cohort, outcome should increase with pressure load
-
-If $z_P$ reflects the haemodynamic burden experienced by the graft, higher pressure load should be associated with worse outcomes within the same clinical cohort.
-
-The complete dataset contains:
-
-- 17 clinical series,
-- 10 centres,
-- 31 groups,
-- 21 groups with pressure load,
-- 14 groups with flow load.
-
-A within-study slope requires at least two groups from the same study with the same outcome measured at different haemodynamic levels.
-
-This information was available for:
-
-- 5 series for $z_P$,
-- 4 series for $z_F$.
-
-Six additional series contained only one group and therefore inform the baseline level but not the within-study slope.
-
-To compare pressure and flow using the same statistical structure, we fitted the same model to both loads and restricted the comparison to the primary outcome.
-
-| Load | Groups / series | Events / patients | $\mu_\beta$ (95% CrI) | $P(\mu_\beta>0)$ |
-|---|---:|---:|---:|---:|
-| $z_P$, pressure | 7 / 3 | 76 / 573 | +1.56 (+0.35, +2.81) | 0.993 |
-| $z_F$, flow | 8 / 4 | 48 / 321 | +0.86 (-0.58, +2.36) | 0.885 |
-
-The interval for pressure load excludes zero.
-
-The interval for flow load does not.
-
-However, this does **not** prove that pressure is statistically superior to flow.
-
-The probability that the pressure slope is larger than the flow slope is:
-
-$$P(\mu_{z_P}>\mu_{z_F})=0.77.$$
-
-The flow analysis also contains less information:
-
-- 48 events,
-- a median group size of 10 patients,
-- two groups with zero events.
-
-Wang 2014 contributes data to both analyses.
-
-When the series defined by a pressure-gradient cut-off is added, the analysis contains:
-
-- 13 groups,
-- 6 strata,
-
-with:
-
-$$\mu_\beta=+1.96\quad(95\%\ \text{CrI }+1.13\text{ to }+2.81).$$
-
-The main evidence that flow and pressure are not interchangeable remains Prediction 2, where both quantities are measured in the same graft groups.
-
----
-
-### Hierarchical model
-
-The main pressure analysis uses a hierarchical binomial model.
-
-Within each study, pressure load is centred around the study mean:
-
-```text
-E_gs ~ Binomial(n_gs, p_gs)
-
-logit(p_gs) =
-    alpha_s
-    + beta_s (zP_gs - mean(zP_s))
-
-beta_s ~ Normal(mu_beta, tau_beta²)
-```
-
-where:
-
-- $E_{gs}$ is the number of events in group $g$ of study $s$,
-- $n_{gs}$ is the number of patients,
-- $\alpha_s$ is the study-specific baseline,
-- $\beta_s$ is the study-specific association with pressure load,
-- $\mu_\beta$ is the average association across studies,
-- $\tau_\beta$ describes between-study variation.
-
-Centering $z_P$ within each study separates two questions:
-
-1. What is the baseline risk in this centre?
-2. How does risk change as pressure load changes within that centre?
-
-This is important because baseline outcome rates vary strongly across centres.
-
----
-
-### Primary clinical result
-
-For the primary outcome of small-for-size syndrome or early dysfunction:
-
-- 7 groups,
-- 3 studies,
-- 76 events,
-- 573 patients.
-
-The estimated mean slope was:
-
-$$\mu_\beta=+1.55$$
-
-with:
-
-$$95\%\ \text{CrI}=+0.33\text{ to }+2.79.$$
-
-This corresponds to an odds ratio of:
-
-$$OR=4.70$$
-
-per unit increase in $z_P$.
-
-The posterior probability of a positive association was:
-
-$$P(\mu_\beta>0)=0.990.$$
-
-For the secondary outcome of mortality or graft loss:
-
-$$\mu_\beta=+1.74\quad(95\%\ \text{CrI }+0.60\text{ to }+2.86).$$
-
-When primary and secondary outcomes were combined:
-
-$$\mu_\beta=+1.79\quad(95\%\ \text{CrI }+0.97\text{ to }+2.64).$$
-
-Every within-study comparison moved in the predicted direction.
-
----
-
-### Model diagnostics
-
-The hierarchical model was sampled using NUTS with four chains.
-
-Diagnostics were:
-
-- maximum $\hat{R}$: 1.001,
-- minimum effective sample size: 5114,
-- divergences: 0,
-- posterior predictive checks inside the expected interval: 7/7.
-
-These results indicate stable sampling for the primary model.
-
----
-
-### Sensitivity analyses
-
-The pressure-load association was tested across 15 alternative specifications.
-
-These included changes in:
-
-- outcome definition,
-- CVP assumptions,
-- handling of overlapping Kyoto publications,
-- prior on between-study variation,
-- study versus centre stratification,
-- imputation strategy.
-
-Across these specifications:
-
-$$\mu_\beta$$
-
-remained between:
-
-$$+0.92\quad\text{and}\quad+1.93.$$
-
-The association remained positive in every specification.
-
-The most conservative analysis combined publications from the same centre into a single stratum:
-
-$$\mu_\beta=+0.92\quad(95\%\ \text{CrI }+0.20\text{ to }+1.65).$$
-
-The prior on between-study variation has an effect, as expected with a small number of studies.
-
-Using:
-
-$$\tau\sim\text{HalfNormal}(0.25)$$
-
-gives:
-
-$$\mu_\beta=+1.60,\qquad P(\mu_\beta>0)=0.998.$$
-
-Using:
-
-$$\tau\sim\text{HalfNormal}(1.0)$$
-
-gives:
-
-$$\mu_\beta=+1.46\quad(-0.07,\,+2.84),$$
-
-with:
-
-$$P(\mu_\beta>0)=0.970.$$
-
-When uncertainty in the calculated indices is propagated by drawing CVP values between 3 and 9 mmHg:
-
-$$\mu_\beta=+1.74\quad(95\%\ \text{CrI }+0.89\text{ to }+2.63).$$
-
----
-
-### Internal-external validation
-
-Validation was performed by leaving out one centre at a time.
-
-The slope was estimated using the remaining centres.
-
-The held-out centre was then evaluated using a conditional likelihood that removes its intercept.
-
-This means that no outcome information from the held-out centre is used to estimate its baseline risk.
-
-The log-score improvement over a model with no association was:
-
-- Cairo: +2.26,
-- Fukuoka: +2.74,
-- Kyoto: +8.40.
-
-The predicted direction was correct in all three centres.
-
-A recovery simulation using the real sample sizes and gradients showed the limits of the available evidence.
-
-When the true effect was zero, the model did not incorrectly exclude zero.
-
-For:
-
-$$\mu=1,$$
-
-the interval excluded zero in about 63% of simulations.
-
-For:
-
-$$\mu=2,$$
-
-it excluded zero in all simulations.
-
-The between-study variance $\tau_\beta$ cannot be estimated precisely with only five studies.
-
----
-
-### P4. Clinical thresholds from different liver fields converge on the same scale
-
-LiPNet predicts that haemodynamic thresholds developed independently in different clinical settings should become comparable when expressed as normalized pressure load.
-
-This is what is observed.
-
-#### Portal hypertension
-
-Clinically significant portal hypertension is defined by:
-
-$$HVPG\geq10\ \text{mmHg}.$$
-
-On the LiPNet scale:
-
-$$z_P=\frac{10}{5}=2.$$
-
----
-
-#### Partial liver grafts
-
-A commonly used graft threshold is:
-
-$$PVP=15\ \text{mmHg}$$
-
-with:
-
-$$CVP=5\ \text{mmHg}.$$
-
-Therefore:
-
-$$z_P=\frac{15-5}{5}=2.$$
-
----
-
-#### Hepatic resection
-
-For a cirrhotic liver with a baseline pressure gradient of approximately 10 mmHg, reducing functional liver mass by resection increases the load carried by the remaining tissue.
-
-The same normalized threshold appears around:
-
-$$z_P=2.$$
-
----
-
-#### Variceal bleeding
-
-A pressure gradient associated with variceal bleeding is approximately:
-
-$$HVPG\geq12\ \text{mmHg}.$$
-
-This corresponds to:
-
-$$z_P=\frac{12}{5}=2.4.$$
-
----
-
-#### What P4 shows
-
-Thresholds developed independently in:
-
-- cirrhosis,
-- portal hypertension,
-- partial liver transplantation,
-- hepatic surgery,
-
-map onto a similar normalized pressure-load scale.
-
-The repeated appearance of:
-
-$$z_P\approx2$$
-
-suggests a common haemodynamic regime.
-
----
-
-## What LiPNet is not
-
-LiPNet is **not an individual risk-prediction model**.
-
-Absolute outcome rates differ strongly between centres.
-
-For example, at similar pressure gradients, different published series report very different rates of small-for-size syndrome or early dysfunction.
-
-A single logistic curve fitted across all centres gives little useful information:
-
-$$\text{slope}=0.11$$
-
-with:
-
-$$95\%\ \text{CI}=-0.25\text{ to }0.46.$$
-
-The across-series rank correlation between $z_P$ and outcome is also weak (16 groups):
-
-$$\rho=0.23,\qquad p=0.399.$$
-
-For portal flow per gram (12 groups):
-
-$$\rho=0.27,\qquad p=0.388.$$
-
-This is expected from the model.
-
-LiPNet does not explain why one centre has a higher baseline event rate than another.
-
-The transferable quantity is the **change in risk associated with a change in haemodynamic load within a clinical setting**, not the absolute baseline risk.
-
----
-
-## Whole-graft extension
-
-The same framework can also be applied to whole grafts.
-
-A whole graft keeps the donor lobular bed, but vascular resistance may change at the inlet or outlet anastomoses.
-
-A simplified resistance model is:
-
-```text
-splanchnic inflow
-        |
-        v
-
-     inlet
-       |
-   lobular bed
-       |
-     outlet
-       |
-       v
-
-      CVP
-```
-
-with possible collateral pathways.
-
-For the vascular anastomoses:
-
-$$R_{\text{in}}\propto d_{\text{in}}^{-4}$$
-
-and:
-
-$$R_{\text{out}}\propto d_{\text{out}}^{-4}.$$
-
-This produces asymmetric haemodynamic effects.
-
-#### Inlet narrowing
-
-If portal inflow is restricted, both:
-
-$$z_F$$
-
-and:
-
-$$z_P$$
-
-decrease together.
-
-This behaviour is consistent with low-flow states and portal steal.
-
-#### Outlet narrowing
-
-If hepatic venous outflow is restricted, effective resistance increases.
-
-Portal pressure therefore rises more strongly than portal flow.
-
-This produces:
-
-$$z_R>1$$
-
-and is consistent with venous congestion or outflow obstruction.
-
-Thus, inlet and outlet lesions move the graft in different directions in the:
-
-$$(z_F,z_P)$$
-
-plane.
-
----
-
----
-
-Back to the [README](README.md) for the repository, the data and the calculator.
+### Changed
+- `data/series.tsv` now holds raw values only, with provenance columns `PVF_basis`, `PVP_basis`, `CVP_basis`, `events_basis` (`reported`, `derived`, `imputed`, `threshold`, `group mean`, `not applicable`) and a column `in_main_analysis`; the stored `zP` and `zF` columns were removed and are recomputed by `src/indices.py`, the single source used by the fit, the plots, the tests and the calculator.
+- Groups defined only by a flow cut-off (Vasavada 2014, PVF above and below 190 mL/min/100 g) are excluded from the main analysis, drawn hollow in `series_flow` and reported in sensitivity. Main flow result: 11 groups, Spearman ρ = 0.35, p = 0.29 (13 groups, ρ = 0.23, p = 0.46 when included).
+- Sensitivity analysis is now per index: a group is excluded for `zP` only if PVP or CVP is imputed or filled, and for `zF` only if PVF or the donor reference is. `results/sensitivity.tsv` lists all analyses. The pooled logistic fit cannot be repeated without imputed CVP (only Yamada 2008 has fully reported pressures, with no events); this is stated in the README as the main limitation.
+- Notes column translated to English and made explicit about every derivation (PVF divided by graft weight, PVP from gradient plus CVP, deaths from survival percentages with the unrounded value).
+- Calculator: the normal portocaval gradient is fixed at 5 mmHg (the value the coefficients were fitted on) instead of user-editable; the curve grid extends to `zP` 0.5–8 and the range of the fitted groups (1.43–2.68) is stored so that values outside it are labelled as extrapolation with a band computed for the same `zP`.
+- Calculator text ("4 of the 5 groups had no reported CVP") and coefficients are injected by `build_app.py` from the analysis outputs.
+- README results updated to the current analysis (intercept −6.40; flow result with and without cut-off groups; per-index sensitivity).
+
+### Added
+- `indices.compute()` records every value it fills in (`CVP_filled`, `donor_ref_filled`), counts it as imputed regardless of the label, and raises an error when a label contradicts the data (e.g. a blank CVP marked `reported`).
+- Calculator input validation: a blank CVP is taken as 5 mmHg and flagged, an explicit 0 is a measured zero; PVP and CVP must be non-negative; graft weight, GRWR, recipient weight and donor reference must be positive numbers (a blank donor reference falls back to 90 mL/min/100 g and says so); a portal flow of 0 gives `zF = 0`, is labelled "no portal inflow", and the ratio `zP/zF` and its interpretation are omitted.
+- Separate labels for pressure (`tagP`: zero or negative gradient, steal risk, window, above window, high) and flow (`tagF`: no inflow, below donor, 1–2×, 2–3×, >3× donor).
+- Tests: incomplete edits are caught, cut-off groups are excluded, README figures are checked against `results/`, calculator has no editable gradient and validates inputs. Tests run the full bootstrap so they never leave a short-bootstrap JSON that would alter the built calculator.
+- `data/interventions.tsv` (pressure and flow change per inflow-modulation manoeuvre, with source) replaces values hard-coded in `plots.py`.
+- `src/model/merge_campaigns.py` to merge per-size campaign outputs; `CITATION.cff` with version, date and concept DOI; `.zenodo.json`; `index.html` redirect for GitHub Pages; `CHANGELOG.md`.
+
+### Fixed
+- A blank CVP was read as 0 by the calculator (risk jumped from 13.1% to 49.6% with the default inputs).
+- Changing the reference gradient in the calculator invalidated the fitted coefficients.
+- Recomputed indices were not the ones used by the correlations and the fit.
+- Uncertainty band outside the curve range was taken from the curve end-point instead of the actual `zP`.
+- Negative or zero graft weight produced a negative `zF`; donor reference 0 was silently replaced by 90.
+- A shared `tag()` labelled a zero pressure gradient as "no portal inflow".
+- `plane` and `risk_curve` plots included cut-off groups.
+- The token `n/a` in provenance columns was read by pandas as missing; replaced by `not applicable`.
+- Unused functions removed from `src/model/network.py` (430 → 244 lines); leftover paper-figure scripts and the derived `data/graph3d_exponents.tsv` removed.
+
+### Removed
+- `data/graph3d_exponents.tsv` (exponents are computed on the fly), stored `zP`/`zF` columns, editable gradient field in the calculator.
+
+## [0.1.0] – 2026-09-20
+
+First public release. Archived as [10.5281/zenodo.22861277](https://doi.org/10.5281/zenodo.22861277).
+
+### Added
+- Extraction table of 12 published LDLT series (22 groups, 1,026 recipients) with the source table or page for every value.
+- Indices `zP = (PVP − CVP)/5` and `zF = graft PVF per 100 g / donor PVF per 100 g`; Spearman correlations with outcome; pooled binomial logistic fit of SFSS on `zP` with 2000-resample bootstrap band.
+- 14 stand-alone plots (`src/plots.py`): nomogram, risk curve, series by pressure and by flow, flow–pressure plane, resection, load curve, interventions, 2D and 3D optimal networks, scaling, allometry, shear profile, certificate.
+- Perfusion-network model of the liver (`src/model/`): 2D and hemispheric 3D graphs, dissipation-optimal tree at fixed maintenance cost, closed-form scaling and allometric closure, campaign scripts with cached outputs.
+- Browser calculator `sfss_calculator.html`, built by `src/build_app.py`.
+- `run_all.sh`, tests with GitHub Actions, PolyForm Noncommercial 1.0.0 licence, patient-level table and cohort template.
