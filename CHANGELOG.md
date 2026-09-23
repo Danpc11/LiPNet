@@ -4,6 +4,11 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [Unreleased]
 
+### Fixed
+- The calculator was applying the exploratory slope (all outcomes combined, OR 6.02) while the paper reports the primary analysis, and it offered mortality series as reference levels for a small-for-size risk. It now uses the primary estimate (OR 4.70 per unit of zP, 1.36 per mmHg, 7 groups from 3 series) and offers only the three SFSS series as references, so page and manuscript state the same effect for the same outcome. A test asserts both.
+- `src/build_app.py` had duplicate placeholder keys, so the group, event and patient counts shown in the page came from a different fit than the slope.
+
+
 ## [0.3.0] – 2026-09-22
 
 The release that turns the repository into the model it is named after.
