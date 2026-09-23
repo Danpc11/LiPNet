@@ -48,9 +48,9 @@ small{color:var(--muted)}
 ' </div>
  <div class="card"><h2 style="margin-top:0">Reference level</h2>
   <label>Anchor for the absolute risk
-   <select id="ref"><option value="cohort">My cohort's average (enter the two values below)</option><option value="own">My rate at the starting gradient</option>__REFOPTS__</select></label>
-  <label>My cohort's overall outcome rate, %<input id="base" type="number" step="1" placeholder="e.g. 10"></label>
-  <label>My cohort's average portocaval gradient, mmHg<input id="basegrad" type="number" step="0.5" placeholder="e.g. 8"></label>
+   <select id="ref"><option value="own">My rate at the current gradient (exact)</option><option value="cohort">My cohort's average (approximate)</option>__REFOPTS__</select></label>
+  <label>Outcome rate, %<input id="base" type="number" step="1" placeholder="e.g. 10"></label>
+  <label>Average portocaval gradient of that cohort, mmHg <small>(only for the approximate option)</small><input id="basegrad" type="number" step="0.5" placeholder="e.g. 8"></label>
  </div>
 </div>
 
@@ -73,7 +73,7 @@ small{color:var(--muted)}
  <button id="copyrow" style="margin-top:10px;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font-size:1rem;cursor:pointer">Copy this case as a row</button>
  <p id="copied" style="font-size:.85rem;color:var(--muted);margin:8px 0 0"></p>
  <pre id="rowout" style="font-size:.75rem;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;color:var(--muted)"></pre>
- <small>Columns: case, PVP, CVP, gradient, PVF, graft weight, GRWR, donor reference, zF, zP, zR, outcome, date. The same columns as <code>data/cohort_template.tsv</code>.</small></div>
+ <small>The row has the 21 columns of <code>data/cohort_template.tsv</code>, in that order; fields the calculator does not know are left empty for you to fill. Values rejected on screen are exported empty, so the file always matches what you see.</small></div>
 <div class="card tbl" style="margin-top:12px"><h2 style="margin-top:0">What modulation does in the published series</h2>
 <table><tr><th>Manoeuvre</th><th>Reported effect</th><th>Source</th></tr>
 <tr><td>Splenic artery ligation</td><td>PVF/100 g 360 → 240 (−33%); PVP −4.4 mmHg on average with intentional control</td><td>Troisi 2003 Tab 4; Ogura 2010</td></tr>
@@ -127,7 +127,7 @@ function calc(){
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
      if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)){
        const zbar=bg/gn, o=b/(1-b), RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);}, R=(z)=>RL(z,BETA);
-       msg.push('Anchored on your cohort: overall rate '+(100*b).toFixed(0)+'% at an average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
+       msg.push('<b>Approximate anchor.</b> Your cohort\u2019s overall rate, '+(100*b).toFixed(0)+'%, is treated as the risk at its average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). Because the curve is not linear, the average risk of a spread-out cohort is not the risk at its average gradient, so this places the level only approximately; the first option, your rate measured at one gradient, has no such error. This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
      } else msg.push('Enter your cohort\u2019s overall outcome rate and its average portocaval gradient, or choose another reference above.');
    } else {
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
@@ -205,15 +205,47 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
  }
  $('plot').innerHTML=s;}
 
-function caseRow(){const g=(id)=>$(id).value;
- const pvp=+g('pvp'), cvp=g('cvp')===''?5:+g('cvp'), pvf=+g('pvf'), gw=+g('gw')||(+g('grwr')/100*+g('rw')*1000), dref=+g('dref')||90;
- const zp=((pvp-cvp)/GN), zf=(pvf&&gw)?(pvf/gw*100/dref):NaN;
- const cells=[g('caseid')||'', pvp||'', g('cvp')===''?'5 (assumed)':cvp, isFinite(pvp-cvp)?(pvp-cvp).toFixed(1):'', pvf||'', gw||'', g('grwr')||'', dref,
-   isFinite(zf)?zf.toFixed(2):'', isFinite(zp)?zp.toFixed(2):'', (isFinite(zp)&&isFinite(zf)&&zf>0)?(zp/zf).toFixed(2):'', g('outcome')||'', new Date().toISOString().slice(0,10)];
- return cells.join('\t');}
-document.getElementById('copyrow').addEventListener('click',()=>{const row=caseRow(); $('rowout').textContent=row;
- if(navigator.clipboard) navigator.clipboard.writeText(row).then(()=>{$('copied').textContent='Copied. Paste it into your spreadsheet; it never left this page.';},()=>{$('copied').textContent='Select the line below and copy it.';});
- else $('copied').textContent='Select the line below and copy it.';});
+function caseRow(){
+ // one row in the columns of data/cohort_template.tsv, built only from values the calculator has validated;
+ // anything the page rejected is exported empty, so the file can never disagree with the screen
+ const num=(id,min)=>{const v=$(id).value; const x=+v; return (v!==''&&isFinite(x)&&(min===undefined||x>=min))?x:null;};
+ const pvp=num('pvp',0), cvpRaw=$('cvp').value, cvp=(cvpRaw===''?null:num('cvp',0)), pvf=num('pvf',0);
+ const gw=num('gw',0), grwr=num('grwr',0), rw=num('rw',0), dref=num('dref',0);
+ const weight = gw!==null ? gw : ((grwr!==null&&rw!==null) ? grwr/100*rw*1000 : null);
+ const cvpUsed = cvp!==null ? cvp : DEFAULT_CVP;
+ const grad = pvp!==null ? pvp - cvpUsed : null;
+ const zp = (grad!==null&&grad>=0) ? grad/GN : null;
+ const zf = (pvf!==null&&weight!==null&&weight>0&&dref!==null&&dref>0) ? (pvf/weight*100)/dref : null;
+ const zr = (zp!==null&&zf!==null&&zf>0) ? zp/zf : null;
+ const f=(x,d)=>x===null?'':x.toFixed(d===undefined?2:d);
+ const cells=[
+   $('caseid').value||'',                      // patient_id
+   '',                                         // centre
+   new Date().toISOString().slice(0,10),       // date
+   '',                                         // graft_type
+   weight===null?'':Math.round(weight),        // graft_weight_g
+   rw===null?'':rw,                            // recipient_weight_kg
+   f(grwr,2),                                  // GRWR
+   '',                                         // MHV_included
+   '',                                         // donor_PVF_mL_min
+   '',                                         // donor_graft_weight_g
+   '',                                         // PVF_reperfusion_mL_min
+   '',                                         // PVP_reperfusion_mmHg
+   '',                                         // CVP_reperfusion_mmHg
+   '',                                         // modulation
+   pvf===null?'':pvf,                          // PVF_final_mL_min
+   pvp===null?'':pvp,                          // PVP_final_mmHg
+   cvp===null?(pvp===null?'':DEFAULT_CVP+' (assumed)'):cvp,   // CVP_final_mmHg
+   $('outcome').value==='sfss'?'1':($('outcome').value==='none'?'0':''),      // SFSS_ILTS2023
+   $('outcome').value==='death90'?'1':($('outcome').value==='none'?'0':''),   // graft_loss_90d
+   $('outcome').value==='death90'?'1':($('outcome').value==='none'?'0':''),   // death_90d
+   ''                                          // regenerated_volume_2w_mL
+ ];
+ return {row: cells.join('\t'), zp: f(zp), zf: f(zf), zr: f(zr)};}
+document.getElementById('copyrow').addEventListener('click',()=>{const r=caseRow(); const row=r.row; $('rowout').textContent=row;
+ const note=(r.zp===''?' The pressure load could not be computed from what you entered, so those fields are blank.':' Computed loads: z_P '+r.zp+(r.zf?', z_F '+r.zf+', z_R '+r.zr:'')+'.');
+ if(navigator.clipboard) navigator.clipboard.writeText(row).then(()=>{$('copied').textContent='Copied.'+note+' Nothing left this page.';},()=>{$('copied').textContent='Select the line below and copy it.'+note;});
+ else $('copied').textContent='Select the line below and copy it.'+note;});
 document.querySelectorAll('input,select').forEach(i=>i.addEventListener('input',calc));i=>0;
 document.getElementById('ref').addEventListener('change',calc);calc();
 </script>
