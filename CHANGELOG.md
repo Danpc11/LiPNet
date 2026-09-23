@@ -8,13 +8,9 @@ All notable changes to this repository are documented here. The format follows [
 - The case export still rebuilt its own values, so an input the page rejected (a graft weight of zero or a negative one) could reach the file. `calc()` now publishes exactly what it validated and `caseRow()` reads only that; a rejected field is exported blank.
 - One outcome selector wrote both `graft_loss_90d` and `death_90d` when "death or graft loss" was chosen. The three outcomes are now independent tick boxes, so each column carries what actually happened; all three stay blank while the outcome is unknown, and a CVP that was assumed rather than measured is exported blank.
 - Removed two unused imports and a stale path to a file from another repository.
-
-
-### Fixed
 - The calculator mixed two models: it used the Bayesian slope (1.547) with the intercepts and bands of the stratified fit (1.959), so a reference series could show a curve and a band that disagreed. `bayes.fit()` now returns the intercept of each stratum on the absolute zP scale and the prediction band implied by the same draws, and `build_app.py` takes slope, interval, intercepts, bands and counts from that one posterior. Wang 2014 at zP 2.40 now reads 11.4% with a band of 9.5 to 17.4%, against 14.1% observed.
 - `caseRow()` rebuilt the row from raw fields, so a rejected input could still be exported (an empty portal pressure gave a gradient of -5 and zP -1). It now reuses only validated values, exports blanks for anything the page rejected, and writes the 21 columns of `data/cohort_template.tsv` in order rather than 13 of its own.
 - The cohort-average anchor is labelled as an approximation, and the exact option (a rate measured at one gradient) is offered first.
-
 
 ## [0.3.1] – 2026-09-22
 
