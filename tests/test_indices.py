@@ -110,10 +110,12 @@ def test_plots_and_calculator():
     assert all(os.path.exists(os.path.join(ROOT, 'results', f'{n}.png')) for n in names)
     assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True).returncode == 0
     html = open(os.path.join(ROOT, 'sfss_calculator.html')).read()
-    B = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))['exploratory (all outcomes)']
+    B = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))['primary (SFSS or early dysfunction)']
     W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
     assert '__' not in html.replace('__proto__', '')
-    assert f"const BETA={B['mu_beta']:.4f}" in html, 'the calculator must use the primary hierarchical estimate'
+    assert f"const BETA={B['mu_beta']:.4f}" in html, 'the calculator must use the primary analysis of the paper'
+    opts_ = re.findall(r'<option value="([^"]+)"', html)
+    assert all('(mortality' not in o for o in opts_), 'reference series must match the outcome the slope was fitted on'
     assert f"BLO={B['mu_beta_ci'][0]:.4f}" in html, 'and its credible interval'
     assert f"{W['alphas'][W['studies'][0]]:.4f}" in html, 'with the per-series levels for the reference option'
     assert 'id="pvp2"' in html and 'id="ref"' in html and 'id="basegrad"' in html
