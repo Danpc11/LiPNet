@@ -121,6 +121,13 @@ def test_plots_and_calculator():
     assert 'id="copyrow"' in html and 'caseRow' in html, 'the demo needs the case-collection card'
     assert 'Nothing left this page' in html, 'and must say the data stay in the browser'
     assert 'cohort_template.tsv' in html and 'caseRow' in html, 'the export must follow the cohort template'
+    assert 'let LAST' in html and 'calc();' in html.split('function caseRow')[1][:120], \
+        'the export must reuse the values the calculator validated, not re-read the fields'
+    cols = open(os.path.join(ROOT, 'data', 'cohort_template.tsv')).readline().rstrip('\n').split('\t')
+    for c in ('SFSS_ILTS2023', 'graft_loss_90d', 'death_90d'):
+        assert c in cols and f"// {c}" in html, f'{c} must be exported in its own column'
+    body = html.split('function caseRow')[1]
+    assert body.count("flag('o_") == 3, 'each outcome must be flagged independently'
     assert 'const ZGRID=' in html and '"band"' in html and 'slope only' in html   # joint band for published strata
 
 def test_whole_graft_model():
