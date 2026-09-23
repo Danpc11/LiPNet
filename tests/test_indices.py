@@ -188,6 +188,18 @@ def test_model_predictions():
 BLOCKED_MACROS = ('operatorname', 'newcommand', 'def', 'require', 'label', 'includegraphics')
 
 
+def test_documents_are_the_right_documents():
+    """A wrong paste is easy and invisible: check each document still starts with its own content."""
+    first = lambda f: open(os.path.join(ROOT, f), encoding='utf-8').read().lstrip().split('\n')[0]
+    assert first('README.md').startswith('# LiPNet'), 'README.md must open with the project title'
+    assert 'Changelog' not in first('THEORY.md'), 'THEORY.md must hold the theory, not the changelog'
+    assert first('THEORY.md').startswith('# LiPNet'), 'THEORY.md must open with its own title'
+    assert first('CHANGELOG.md').startswith('# Changelog'), 'CHANGELOG.md must open as a changelog'
+    theory = open(os.path.join(ROOT, 'THEORY.md'), encoding='utf-8').read()
+    for section in ('## The model', '### P1.', '### P2.', '### P3.', '### P4.'):
+        assert section in theory, f'THEORY.md is missing {section}'
+
+
 def test_docs_math_renders_on_github():
     """GitHub renders README maths with a restricted KaTeX: a blocked macro silently kills the whole expression."""
     docs = {f: open(os.path.join(ROOT, f), encoding='utf-8').read() for f in ('README.md', 'THEORY.md')}
@@ -225,5 +237,5 @@ def test_readme_matches_results():
     assert 'liver_pressure_index' not in docs, 'stale repository name'
 
 if __name__ == '__main__':
-    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_docs_math_renders_on_github, test_readme_matches_results):
+    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_documents_are_the_right_documents, test_docs_math_renders_on_github, test_readme_matches_results):
         t(); print('ok', t.__name__)
