@@ -1,0 +1,14 @@
+# ---- metadata: "# key value", one per line ----------------------------------
+# study          Ogura 2010
+# group          final PVP >= 15
+# figure         Fig. 2, upper curve
+# outcome        death
+# horizon        2 years
+# time_unit      months
+# n_start        43
+# total_events   14
+# gradient_mmHg  9.9
+# risk           0:43, 6:38, 12:34, 18:31, 24:29
+# ---- then every point read off the step function, increasing time -----------
+time,survival
+0,1.000

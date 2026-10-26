@@ -1,0 +1,22 @@
+# The sixteen recipient deaths of Ogura Y et al., Liver Transpl 2010;16:718-728, Table 3,
+# transcribed one row per patient. The denominators come from the same paper: 86 recipients
+# with a final portal pressure < 15 mmHg and 43 with >= 15 mmHg (129 monitored in period II).
+# Central venous pressure was reported by group only (6.0 mmHg below 15, 6.8 at or above),
+# so a per-patient gradient needs the assumed CVP already flagged in the main extraction.
+case	age	sex	graft	grwr	splenectomy	final_pvp	sfss	loss_days	cause
+1	57	M	left	0.75	0	8	0	195	primary lung cancer
+2	42	M	right	0.85	0	12	0	62	infection/sepsis
+3	59	M	right	0.90	1	13	0	599	graft failure, chronic rejection
+4	25	F	right	1.26	0	14	0	53	graft failure, severe rejection
+5	28	F	left	0.80	0	15	0	195	graft failure, chronic rejection
+6	53	M	right	1.04	1	15	0	100	infection/sepsis
+7	47	F	left	1.11	1	16	0	40	infection/sepsis
+8	44	F	left	0.77	0	17	1	76	thrombotic microangiopathy
+9	56	M	right	0.88	0	17	0	328	infection/sepsis
+10	52	F	left	0.70	1	17	0	242	infection/sepsis
+11	60	M	right	1.41	0	17	0	11	cerebral bleeding
+12	64	M	right	1.19	1	17	0	53	infection/sepsis
+13	51	F	left	1.13	1	18	0	703	graft failure, chronic rejection
+14	47	F	left	0.96	1	18	0	9	graft failure, humoral rejection
+15	68	F	left	1.06	1	18	0	5	pulmonary hemorrhage
+16	58	F	left	0.74	1	26	1	48	infection/sepsis

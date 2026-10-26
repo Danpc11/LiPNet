@@ -1,0 +1,10 @@
+# Group-level haemodynamics by OUTCOME, transcribed from Chan SC et al.,
+# Liver Transpl 2011;17:115-121, Table 3 (right liver LDLT including the middle hepatic
+# vein; 46 recipients split by Clavien grade of complication). Values are medians with
+# ranges, as published. The donor reference flow, 81 mL/min/100 g, is from the same
+# paper's Table 2 (right liver of the donor before hepatectomy).
+# This split is NOT in the main extraction, which carries Chan as one row scored on
+# in-hospital death (2 events). Clavien grade 2+ gives 12 events in the same 46 recipients.
+group	n	events	outcome	pvf_per_100g	pvf_lo	pvf_hi	pvp_after	pvp_lo	pvp_hi	graft_g	g_slv
+Clavien grade 0-1	34	0	Clavien grade 2+ complication	325	127	625	14	10	26	583	47
+Clavien grade 2+	12	12	Clavien grade 2+ complication	311	180	754	14	11	18	610	48

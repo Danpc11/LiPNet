@@ -2,6 +2,18 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.4.0] – 2026-10-21
+
+### Added
+- `src/fem/`: a finite-element model of one hepatic lobule, which opens up the single graph edge the network model uses for a lobule. Anisotropic Darcy perfusion of the hexagonal lobule reproduces a perfusion of 1.05 mL/min/g, a sinusoidal transit time of 8.6 s and a wall shear stress of 0.19 Pa; transport carries oxygen with its haemoglobin-bound pool (periportal 56 mmHg to pericentral 33, 33% extraction), ethanol through ADH and CYP2E1, acetaldehyde, and a pericentrally cleared drug, in one continuum or with the sinusoid and the hepatocyte separated by a membrane of finite permeability. Nitric oxide is solved as a wall sub-model rather than a lobule field, because its diffusion length is 0.18 µm in the lumen. `coupling.py` returns what the network needs: a geometric shape factor (kappa = 0.996, so the single edge costs the graph nothing) and a flow-dependent resistance load from the shear-NO loop. `network_link.py` then shows how little of that survives the rest of the series: the dissipation-optimal network puts 21% of its resistance in the sinusoids, so a graft at four times the donor's flow per gram reaches a measured zR of 0.91, against the 0.31 to 0.74 of the published groups.
+- `src/ipd/`: recovery of patient-level information from the published literature. `patient_level.py` carries the sixteen deaths of Ogura 2010 Table 3 with their final portal pressures, the sixteen recipients of Botha 2010 Table 5 with their portocaval gradient on both sides of a hemiportocaval shunt, and the outcome contrast of Chan 2011 Table 3 (12 events in 46 recipients, a null); every transcription is checked against the statistics its own paper reports. `ecological.py` replaces the group-mean likelihood with one that integrates over the within-group spread, and `km_reconstruct.py` implements the Guyot reconstruction, validated against simulated cohorts.
+
+### Fixed
+- Ogura 2010's printed dispersions of the portocaval gradient are standard errors, not standard deviations: the same paper gives that cohort's MELD as 23.2 ± 1.1 (n = 86) and 22.9 ± 1.7 (n = 43) while its Table 1 gives 22.9 ± 10.6. Converted, they are 2.78 and 2.62 mmHg. With that correction and two dispersions computed from a published patient table and a published range, all eight within-group standard deviations fall between 2.6 and 4.4 mmHg, which is what licenses a single pooled value of 3.4 mmHg; before it, they looked bimodal and no pooling would have been defensible.
+
+### Notes
+- The ecological correction runs one way: the patient-level slope is 1 to 11% larger than the group-mean slope over the range the series report, so the published estimate is a lower bound rather than an optimistic one.
+
 ## [0.3.1] – 2026-09-23
 
 ### Fixed

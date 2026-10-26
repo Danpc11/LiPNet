@@ -156,6 +156,23 @@ src/indices.py
     - internal-external validation
     - recalibration
 
+src/fem/
+    Lobule-scale finite elements:
+    - anisotropic Darcy perfusion
+    - O2 with haemoglobin, ethanol, acetaldehyde, drug
+    - sinusoid/hepatocyte two-phase exchange, zonal membrane
+    - NO wall sub-model
+    - shape factor and z_R(z_F) back to the network
+    Output:
+    results/fem_*.json, results/fem_*.pdf
+
+src/ipd/
+    Patient-level layer:
+    - Kaplan-Meier reconstruction (Guyot)
+    - within-group dispersion model
+    Output:
+    results/ipd_*.json
+
 src/plots.py
     Generates 18 stand-alone figures
 
@@ -168,6 +185,8 @@ data/series.tsv
 sfss_calculator.html
 index.html
 tests/
+docs/FEM.md
+docs/IPD.md
 run_all.sh
 ```
 
@@ -285,6 +304,56 @@ results/sensitivity.tsv
 ```
 
 The seventeen series and their links are listed in [Included clinical series](#included-clinical-series) above.
+
+---
+
+## Inside the lobule
+
+The network model represents a whole lobule as one edge of conductance $w=r^4/l$: a rigid
+Poiseuille tube whose resistance does not depend on its flow. `src/fem/` opens that edge
+up with a finite-element model of a single hexagonal lobule, and hands two things back.
+
+The first is a shape factor. Comparing the computed resistance against an equal-area radial
+annulus with the same permeability gives $\kappa = R_{\text{FEM}}/R_{\text{annulus}} = 0.996$,
+so the hexagonal outline costs the network model essentially nothing. The single edge is a
+better idealisation than it looks.
+
+The second is the part that is not geometric. Driving the lobule at a prescribed flow and
+closing the loop shear $\to$ eNOS $\to$ sinusoidal calibre $\to$ permeability gives a
+resistance that falls as flow rises:
+
+| $z_F$ | 0.5 | 1 | 1.5 | 2 | 3 | 4 |
+|---|---|---|---|---|---|---|
+| lobule $z_R$ | 1.21 | 1.00 | 0.85 | 0.74 | 0.59 | 0.56 |
+
+With the feedback gain at zero this is identically 1, so the two models are nested.
+
+Put back into the series, though, the effect is small. The dissipation-optimal network puts
+21% of its resistance in the sinusoids, which is where the published measurements put it
+too (0 in the cat and dog, 0.08 to 0.26 by micropuncture in the rabbit, a third in the
+perfused rat) even though the share was never used in the optimisation. At that share a
+graft at four times the donor's flow per gram reaches a measured $z_R$ of 0.91, not the
+0.31 to 0.74 of the published series. Sinusoidal autoregulation is a small, same-signed
+background term to be subtracted before attributing the rest, not a competing explanation
+for the clinical observation.
+
+The same solve also puts 47% of the intralobular pressure drop in the quarter nearest the
+central vein, reproducing the outlet-dominated profile that Henriksen and Lassen derived in
+1988 from a quite different argument.
+
+The same solve carries oxygen with its haemoglobin-bound pool, ethanol through ADH and
+CYP2E1, acetaldehyde, and a pericentrally cleared drug, either in one continuum or with the
+sinusoid and the hepatocyte separated by a membrane of finite permeability. Without fitting, it reproduces a
+periportal-to-pericentral $pO_2$ of 56 to 33 mmHg, 33% hepatic oxygen extraction, a
+transit time of 8.6 s and a sinusoidal wall shear stress of 0.19 Pa, and it puts the
+reactive drug metabolite and the acetaldehyde peak where centrilobular necrosis is.
+
+```bash
+python src/fem/run_fem.py all
+python tests/test_fem.py
+```
+
+The derivation, the numerical traps and the limits are in **[docs/FEM.md](docs/FEM.md)**.
 
 ---
 
