@@ -171,6 +171,12 @@ def test_model_predictions():
     assert p2['all_below_one'] and p2['reconstructed'] >= 4, 'P2: every reconstructed outflow below one'
     assert p2['min_prob_below_one'] > 0.9, 'P2: with measurement uncertainty'
     assert max(p2['outcome_reconstructed_pct']) <= 10, 'P2: those grafts did well (reported separately)'
+    sw = p2['reference_sweep']                                  # the normalisation does not manufacture zR < 1
+    assert sw['groups'] == 5 and sw['combinations'] == 15
+    assert sw['combinations_all_below_one'] == 14 and len(sw['exceptions']) == 1
+    assert (sw['exceptions'][0]['donor_ref_flow'], sw['exceptions'][0]['normal_gradient']) == (100.0, 4.0)
+    assert 1.0 < sw['exceptions'][0]['max_zR'] < 1.05, 'the one exception is the extreme corner, barely above one'
+    assert sw['cvp_sweep_all_below_one'], 'the assumed CVP alone never lifts a group above one'
     p3 = P['P3_within_cohort']
     assert p3['every_pair_in_predicted_direction'], 'P3: every within-study pair in the predicted direction'
     for k in ('primary', 'secondary', 'exploratory'):           # the prespecified order

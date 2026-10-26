@@ -15,11 +15,12 @@ Outcome order, fixed in advance:
   3. exploratory  both combined (one stratum per study and outcome definition)
 """
 import os
-os.environ.setdefault('XLA_FLAGS', '--xla_force_host_platform_device_count=4')
+N_DEVICES = min(4, os.cpu_count() or 1)      # one XLA host device per chain, never more than the machine has
+os.environ.setdefault('XLA_FLAGS', f'--xla_force_host_platform_device_count={N_DEVICES}')
 import numpy as np, pandas as pd
 import jax, jax.numpy as jnp, numpyro, numpyro.distributions as dist
 from numpyro.infer import MCMC, NUTS, Predictive
-numpyro.set_host_device_count(4)
+numpyro.set_host_device_count(N_DEVICES)
 
 PRIORS = (0.25, 0.5, 1.0)           # half-normal scales for tau_beta, reported side by side
 

@@ -79,6 +79,51 @@ def p2_discordance(d, draws=4000, seed=0):
                 detail=detail)
 
 
+REF_FLOWS = (80.0, 85.0, 90.0, 95.0, 100.0)      # donor PVF per 100 g, default 90
+REF_GRADIENTS = (4.0, 5.0, 6.0)                   # normal portocaval gradient, default 5 mmHg
+REF_CVPS = (3.0, 5.0, 7.0, 9.0)                   # assumed CVP where a series reports none, default 5 mmHg
+
+
+def p2_reference_sweep(d):
+    """Could the normalisation alone put every paired group below one? Both denominators of zR were fixed from donor
+    physiology before the extraction, so they are swept here: the default donor reference flow (used where a series
+    reports no donor value of its own; a stored reference equal to the default 90 is the default, only Troisi and Chan
+    report their own) over 80-100 mL/min/100 g, the normal gradient over 4-6 mmHg, and, separately, the CVP assumed
+    where none is reported over 3-9 mmHg. For each combination the largest zR among the groups that
+    report both loads is recorded; the combination that overturns the result, if any, is named."""
+    raw = d[d.in_main_analysis & d.PVF_per_100g.notna() & (d.PVP.notna() | d.gradient_mmHg.notna())].copy()
+
+    def zr_max(ref_flow, normal_gradient, cvp):
+        stored = raw.donor_PVF_per_100g_ref
+        ref = np.where(stored.isna() | (stored == indices.DEFAULT_DONOR_REF), ref_flow, stored)
+        grad = np.where(raw.gradient_mmHg.notna(), raw.gradient_mmHg,
+                        raw.PVP - np.where(raw.CVP_basis.eq('imputed'), cvp, raw.CVP))
+        z = np.asarray((grad / normal_gradient) / (raw.PVF_per_100g / ref), float)
+        i = int(np.argmax(z))
+        return float(z[i]), f"{raw.study.iloc[i]} / {raw.group.iloc[i]}"
+
+    grid = []
+    for f in REF_FLOWS:
+        for g in REF_GRADIENTS:
+            m, who = zr_max(f, g, 5.0)
+            grid.append(dict(donor_ref_flow=f, normal_gradient=g, assumed_cvp=5.0, max_zR=round(m, 3), max_group=who,
+                             all_below_one=bool(m < 1)))
+    cvp = []
+    for c in REF_CVPS:
+        m, who = zr_max(90.0, 5.0, c)
+        cvp.append(dict(donor_ref_flow=90.0, normal_gradient=5.0, assumed_cvp=c, max_zR=round(m, 3), max_group=who,
+                        all_below_one=bool(m < 1)))
+    corner_m, corner_who = zr_max(100.0, 4.0, 3.0)
+    return dict(groups=int(len(raw)), grid=grid, combinations=len(grid),
+                combinations_all_below_one=int(sum(x['all_below_one'] for x in grid)),
+                exceptions=[x for x in grid if not x['all_below_one']],
+                cvp_sweep=cvp, cvp_sweep_all_below_one=bool(all(x['all_below_one'] for x in cvp)),
+                worst_corner=dict(donor_ref_flow=100.0, normal_gradient=4.0, assumed_cvp=3.0, max_zR=round(corner_m, 3),
+                                  max_group=corner_who),
+                note='flow and gradient references crossed on a grid; the assumed CVP swept separately at the default '
+                     'references; the worst corner crosses all three and is reported for completeness')
+
+
 def p3_within_cohort(d):
     """Primary analysis: hierarchical binomial model with the pressure index centred within each study, fitted by
     NUTS. Reported in the prespecified order (primary outcome, secondary outcome, all outcomes combined), with the
@@ -145,6 +190,7 @@ def main():
     d = indices.compute(pd.read_csv(f'{ROOT}/data/series.tsv', sep='\t'))
     res = dict(P1_allometry=p1_allometry(), P2_discordance=p2_discordance(d),
                P3_within_cohort=p3_within_cohort(d), P4_thresholds=p4_thresholds())
+    res['P2_discordance']['reference_sweep'] = p2_reference_sweep(d)
     json.dump(res, open(f'{OUT}/predictions.json', 'w'), indent=1)
     a, b2, c3, d4 = res['P1_allometry'], res['P2_discordance'], res['P3_within_cohort'], res['P4_thresholds']
     print('P1  comparative anatomy')
@@ -157,6 +203,10 @@ def main():
           f"{[round(x,2) for x in b2['ratio_reconstructed']]}, all below 1: {b2['all_below_one']} "
           f"(sign test p = {b2['sign_test_p']:.3f}; smallest posterior probability of being below 1: {b2['min_prob_below_one']:.2f})")
     print(f"    their outcomes, reported separately: {b2['outcome_reconstructed_pct']}%")
+    sw = b2['reference_sweep']
+    print(f"    reference sweep: every paired group below 1 in {sw['combinations_all_below_one']} of {sw['combinations']} "
+          f"flow x gradient combinations; exceptions {[(x['donor_ref_flow'], x['normal_gradient'], x['max_zR']) for x in sw['exceptions']]}; "
+          f"CVP 3-9 all below 1: {sw['cvp_sweep_all_below_one']}; worst corner (100, 4, CVP 3): {sw['worst_corner']['max_zR']}")
     print('P3  within-cohort ordering (primary analysis: hierarchical, zP centred within study)')
     a = c3['accounting']
     print(f"    material: {a['series']} series from {a['centres']} centres, {a['groups']} groups; {a['groups_with_zP']} with a pressure index "

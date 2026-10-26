@@ -4,8 +4,8 @@ set -e
 export PYTHONPATH=src
 python src/indices.py          # indices, stratified and hierarchical fits, validation
 python src/bayes.py            # primary hierarchical model, priors, overlap sets, validation (NUTS, a few minutes)
-python src/predictions.py      # the four predictions of the model -> results/predictions.json
-python src/plots.py all        # 18 stand-alone plots -> results/<name>.pdf/.png (network_2d/3d recompute the model, ~1 min)
+python src/predictions.py      # the four predictions of the model and the reference sweep -> results/predictions.json
+python src/plots.py all        # 19 stand-alone plots -> results/<name>.pdf/.png (network_2d/3d recompute the model, ~1 min)
 python src/build_app.py        # -> sfss_calculator.html
 python src/ipd/run_ipd.py all --quiet     # ecological-bias correction -> results/ipd_*.json (~1 min)
 python src/fem/run_fem.py all --quiet   # lobule finite elements -> results/fem_*.json and 4 figures (~1 min)

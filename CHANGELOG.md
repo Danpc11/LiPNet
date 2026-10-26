@@ -2,6 +2,19 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.4.2] – 2026-10-25
+
+### Added
+- `predictions.p2_reference_sweep`: the two references behind $z_R$ are swept rather than assumed. The default donor flow (80 to 100 mL/min/100 g, in steps of 5; Troisi and Chan keep the donor value they report) is crossed with the normal gradient (4, 5, 6 mmHg), and the assumed CVP (3 to 9 mmHg) is swept separately at the default references. All five paired groups stay below one in 14 of the 15 flow-by-gradient combinations; the exception is the extreme corner, a reference of 100 with a normal gradient of 4 mmHg, where Ishizaki 2012 reaches 1.03. Crossing all three at their extremes (100, 4 mmHg, CVP 3) lifts Wang 2014 without splenectomy to 1.14, which is reported as the worst corner. The result sits in `results/predictions.json` under `P2_discordance.reference_sweep` and is asserted by `tests/test_indices.py`.
+- `plots.whole_graft`: the whole-graft extension as one figure (resistance chain, loads along a narrowing of each anastomosis, and the two trajectories in the flow-pressure plane), which the manuscript cites as Fig. S2.
+
+### Fixed
+- `data/series.tsv` stored Ogura 2010's printed dispersions (0.3 and 0.4 mmHg) as standard deviations, so the measurement Monte Carlo in `bayes.py`, which divides the stored spread by sqrt(n), understated that series' uncertainty about ninefold. They are standard errors (see 0.4.0) and are now stored as the converted standard deviations, 2.78 and 2.62 mmHg, with the reason in the row notes. The same rows now note that Table 3 of the paper lists 4 and 12 deaths over the whole follow-up, and why the 2-year counts derived from the survival curve are the ones used.
+- `run_all.sh` was committed without its execute bit, so `./run_all.sh` failed with "Permission denied".
+- `bayes.py` asked XLA for four host devices whatever the machine had; on a two-core machine the thirty refits of the recovery simulation exhausted memory during compilation. It now asks for `min(4, cpu_count)`.
+- `docs/IPD.md` quoted a pooled within-group spread of 0.76 $z_P$ units and a reported-spread fit of +1.70 (+0.34 to +3.40); the code gives 0.69 (3.45 mmHg) and +1.71 (+0.34 to +3.28).
+- `results/bayes_recovery.json` is regenerated with the ten replicates the script asks for (the cached file had eight).
+
 ## [0.4.1] – 2026-10-21
 
 ### Fixed

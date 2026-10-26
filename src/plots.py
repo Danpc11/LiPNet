@@ -22,6 +22,7 @@ Available plots (results/<name>.pdf and .png):
     allometry          allometric closure across species: set-point and vascular-mass exponents vs b
     shear_profile      wall shear along the three human hepatic trees from measured diameter ratios
     certificate        heuristic vs exhaustive optimum on a 7-lobule domain (cached)
+    whole_graft        Fig. S2: inlet and outlet obstruction of a whole graft in the flow-pressure plane
 """
 import json, os, sys, warnings; warnings.filterwarnings('ignore')
 import logging as _logging
@@ -343,8 +344,53 @@ def certificate():
     for i, r in ce.iterrows(): ax.text(i, r.frac_seeds_at_opt * 100 + 2, f'gap {abs(r.rel_gap):.0e}', ha='center', fontsize=6.5)
     ax.set_ylim(0, 115); ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Random starts reaching the exact optimum (%)'); ax.set_title('7 lobules, 279 936 trees enumerated', fontsize=8); save(fig, 'certificate')
 
+def whole_graft(h=1.5):
+    """Fig. S2: a whole graft in the same identity. (A) the resistance chain with the two anastomoses; (B) flow and
+    pressure loads along a narrowing of the outlet and of the inlet; (C) the two trajectories in the flow-pressure
+    plane, leaving the donor diagonal in opposite directions."""
+    from model import whole_graft as wg
+    from matplotlib.patches import FancyBboxPatch
+    d = np.linspace(1.0, 0.5, 26)
+    out, inn = wg.sweep('out', d=d, h=h), wg.sweep('in', d=d, h=h)
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.6), gridspec_kw=dict(width_ratios=[1.25, 1, 1]))
+    # (A) resistance chain
+    ax = axes[0]; ax.set_xlim(-0.2, 10.6); ax.set_ylim(-0.4, 4.2); ax.axis('off')
+    boxes = [(0.3, 'recipient\nportal trunk', '0.92', 'k'), (2.75, 'inlet\n$R_{in}\\propto d_{in}^{-4}$', '#dbe6f7', C_IN),
+             (5.2, 'lobular\nbed $R_{lob}$', '#f8dcdc', C_SIN), (7.65, 'outlet\n$R_{out}\\propto d_{out}^{-4}$', '#dcefdc', C_OUT)]
+    for x, lab, fc, ec in boxes:
+        ax.add_patch(FancyBboxPatch((x, 1.5), 2.05, 1.3, boxstyle='round,pad=0.04', fc=fc, ec=ec, lw=0.9))
+        ax.text(x + 1.02, 2.15, lab, ha='center', va='center', fontsize=5.8)
+    for x in (2.35, 4.8, 7.25): ax.annotate('', (x + 0.4, 2.15), (x, 2.15), arrowprops=dict(arrowstyle='->', lw=0.8))
+    ax.annotate('', (10.3, 2.15), (9.7, 2.15), arrowprops=dict(arrowstyle='->', lw=0.8)); ax.text(10.0, 2.55, 'CVP', fontsize=6, ha='center')
+    ax.plot([1.3, 1.3, 9.9, 9.9], [1.5, 0.55, 0.55, 1.5], color='0.45', lw=0.8, ls='--')
+    ax.text(5.6, 0.15, 'collateral path $R_{coll}$, in parallel', ha='center', fontsize=6, color='0.35')
+    ax.annotate('PVP, trunk', (1.3, 2.8), (1.3, 3.75), fontsize=6, ha='center', color='0.35', arrowprops=dict(arrowstyle='-', color='0.5', lw=0.6))
+    ax.annotate('PVP, graft', (4.5, 2.8), (4.5, 3.75), fontsize=6, ha='center', color='0.35', arrowprops=dict(arrowstyle='-', color='0.5', lw=0.6))
+    # (B) loads along each narrowing
+    ax = axes[1]; x = [r['diameter_ratio'] for r in out]
+    ax.plot(x, [r['zP'] for r in out], color=C_OUT, lw=1.5, label='outlet narrowed, $z_P$')
+    ax.plot(x, [r['zP'] for r in inn], color=C_IN, lw=1.5, label='inlet narrowed, $z_P$ = $z_F$')
+    ax.plot(x, [r['zF'] for r in out], color=C_OUT, lw=1.3, ls='--', zorder=4, label='outlet narrowed, $z_F$')
+    ax.plot(x, [r['portal_trunk_pressure'] for r in inn], color=C_IN, lw=1.0, ls=':', label='inlet narrowed, trunk pressure')
+    ax.invert_xaxis(); ax.set_xlabel('Anastomosis diameter (fraction of normal)'); ax.set_ylabel('Load (donor = 1)')
+    ax.set_ylim(0, 3.3); ax.legend(fontsize=5.6, loc='upper left', handlelength=2.4, borderaxespad=0.3)
+    # (C) flow-pressure plane
+    ax = axes[2]; zz = np.linspace(0, 3, 2); ax.plot(zz, zz, 'k--', lw=0.8, label='$z_R$ = 1, donor diagonal')
+    ax.fill_between([1, 2], 1, 2, color='0.92', lw=0, zorder=0)
+    for rows, c, lab in ((out, C_OUT, 'outlet narrowed'), (inn, C_IN, 'inlet narrowed')):
+        xf, yp = [r['zF'] for r in rows], [r['zP'] for r in rows]
+        ax.plot(xf, yp, color=c, lw=1.6, label=lab); ax.plot(xf[-1], yp[-1], 'o', color=c, ms=4)
+    ax.plot(h, h, 'o', color='k', ms=4.5, zorder=4); ax.annotate(f'normal anastomoses,\ninflow {h:g}× donor', (h, h), (2.0, 1.1), fontsize=5.8, ha='left', arrowprops=dict(arrowstyle='-', color='0.5', lw=0.6))
+    ax.annotate('$d_{out}$ = 0.5', (out[-1]['zF'], out[-1]['zP']), (0.55, 2.55), fontsize=5.8, color=C_OUT, arrowprops=dict(arrowstyle='-', color=C_OUT, lw=0.6))
+    ax.annotate('$d_{in}$ = 0.5', (inn[-1]['zF'], inn[-1]['zP']), (0.55, 1.75), fontsize=5.8, color=C_IN, arrowprops=dict(arrowstyle='-', color=C_IN, lw=0.6))
+    ax.set_xlim(0, 3); ax.set_ylim(0, 3); ax.set_aspect('equal'); ax.set_xlabel('Flow load $z_F$'); ax.set_ylabel('Pressure load $z_P$')
+    ax.legend(fontsize=5.6, loc='lower right', borderaxespad=0.3)
+    for a, L in zip(axes, 'ABC'): a.text(-0.12 if L != 'A' else -0.02, 1.04, L, transform=a.transAxes, fontsize=10, fontweight='bold', va='bottom')
+    fig.tight_layout(w_pad=1.4); save(fig, 'whole_graft')
+
+
 PLOTS = dict(predictions=predictions, nomogram=nomogram, within_study=within_study, forest=forest, centred=centred, risk_change=risk_change, series_pressure=series_pressure, series_flow=series_flow, plane=plane, resection=resection, load_curve=load_curve,
-             interventions=interventions, network_2d=network_2d, network_3d=network_3d, scaling=scaling, allometry=allometry, shear_profile=shear_profile, certificate=certificate)
+             interventions=interventions, network_2d=network_2d, network_3d=network_3d, scaling=scaling, allometry=allometry, shear_profile=shear_profile, certificate=certificate, whole_graft=whole_graft)
 
 if __name__ == '__main__':
     names = sys.argv[1:]

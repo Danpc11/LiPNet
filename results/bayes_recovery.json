@@ -1,26 +1,26 @@
 [
  {
   "mu_true": 0.0,
-  "mean_estimate": 0.08855055691674352,
-  "bias": 0.08855055691674352,
+  "mean_estimate": 0.04278473295271397,
+  "bias": 0.04278473295271397,
   "coverage": 1.0,
   "power_to_exclude_zero": 0.0,
-  "reps": 8
+  "reps": 10
  },
  {
   "mu_true": 1.0,
-  "mean_estimate": 0.8695563897490501,
-  "bias": -0.13044361025094986,
+  "mean_estimate": 0.7879007905721664,
+  "bias": -0.21209920942783356,
   "coverage": 1.0,
-  "power_to_exclude_zero": 0.625,
-  "reps": 8
+  "power_to_exclude_zero": 0.5,
+  "reps": 10
  },
  {
   "mu_true": 2.0,
-  "mean_estimate": 1.6784721612930298,
-  "bias": -0.3215278387069702,
+  "mean_estimate": 1.7451765060424804,
+  "bias": -0.2548234939575196,
   "coverage": 1.0,
   "power_to_exclude_zero": 1.0,
-  "reps": 8
+  "reps": 10
  }
 ]

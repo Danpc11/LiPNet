@@ -91,8 +91,8 @@ R-hat 1.005. That agreement is a test in `tests/test_ipd.py`, not a remark.
 | mu_beta | +1.56 | +1.58 | +1.66 | +1.74 | +1.68 | +1.59 | +1.39 |
 | odds ratio per unit z_P | 4.8 | 4.8 | 5.3 | 5.7 | 5.3 | 4.9 | 4.0 |
 
-Using each group's own reported SD, and the pooled median of 0.76 z_P units where it is
-missing, gives mu_beta = +1.70 (+0.34 to +3.40).
+Using each group's own reported SD, and the pooled median of 0.69 z_P units (3.45 mmHg)
+where it is missing, gives mu_beta = +1.71 (+0.34 to +3.28).
 
 Two things follow, and the second matters more than the first.
 
