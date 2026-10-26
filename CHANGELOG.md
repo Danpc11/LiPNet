@@ -14,6 +14,8 @@ All notable changes to this repository are documented here. The format follows [
 - `bayes.py` asked XLA for four host devices whatever the machine had; on a two-core machine the thirty refits of the recovery simulation exhausted memory during compilation. It now asks for `min(4, cpu_count)`.
 - `docs/IPD.md` quoted a pooled within-group spread of 0.76 $z_P$ units and a reported-spread fit of +1.70 (+0.34 to +3.40); the code gives 0.69 (3.45 mmHg) and +1.71 (+0.34 to +3.28).
 - `results/bayes_recovery.json` is regenerated with the ten replicates the script asks for (the cached file had eight).
+- README: the Vasavada 2014 row pointed to a different paper by the same author (Exp Clin Transplant 2014;12:437); the series extracted (134 recipients, early graft dysfunction, section 4.7) is Int J Surg 2014;12(2):177–180, doi 10.1016/j.ijsu.2013.12.006. The three PubMed-search links (Troisi 2005, Chan 2011, Alim 2016) are replaced by their DOIs, and the limitations now count the three centres that provide a within-cohort contrast, not four.
+- `network.solve` runs under `np.errstate`: Accelerate, the macOS BLAS, raised spurious floating-point flags inside `matmul` on the wide-ranging conductances of the optimal tree while returning finite results.
 
 ## [0.4.1] – 2026-10-21
 
