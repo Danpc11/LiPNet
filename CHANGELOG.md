@@ -2,6 +2,11 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.4.1] – 2026-10-21
+
+### Fixed
+- The figure scripts silence the matplotlib font-manager notices. `Liberation Sans` heads the font list and is absent on macOS, so every lookup logged a notice while the Arial fallback drew the figure correctly; `warnings.filterwarnings` never reached them because they come from the logger rather than the warnings system. The font list is unchanged, so figures built on Linux keep the typeface of the published ones.
+
 ## [0.4.0] – 2026-10-21
 
 ### Added

@@ -10,6 +10,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
 
+import logging as _logging
+# 'Liberation Sans' is absent on macOS; matplotlib falls back to Arial and logs a notice
+# for every lookup. The fallback is correct, so the notice is silenced rather than the list
+# changed, which would alter the typeface of the published figures on Linux.
+_logging.getLogger('matplotlib.font_manager').setLevel(_logging.ERROR)
+
 plt.rcParams.update({'font.family': ['Liberation Sans', 'Arial', 'DejaVu Sans'], 'font.size': 8,
                      'axes.spines.top': False, 'axes.spines.right': False, 'legend.frameon': False})
 ROOT = os.path.join(os.path.dirname(__file__), '..', '..')

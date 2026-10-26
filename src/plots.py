@@ -24,6 +24,9 @@ Available plots (results/<name>.pdf and .png):
     certificate        heuristic vs exhaustive optimum on a 7-lobule domain (cached)
 """
 import json, os, sys, warnings; warnings.filterwarnings('ignore')
+import logging as _logging
+# findfont notices come from the matplotlib logger, which filterwarnings does not reach
+_logging.getLogger('matplotlib.font_manager').setLevel(_logging.ERROR)
 import numpy as np, pandas as pd
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle

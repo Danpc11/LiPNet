@@ -62,6 +62,9 @@ def cmd_figures(args):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    import logging as _logging
+    # 'Liberation Sans' is absent on macOS; the Arial fallback is correct, the notice is not
+    _logging.getLogger('matplotlib.font_manager').setLevel(_logging.ERROR)
     plt.rcParams.update({'font.family': ['Liberation Sans', 'Arial', 'DejaVu Sans'],
                          'font.size': 8, 'axes.spines.top': False, 'axes.spines.right': False,
                          'legend.frameon': False})
