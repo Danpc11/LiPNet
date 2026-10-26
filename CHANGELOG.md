@@ -4,6 +4,8 @@ All notable changes to this repository are documented here. The format follows [
 
 ## [0.4.2] – 2026-10-25
 
+Archived at Zenodo as [10.5281/zenodo.23656741](https://doi.org/10.5281/zenodo.23656741) (26 October 2026); this is the version cited by the article.
+
 ### Added
 - `predictions.p2_reference_sweep`: the two references behind $z_R$ are swept rather than assumed. The default donor flow (80 to 100 mL/min/100 g, in steps of 5; Troisi and Chan keep the donor value they report) is crossed with the normal gradient (4, 5, 6 mmHg), and the assumed CVP (3 to 9 mmHg) is swept separately at the default references. All five paired groups stay below one in 14 of the 15 flow-by-gradient combinations; the exception is the extreme corner, a reference of 100 with a normal gradient of 4 mmHg, where Ishizaki 2012 reaches 1.03. Crossing all three at their extremes (100, 4 mmHg, CVP 3) lifts Wang 2014 without splenectomy to 1.14, which is reported as the worst corner. The result sits in `results/predictions.json` under `P2_discordance.reference_sweep` and is asserted by `tests/test_indices.py`.
 - `plots.whole_graft`: the whole-graft extension as one figure (resistance chain, loads along a narrowing of each anastomosis, and the two trajectories in the flow-pressure plane), which the manuscript cites as Fig. S2.

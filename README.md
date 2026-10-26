@@ -420,9 +420,9 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo:
+The software is archived on Zenodo. The version used in the article is v0.4.2:
 
-**DOI: 10.5281/zenodo.22861276**
+**DOI: 10.5281/zenodo.23656741** (this version) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 
 A machine-readable citation is also available in:
 

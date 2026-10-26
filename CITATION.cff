@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "LiPNet: a liver perfusion network model of haemodynamic load in partial grafts"
+title: "LiPNet: a liver perfusion network model of haemodynamic load in partial liver grafts"
 message: "If you use this code or data, please cite the repository and the associated article."
 authors:
   - family-names: Vázquez-Victorio
@@ -17,8 +17,8 @@ authors:
   - family-names: Pérez-Calixto
     given-names: Daniel
 repository-code: "https://github.com/Danpc11/LiPNet"
-doi: 10.5281/zenodo.22861276
-date-released: 2026-09-22
+doi: 10.5281/zenodo.23656741
+date-released: 2026-10-26
 license: PolyForm-Noncommercial-1.0.0
 version: 0.4.2
 year: 2026
