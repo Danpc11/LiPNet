@@ -155,15 +155,18 @@ class Loaded:
         nodes = np.unique(np.concatenate([self.Ei[keep], self.Ej[keep]]))
         mask = nodes != self.src; red = nodes[mask]
         B = self.B[np.ix_(red, keep)]
-        Lr = (B * w[keep]) @ B.T
-        Qr = self.Q[np.ix_(red, red)]
-        Y = solve(Lr, Qr, assume_a='pos')                      # L^+ Q
-        D = float(np.trace(Y))
-        M = solve(Lr, Y.T, assume_a='pos')                     # L^+ Q L^+  (symmetric)
-        MB = M @ B
-        grad = -np.einsum('ik,ik->k', MB, B)                    # -b_e^T M b_e
-        phi = solve(Lr, self.mu[red], assume_a='pos')
-        f = np.zeros(self.m); f[keep] = w[keep] * (B.T @ phi)
+        # Accelerate (macOS BLAS) raises spurious floating-point flags inside matmul when the
+        # conductances span many orders of magnitude; the results are finite, so silence them here.
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            Lr = (B * w[keep]) @ B.T
+            Qr = self.Q[np.ix_(red, red)]
+            Y = solve(Lr, Qr, assume_a='pos')                      # L^+ Q
+            D = float(np.trace(Y))
+            M = solve(Lr, Y.T, assume_a='pos')                     # L^+ Q L^+  (symmetric)
+            MB = M @ B
+            grad = -np.einsum('ik,ik->k', MB, B)                    # -b_e^T M b_e
+            phi = solve(Lr, self.mu[red], assume_a='pos')
+            f = np.zeros(self.m); f[keep] = w[keep] * (B.T @ phi)
         return D, grad, f
     def dissipation(self, w, keep=None): return self.solve(w, keep)[0]
     def cycle_rank(self, keep):
