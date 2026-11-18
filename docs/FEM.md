@@ -201,6 +201,12 @@ as an independent $O(h)$ check and reported as `balance_error`.
 
 Nothing below was fitted. The permeability was chosen to put the perfusion at
 1 mL min⁻¹ g⁻¹ and the porosity to put the transit time in range; everything else follows.
+The lobule holds 1 mmHg between the portal triad and the central vein, the drop the network of
+`src/model/human.py` imposes on its sinusoidal edge (`LOBULE_DROP_MMHG` in `params.py`), and the
+permeability that goes with it is $1.6\times10^{-13}$ m², ten times the value measured on the human
+cast, which carries a tenth of the physiological flow at that drop ([HUMAN.md](HUMAN.md), section 4).
+Darcy flow depends on $k\,\Delta P/\mu$ only, so no flow, velocity, shear or concentration below
+changed when the pair was moved from 4 mmHg and $4\times10^{-14}$ m².
 
 | quantity | model | reported range |
 |---|---|---|

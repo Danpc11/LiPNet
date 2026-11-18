@@ -124,6 +124,9 @@ def cmd_network(args):
     out['at_model_share'] = nl.sweep(load, sc['rows'][-1]['sinusoidal_share'])
     out['at_extrapolated_share'] = nl.sweep(load, sc['extrapolated_at_1e6'])
     out['if_sinusoids_carried_half'] = nl.sweep(load, 0.5)
+    from fem.params import LOBULE_DROP_MMHG
+    out['calibrated_share'] = LOBULE_DROP_MMHG / 5.0                 # the lobular drop imposed in src/model/human.py over the 5 mmHg gradient
+    out['at_calibrated_share'] = nl.sweep(load, out['calibrated_share'])
     try:
         out['against_the_published_groups'] = nl.predict_series(
             load, sc['rows'][-1]['sinusoidal_share'])

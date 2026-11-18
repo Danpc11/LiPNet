@@ -140,11 +140,16 @@ def model_against_data(d):
     two = [liver.two_inflows(zF, l['share_inlet'], l['zR'], arterial_load=phi)['zR'] for l in lob for zF in (p.zF.min(), p.zF.max()) for phi in (0.0, 1.0)]
     out['network_with_arterial_inflow'] = [float(min(two)), float(max(two))]
     out['network_with_arterial_inflow_any_split'] = [float(liver.two_inflows(float(p.zF.max()), 0.0, arterial_load=0.0)['zR']), 1.0]
+    from model import human
+    cal = [human.liver(b) for b in (0.6, 2 / 3, 0.75, 0.85, 0.93)]
+    two = [liver.two_inflows(zF, c['share_inlet'], 1 - c['trunks_removed'], arterial_load=phi)['zR'] for c in cal for zF in (p.zF.min(), p.zF.max()) for phi in (0.0, 1.0)]
+    out['human_calibration_lobar_graft'] = [float(min(1 - c['trunks_removed'] for c in cal)), float(max(1 - c['trunks_removed'] for c in cal))]
+    out['human_calibration_with_arterial_inflow'] = [float(min(two)), float(max(two))]
     f = os.path.join(ROOT, 'results', 'model_liver.json')
     if os.path.exists(f) and 'graft_on_explicit_graph_range' in json.load(open(f)): out['explicit_graphs'] = json.load(open(f))['graft_on_explicit_graph_range']
     f = os.path.join(ROOT, 'results', 'fem_network_link.json')
     if os.path.exists(f): out['with_shear_feedback_of_the_lobule_layer'] = [float(g['zR_predicted']) for g in json.load(open(f))['against_the_published_groups']['groups']]
-    lo = min(out['network_lobar_graft'][0], out['network_with_arterial_inflow'][0], *(out.get('explicit_graphs') or [1.0]))
+    lo = min(out['network_lobar_graft'][0], out['network_with_arterial_inflow'][0], out['human_calibration_with_arterial_inflow'][0], *(out.get('explicit_graphs') or [1.0]))
     out['lowest_model_value'] = float(lo); out['observed_below_lowest_model_value'] = int(sum(z < lo for z in out['observed_zR']))
     return out
 

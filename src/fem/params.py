@@ -46,16 +46,31 @@ class Geometry:
     grade: float = 1.35         # radial grading exponent (>1 refines towards the central vein)
 
 
+LOBULE_DROP_MMHG = 1.0        # portal triad to central vein, at donor flow. The one number the lobule and the network share.
+
+
 @dataclass
 class Flow:
-    """Darcy (superficial) flow through the sinusoidal bed."""
+    """Darcy (superficial) flow through the sinusoidal bed.
+
+    The lobule holds LOBULE_DROP_MMHG of the 5 mmHg between the portal vein and the vena cava; src/model/liver.py
+    imposes the same drop on the sinusoidal edge of the network, so the two layers describe one liver: about 2 mmHg
+    along the portal tree (Poiseuille on the human cast gives 1.9 to 2.0), 1 mmHg across the lobule and 2 mmHg along
+    the hepatic veins. The boundary pressures below are those of that series above a caval pressure of 3 mmHg.
+
+    The permeability is a calibration, not a measurement: it is the value that carries 1 mL/min per g at that drop.
+    The permeability measured on the human cast (1.56e-14 m^2 radially, 3.64e-14 m^2 along the central vein; Debbaut
+    et al. 2012) carries a tenth of the physiological flow at 1 mmHg in Debbaut's own lobule model (157 of about
+    1500 mL/min; Debbaut et al. 2014). Darcy flow depends only on k dP / mu, so every flow, velocity, shear and
+    transport result of this layer is the same as with the earlier pair (4 mmHg, 4.0e-14 m^2); only the pressures are not.
+    """
     mu: float = 3.5e-3          # apparent blood viscosity in the sinusoids [Pa s]
-    k_r: float = 4.0e-14        # permeability along the portal-central axis [m^2]
-    k_t: float = 1.3e-14        # permeability transverse to it [m^2]
+    k_r: float = 1.6e-13        # permeability along the portal-central axis [m^2]
+    k_t: float = 5.2e-14        # permeability transverse to it [m^2]
     phi: float = 0.15           # sinusoidal volume fraction (porosity) [-]
     d_sin: float = 8.0e-6       # sinusoid diameter, used only for the wall shear estimate [m]
-    p_portal: float = mmHg(7.0)   # portal triad pressure [Pa]
-    p_central: float = mmHg(3.0)  # central vein pressure [Pa]
+    p_portal: float = mmHg(5.0 + LOBULE_DROP_MMHG)   # portal triad pressure [Pa]
+    p_central: float = mmHg(5.0)                     # central vein pressure [Pa]
 
 
 @dataclass

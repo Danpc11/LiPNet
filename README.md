@@ -195,6 +195,14 @@ src/model/liver.py
     Output:
     results/model_liver.json
 
+src/model/human.py
+    The optimum in physical units for a human liver:
+    - calibration against the human vascular cast, exponent b of the portal vein
+    - one lobular pressure drop shared with src/fem
+    - growth with the body and regrowth of a graft
+    Output:
+    results/model_human.json
+
 src/audit.py
     What the table and the fits support
     Output:
@@ -203,6 +211,7 @@ src/audit.py
 docs/FEM.md
 docs/IPD.md
 docs/LIVER.md
+docs/HUMAN.md
 run_all.sh
 ```
 
@@ -350,10 +359,13 @@ resistance that falls as flow rises:
 
 With the feedback gain at zero this is identically 1, so the two models are nested.
 
-Put back into the series, though, the effect is small. The dissipation-optimal network puts
-21% of its resistance in the sinusoids, which is where the published measurements put it
-too (0 in the cat and dog, 0.08 to 0.26 by micropuncture in the rabbit, a third in the
-perfused rat) even though the share was never used in the optimisation. At that share a
+Put back into the series, though, the effect is small. The lobule holds 1 mmHg of the 5 mmHg
+between the portal vein and the vena cava, the same drop in the lobule layer and in the
+network (`docs/HUMAN.md`). That fifth is what the dissipation-optimal network gives its
+sinusoids on the explicit graph of 151 lobules (21%); left to the optimum at the size of a
+human liver it would be 4 to 12%. The published measurements span it (0 in the cat and dog,
+0.08 to 0.26 by micropuncture in the rabbit, a third in the perfused rat, 0.44 by
+micropuncture in the rat). At that share a
 graft at four times the donor's flow per gram reaches a measured $z_R$ of 0.91, not the
 0.31 to 0.74 of the published series. Sinusoidal autoregulation is a small, same-signed
 background term to be subtracted before attributing the rest, not a competing explanation

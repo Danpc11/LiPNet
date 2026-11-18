@@ -2,6 +2,27 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.4.4] – 2026-11-18
+
+The model in physical units for a human liver, with the three inconsistencies that calibration exposed corrected, and its growth. Derivations, numbers and sources are in [docs/HUMAN.md](docs/HUMAN.md). The range of $b$ stays $[0.5,1]$.
+
+### Added
+- `src/model/human.py`: the canopy of `liver.py` in millimetres, mL/min, mmHg and Pa, calibrated with the liver volume, 90 mL/min per 100 g, 5 mmHg and 3.5 mPa s, against the human cast of Debbaut et al. (J Anat 2014). The absolute portal radii from the trunk to generation 11 are reproduced within 10% at $b=0.75$ with no fitted scale (rms error below 10% for $b$ from 0.69 to 0.86; 0.33 at $b=0.5$ and 0.17 at $b=1$); the radius law on the measured generations gives 0.89 (0.83 to 0.94).
+- `human.growth`: the calibrated liver from 150 g to 1500 g at invariant gradient and flow per gram, with the share $s$ of the growth that is lobule enlargement left free. Portal diameter grows as $V^{0.34}$ to $V^{0.40}$ and trunk velocity as $V^{0.21}$ to $V^{0.32}$ whatever $s$; the lobular drop grows as $V^{2s/3}$.
+- `human.regeneration`: loads of a graft regrowing by lobule enlargement at constant inflow, between unchanged calibres and calibres in proportion. At the 1.58-fold volume reached two weeks after transplantation the flow load is 0.63 of its value at reperfusion and the pressure load 1.10 or 0.68.
+- `tests/test_human.py`, six tests. `run_all.sh` runs the new module.
+
+### Fixed
+- Branch length. The canopy made every branch as long as the side of its territory (portal trunk 122 mm). In the cast a branch is 0.35 to 0.50 of that side; `BRANCH_LENGTH_FACTOR = 0.44` gives a trunk of 50 mm in a 1500 g liver (48.6 mm pooled in adults). The factor multiplies every length, so no dimensionless result of `liver.py` moves.
+- The lobule. The lobule layer held 4 mmHg (4.9 mmHg at the hepatic flow of the network, the whole gradient) while the optimum of the network gave its sinusoidal edge 0.2 to 0.6 mmHg. Both now hold `LOBULE_DROP_MMHG = 1.0`, defined in `src/fem/params.py` and imposed on the sinusoidal edge by `human.liver`: 2.1 mmHg along the portal tree (1.9 to 2.0 by Poiseuille on the cast), 1.0 across the lobule, 1.9 along the hepatic veins. The permeability of the lobule layer moves with it ($k_r=1.6\times10^{-13}$ m², $k_t=5.2\times10^{-14}$ m²); Darcy flow depends on $k\,\Delta P/\mu$ only, so every flow, velocity, shear, transit time and concentration of `src/fem` is unchanged and only its pressures differ. `fem_network_link.json` gains the sweep at the calibrated share.
+- The exponent of the hepatic vein (0.45) is reported and no longer used. By Poiseuille its three measured generations hold 2.6 mmHg at donor flow and the trend gives 56 to 99 mmHg for the tree. `liver.summary` drops the hepatic-vein setting and the interval built on it, and evaluates $b=2/3$ instead.
+
+### Notes
+- With the calibration a lobar graft is at $z_R$ 0.96 to 1.00, and 0.82 to 0.90 with the arterial inflow, for $b$ from 0.6 to 0.93. The five observed values (0.31 to 0.74) remain below the lowest value the model reaches (0.81).
+- The README sentence that the network puts 21% of its resistance in the sinusoids held for the explicit graph of 151 lobules; at the size of a human liver the optimum gives 4 to 12%, and the text now says so.
+- No measurement of lobule size or number against age in people was found, and the series of portal flow and pressure during the regrowth of human grafts could not be read; `docs/HUMAN.md`, section 8.
+- `THEORY.md` and the manuscript are not changed by this release.
+
 ## [0.4.3] – 2026-11-18
 
 A review of the model against the liver it is applied to, and of the table and fits, with nothing added to the model. The derivations and every number are in [docs/LIVER.md](docs/LIVER.md).

@@ -53,8 +53,10 @@ with $n$ the branching number and $\lambda$ the length ratio. Inverting it for t
 
 One exponent does not describe both venous trees. A model with one exponent per tree is not closed: the costs
 $m^b$ of the two trees then carry different units, and their joint optimum depends on one further number, the
-budget of one tree relative to the other, which the model does not supply. Results are reported at each exponent,
-and where they depend on the split between the trees, over every split.
+budget of one tree relative to the other, which the model does not supply. The exponent of the hepatic vein is
+reported and not used: by Poiseuille the same radii hold more than the gradient of the whole liver
+([HUMAN.md](HUMAN.md), section 3). Results are reported across $b$, and where they depend on the split between the
+trees, over every split.
 
 ## 3. Where the pressure drop sits in a human liver
 
@@ -81,7 +83,6 @@ $$z_R(\text{graft})=1-\frac{\Delta P_{\text{removed generations}}}{\Delta P_{\te
 | | $z_R$ of a lobar graft |
 |---|---|
 | canopy, $b=1$ to $0.5$ | 0.93 to 1.00 |
-| each tree at its cast exponent, any split | 0.95 to 1.00 |
 | explicit 3D graphs (160 and 293 lobules), one first-order portal branch | 0.90 to 0.96 |
 
 On the explicit graphs the graft keeps the hepatic venous edges that drain it at the calibre they had in the whole
@@ -114,7 +115,8 @@ The series report no arterial flow, so $\varphi$ is not observed.
 | with the shear feedback of the lobule layer (`src/fem/network_link.py`) | 0.91 to 0.92 |
 | observed | 0.31, 0.54, 0.55, 0.72, 0.74 |
 
-All five observed values lie below the lowest value the model reaches. The model has the sign of the departure and
+In physical units, with the lobular drop shared with the lobule layer, a lobar graft is at 0.96 to 1.00 and at 0.82 to
+0.90 with the arterial inflow ([HUMAN.md](HUMAN.md), section 5). All five observed values lie below the lowest value the model reaches. The model has the sign of the departure and
 not its size. Widening the outlet anastomosis in `whole_graft.py` lowers $z_R$ to 0.95 at most, because that
 anastomosis holds 5% of the resistance.
 

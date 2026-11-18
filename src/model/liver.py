@@ -18,8 +18,9 @@ five questions that the manuscript asserts or leaves open, and that decide how f
    quoted in network.py (Debbaut et al.). The portal vein and the hepatic vein do not give the same b. A model with
    one exponent per tree is not closed: the costs m^b of the two trees then have different units, so their joint
    optimum depends on one more number (the budget of one tree relative to the other) that the model does not
-   supply. Results are therefore reported at each tree's exponent, and where they depend on the split between the
-   trees, as the interval over every split.
+   supply. The exponent of the hepatic vein is reported and not used: the same radii give, by Poiseuille, a drop
+   larger than the gradient of the whole liver (src/model/human.py), so they are not the calibres of a perfused
+   liver. Results are reported across b, and where they depend on the split between the trees, over every split.
 
 3. How is the portocaval pressure drop shared between the portal tree, the sinusoids and the hepatic venous tree
    at the size of a human liver (about 10^6 lobules), and how much of it sits in the trunks?  `canopy`.
@@ -166,8 +167,8 @@ def summary(graphs=True):
     out['casts'] = {k: dict(v, b=exponent_from_cast(**v), model_ratio_b_half=float(diameter_ratio(0.5, v['n'], v['l_ratio'])),
                             model_ratio_b_one=float(diameter_ratio(1.0, v['n'], v['l_ratio'])),
                             shear_per_generation=float((1 / v['n']) / v['d_ratio'] ** 3)) for k, v in CASTS.items()}
-    b_pv, b_hv = out['casts']['portal vein']['b'], out['casts']['hepatic vein']['b']
-    settings = [('b = 1', 1.0), ('portal vein cast', b_pv), ('b = 0.75', 0.75), ('b = 0.5', 0.5), ('hepatic vein cast', b_hv)]
+    b_pv = out['casts']['portal vein']['b']
+    settings = [('b = 1', 1.0), ('portal vein cast', b_pv), ('b = 0.75', 0.75), ('b = 2/3', 2 / 3), ('b = 0.5', 0.5)]
     out['human_liver'] = []
     for name, b in settings:
         c = canopy(HUMAN_GENERATIONS, b); tau0 = np.sqrt(c['D'])
@@ -180,13 +181,8 @@ def summary(graphs=True):
             asymptotic_exponent=float((2 - b) / b), sinusoid_shear_over_tau0=float(c['tau_sinusoid'] / tau0),
             trunk_shear_over_tau0=float(c['tau_trunk'] / tau0), sinusoid_over_trunk_shear=float(c['tau_sinusoid'] / c['tau_trunk']),
             shear_identity_holds=bool(np.allclose(c['tau'], tau0 * c['m'] ** ((b - 1) / 2)))))
-    # a graft when each tree has the exponent of its cast: the trunks removed are a fraction of each tree's own drop,
-    # so for any split of the drop between the trees zR lies between the two single-exponent values
-    t_pv, t_hv = canopy(HUMAN_GENERATIONS, b_pv)['trunk_within_tree'], canopy(HUMAN_GENERATIONS, b_hv)['trunk_within_tree']
-    out['lobar_graft_at_cast_exponents'] = dict(trunk_fraction_portal_tree=t_pv, trunk_fraction_hepatic_tree=t_hv,
-                                                zR_interval=[float(1 - max(t_pv, t_hv)), 1.0])
     out['two_inflows'] = []
-    for name, b in settings[:4]:
+    for name, b in settings:
         lob = lobar_graft(HUMAN_GENERATIONS, b, 1)
         for zF in (3.3, 4.1):
             for phi in (0.0, 1.0, zF):
@@ -220,7 +216,6 @@ if __name__ == '__main__':
     for r in s['human_liver']:
         print(f"   {r['setting']:18s} b {r['b']:.2f} | inlet {r['share_inlet']:.3f} sinusoid {r['share_sinusoid']:.3f} outlet {r['share_outlet']:.3f} trunks {r['share_trunks']:.3f} | "
               f"shear sinusoid/trunk {r['sinusoid_over_trunk_shear']:.3g} | zR lobar {r['zR_lobar_graft']:.3f}, sectoral {r['zR_sectoral_graft']:.3f} | exponent {r['local_exponent_D_N']:.2f} (asymptote {r['asymptotic_exponent']:.2f})")
-    g = s['lobar_graft_at_cast_exponents']; print(f"   lobar graft with each tree at its cast exponent, any split between trees: zR {g['zR_interval'][0]:.3f} to {g['zR_interval'][1]:.3f}")
     if 'graft_on_explicit_graph_range' in s: print(f"   explicit 3D graphs, one first-order portal branch: zR {s['graft_on_explicit_graph_range'][0]:.2f} to {s['graft_on_explicit_graph_range'][1]:.2f}")
     print('portal flow load with the artery joining at the sinusoid: zR of a lobar graft')
     for r in s['two_inflows']: print(f"   {r['setting']:18s} zF {r['zF']}: arterial flow per lobule x{r['arterial_load']:.1f} -> zR {r['zR']:.3f}")
