@@ -15,7 +15,7 @@ Outcome order, fixed in advance:
   3. exploratory  both combined (one stratum per study and outcome definition)
 """
 import os
-N_DEVICES = min(4, os.cpu_count() or 1)      # one XLA host device per chain, never more than the machine has
+N_DEVICES = 4      # one XLA host device per chain on every machine: the draws, and so the cached numbers, do not depend on the core count
 os.environ.setdefault('XLA_FLAGS', f'--xla_force_host_platform_device_count={N_DEVICES}')
 import numpy as np, pandas as pd
 import jax, jax.numpy as jnp, numpyro, numpyro.distributions as dist
@@ -140,6 +140,7 @@ def recovery(d, mu_true=(0.0, 0.5, 1.0, 2.0), tau_true=0.3, reps=40, seed=0, **k
             ev = rng.binomial(n, p)
             sim = d0.copy(); sim['events'] = ev
             f = fit(sim, warmup=600, samples=800, chains=2, seed=r, **kw)
+            jax.clear_caches()          # thirty refits otherwise keep thirty compiled samplers in memory
             est.append(f['mu_beta']); cov.append(f['mu_beta_ci'][0] <= mt <= f['mu_beta_ci'][1]); pos.append(f['mu_beta_ci'][0] > 0)
         rows.append(dict(mu_true=mt, mean_estimate=float(np.mean(est)), bias=float(np.mean(est) - mt),
                          coverage=float(np.mean(cov)), power_to_exclude_zero=float(np.mean(pos)), reps=reps))
@@ -206,6 +207,7 @@ def monte_carlo_measurement(d, draws=200, seed=0, **kw):
         shift = shift + np.where(cvp_imp, e.study.map(per_study).values, 0.0)
         e['zP'] = e.zP + shift / 5.0
         f = fit(e, warmup=400, samples=600, chains=2, quiet=True, keep_draws=200, **kw)
+        jax.clear_caches()
         mus.extend(f['mu_draws'])                 # pool the posteriors, not their means, so the reported
     mus = np.array(mus)                           # interval carries measurement AND statistical uncertainty
     return dict(draws=int(draws), mu_beta=float(mus.mean()),

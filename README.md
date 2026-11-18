@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.4.2-1f6feb)
+![Version](https://img.shields.io/badge/version-0.4.3-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 ---
@@ -186,8 +186,23 @@ data/series.tsv
 sfss_calculator.html
 index.html
 tests/
+src/model/liver.py
+    The optimum applied to a human liver:
+    - wall shear of each vessel against the scale tau0
+    - exponent b of each human vascular cast
+    - share of the pressure drop by compartment
+    - a partial graft as a sub-network, with two inflows
+    Output:
+    results/model_liver.json
+
+src/audit.py
+    What the table and the fits support
+    Output:
+    results/audit.json
+
 docs/FEM.md
 docs/IPD.md
+docs/LIVER.md
 run_all.sh
 ```
 
@@ -199,6 +214,12 @@ Install the dependencies:
 
 ```bash
 pip install -r requirements.txt
+```
+
+To reproduce the cached posterior summaries to the last digit rather than to Monte Carlo error, also install the versions they were computed with:
+
+```bash
+pip install -r requirements-lock.txt
 ```
 
 Run the complete workflow:

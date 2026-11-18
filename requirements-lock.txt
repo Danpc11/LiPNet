@@ -1,0 +1,6 @@
+# Exact versions behind the cached fits in results/bayes_*.json. With these the NUTS draws, and so every posterior
+# summary in the article, are reproduced to the last digit; with a newer jax they are reproduced to Monte Carlo
+# error (primary slope +1.56, +0.37 to +2.76 under jax 0.12.1, against +1.55, +0.33 to +2.79).
+jax==0.11.2
+jaxlib==0.11.2
+numpyro==0.22.0

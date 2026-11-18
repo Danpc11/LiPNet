@@ -2,6 +2,25 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.4.3] – 2026-11-18
+
+A review of the model against the liver it is applied to, and of the table and fits, with nothing added to the model. The derivations and every number are in [docs/LIVER.md](docs/LIVER.md).
+
+### Added
+- `src/model/liver.py`: the consequences of the optimum for a human liver. (1) The Poiseuille wall shear of an edge is $\tau_e=\tau_0 m_e^{(b-1)/2}$, so $\tau_0=\sqrt{D^*/C}$ is the scale of the design and equals a wall shear only at $b=1$; the allometric closure is recomputed for the physical shear, which stays between −0.077 and −0.003 in the sinusoid and falls to −0.30 in the trunk. (2) The diameter ratio the optimum fixes, inverted for the human casts already quoted in `network.py`: $b=0.92$ for the portal vein, 0.45 for the hepatic vein, 1.22 for the hepatic artery. (3) The share of the portocaval drop held by each compartment at $1.6\times10^6$ lobules, and the local exponent of $D^*$ with $N$ at that size. (4) A partial graft as the sub-network below a first-order branch: $z_R$ of 0.93 to 1.00 on the canopy and 0.90 to 0.96 on the explicit 3D graphs. (5) The arterial inflow joining at the sinusoid, which lowers the $z_R$ read from a portal flow load to 0.81 to 0.90 when the arterial flow per lobule does not exceed the donor's.
+- `src/audit.py`: what the table and the cached fits support. Arithmetic and provenance of `data/series.tsv`; the sampling interval of $z_R$ with the dispersions the papers report; the donor gradient and donor flow reference at which each paired group reaches one; the reference-free relation between the two loads; what each stratum contributes to the slope; and the model's interval for $z_R$ next to the observed values.
+- `tests/test_liver.py`, seven tests covering both modules.
+
+### Fixed
+- The posterior summaries depend on the jax version, not on the machine: the cached fits are reproduced to the last digit with jax 0.11.2 and numpyro 0.22.0, and to Monte Carlo error with jax 0.12.1 (primary slope +1.56, +0.37 to +2.76, against +1.55, +0.33 to +2.79). `requirements-lock.txt` records the versions behind the cached numbers.
+- `bayes.py` again asks XLA for four host devices on every machine, so the draws do not depend on the core count, and clears the compiled samplers between the refits of the recovery simulation and of the measurement Monte Carlo. That, not the device count, is what exhausted memory on a two-core machine in 0.4.2.
+
+### Notes
+- All five observed resistance loads (0.31 to 0.74) lie below the lowest value the model reaches (0.81). The model has the sign of the departure from the diagonal and not its size; widening the outlet anastomosis in `whole_graft.py` reaches 0.95 at most.
+- No series reports a donor gradient, and the donor flow reference is measured in three (81, 91, 118 mL/min/100 g). The two highest paired groups reach $z_R=1$ at a donor gradient of 3.6 to 3.7 mmHg, and stand at 0.94 and 0.97 with the largest measured donor reference.
+- Uemura 2016 separates its groups by 0.37 mmHg and carries no information on the slope: the primary estimate is unchanged without it (+1.53, +0.30 to +2.77, 46 events in 352 recipients from two series).
+- `THEORY.md` and the manuscript are not changed by this release.
+
 ## [0.4.2] – 2026-10-25
 
 Archived at Zenodo as [10.5281/zenodo.23656741](https://doi.org/10.5281/zenodo.23656741) (26 October 2026); this is the version cited by the article.
