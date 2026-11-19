@@ -61,7 +61,16 @@ def table_checks(d):
                 gradient_timing_of_paired_groups=d.dropna(subset=['zF', 'zP']).set_index(d.dropna(subset=['zF', 'zP']).study + ' / ' + d.dropna(subset=['zF', 'zP']).group).gradient_timing.to_dict())
 
 
-def paired(d):
+def ratio_log_se(cv_flow, n_flow, sd_grad, n_grad, gradient, rho=0.0):
+    """Standard error of log(zR) = log(mean gradient) - log(mean flow) + constants, from the dispersions of the two
+    measurements in a group and the correlation rho between the sampling errors of the two means (delta method)."""
+    sF, sP = cv_flow / np.sqrt(n_flow), sd_grad / np.sqrt(n_grad) / gradient
+    return float(np.sqrt(sF ** 2 + sP ** 2 - 2 * rho * sF * sP))
+
+
+def paired(d, correlations=(-0.5, 0.5)):
+    """correlations: values of the correlation between the sampling errors of the mean gradient and of the mean flow of a
+    group at which the interval of their ratio is repeated; no paper reports it, and the interval at zero is the default."""
     p = d.dropna(subset=['zF', 'zP']).copy(); rows = []
     cvs = [v['cv_flow'] for v in REPORTED.values() if v['cv_flow']] + [sd_from_range(*REPORTED[('Chan 2011', 'right lobe with MHV, no modulation')]['flow_range'], 46) / 318.0]
     sds = [v['sd_grad'] for v in REPORTED.values() if v['sd_grad']] + [sd_from_range(*REPORTED[('Chan 2011', 'right lobe with MHV, no modulation')]['grad_range'], 46)]
@@ -71,23 +80,26 @@ def paired(d):
         rep = REPORTED[(r.study, r.group)]; grad = 5 * r.zP
         cv = rep['cv_flow'] or (sd_from_range(*rep['flow_range'], rep['n_flow']) / r.PVF_per_100g if rep.get('flow_range') else cv_max)
         sd = rep['sd_grad'] or (sd_from_range(*rep['grad_range'], rep['n_grad']) if rep.get('grad_range') else sd_max)
-        se = np.sqrt((cv / np.sqrt(rep['n_flow'])) ** 2 + (sd / np.sqrt(rep['n_grad']) / grad) ** 2)      # relative SE of the ratio of the two means
+        ratio_se = lambda rho: ratio_log_se(cv, rep['n_flow'], sd, rep['n_grad'], grad, rho)
+        se = ratio_se(0.0)                                             # relative SE of the ratio of the two means, taken as independent
         own_ref = bool(pd.notna(r.donor_PVF_per_100g_ref) and r.donor_PVF_per_100g_ref != indices.DEFAULT_DONOR_REF)
         ref = r.donor_PVF_per_100g_ref if pd.notna(r.donor_PVF_per_100g_ref) else indices.DEFAULT_DONOR_REF
         rows.append(dict(
-            study=r.study, group=r.group, n=int(r.n), zF=float(r.zF), zP=float(r.zP), zR=float(r.zR),
+            study=r.study, group=r.group, cohort_id=r.cohort_id, configuration=r.configuration, n=int(r.n), zF=float(r.zF), zP=float(r.zP), zR=float(r.zR),
             flow_basis=r.PVF_basis, donor_flow_reference=float(ref), donor_flow_reference_measured_in_series=own_ref,
             pressure_basis=r.PVP_basis, CVP_basis=r.CVP_basis, gradient_basis=r.gradient_basis, gradient_timing=r.gradient_timing,
             flow_cv_used=float(cv), flow_cv_reported=bool(rep['cv_flow'] or rep.get('flow_range')),
             gradient_sd_used=float(sd), gradient_sd_reported=bool(rep['sd_grad'] or rep.get('grad_range')), dispersion_basis=rep['basis'],
-            zR_ci_sampling=[float(r.zR * np.exp(-1.96 * se)), float(r.zR * np.exp(1.96 * se))],
+            zR_ci_sampling=[float(r.zR * np.exp(-1.96 * se)), float(r.zR * np.exp(1.96 * se))], zR_log_se=float(se),
+            zR_ci_by_correlation={f'{rho:+.1f}': [float(r.zR * np.exp(-1.96 * ratio_se(rho))), float(r.zR * np.exp(1.96 * ratio_se(rho)))] for rho in correlations},
             # reference values that put the group at zR = 1, one at a time
             donor_gradient_at_which_zR_is_one_mmHg=float(5 * r.zR),
             donor_flow_reference_at_which_zR_is_one=(None if own_ref else float(ref / r.zR)),
             zR_at_largest_measured_donor_reference=(None if own_ref else float(r.zR * max(measured_refs) / ref))))
     return dict(groups=rows, flow_cv_where_unreported=float(cv_max), gradient_sd_where_unreported=float(sd_max),
                 measured_donor_flow_references=[float(x) for x in measured_refs],
-                note='zR_ci_sampling is the sampling error of the two group means only; it holds the donor references fixed')
+                note='zR_ci_sampling is the sampling error of the two group means only, taken as independent; it holds the donor references fixed. '
+                     'zR_ci_by_correlation repeats it for a correlation between the two sampling errors: a positive one narrows the interval of the ratio')
 
 
 def loads(d):
@@ -130,7 +142,7 @@ def slope(d):
         ic = json.load(open(f))['index_contrast']
         out['pressure_against_flow'] = {k: dict(groups=v['groups'], series=len(v['strata']), events=v['events'], median_group_size=v['median_group_size'],
                                                 mu_beta=v['mu_beta'], mu_beta_ci=v['mu_beta_ci']) for k, v in ic.items() if isinstance(v, dict)}
-        out['pressure_against_flow']['prob_pressure_slope_exceeds_flow_slope'] = ic['prob_pressure_slope_exceeds_flow_slope']
+        out['pressure_against_flow']['slopes_compared'] = False      # different cohorts except the shared series: no probability that one exceeds the other
         out['pressure_against_flow']['series_in_both_arms'] = ic['shared_series']
     return out
 

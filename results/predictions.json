@@ -27,16 +27,72 @@
  },
  "P2_discordance": {
   "groups_with_both": 6,
-  "reconstructed": 5,
-  "standard": 1,
-  "ratio_reconstructed": [
-   0.306,
-   0.549,
-   0.539,
-   0.742,
-   0.651
-  ],
-  "all_below_one": true,
+  "cohorts": 5,
+  "cohorts_below_one": 5,
+  "sign_test_cohorts_one_sided_p": 0.03125,
+  "sign_test_cohorts_two_sided_p": 0.0625,
+  "sign_test_sensitivity": {
+   "unit_cohort": {
+    "below_one": 5,
+    "of": 5,
+    "one_sided_p": 0.03125
+   },
+   "unit_centre": {
+    "below_one": 5,
+    "of": 5,
+    "one_sided_p": 0.03125
+   },
+   "leave_one_cohort_out": [
+    {
+     "left_out": "Chan 2011",
+     "below_one": 4,
+     "of": 4,
+     "one_sided_p": 0.0625
+    },
+    {
+     "left_out": "Yagi 2006",
+     "below_one": 4,
+     "of": 4,
+     "one_sided_p": 0.0625
+    },
+    {
+     "left_out": "Wang 2014",
+     "below_one": 4,
+     "of": 4,
+     "one_sided_p": 0.0625
+    },
+    {
+     "left_out": "Ishizaki 2012",
+     "below_one": 4,
+     "of": 4,
+     "one_sided_p": 0.0625
+    },
+    {
+     "left_out": "Wu 2011",
+     "below_one": 4,
+     "of": 4,
+     "one_sided_p": 0.0625
+    }
+   ],
+   "one_group_per_cohort": [
+    {
+     "group_dropped": "Wang 2014 / splenectomy",
+     "below_one": 5,
+     "of": 5,
+     "one_sided_p": 0.03125
+    },
+    {
+     "group_dropped": "Wang 2014 / no splenectomy",
+     "below_one": 5,
+     "of": 5,
+     "one_sided_p": 0.03125
+    }
+   ],
+   "smallest_one_sided_p_attainable": 0.03125,
+   "note": "the six groups are six descriptions and five independent units; with five units the exact sign test cannot give less than 0.031, and leaving any cohort out gives 0.0625"
+  },
+  "groups_below_one": 6,
+  "groups_with_interval_below_one": 6,
   "ratio_all": [
    0.306,
    0.549,
@@ -45,107 +101,789 @@
    0.742,
    0.651
   ],
-  "all_groups_below_one": true,
-  "sign_test_all_p": 0.015625,
-  "min_prob_below_one_all": 0.99975,
-  "sign_test_p": 0.03125,
-  "min_prob_below_one": 0.99975,
-  "outcome_reconstructed_pct": [
-   4.35,
-   7.41,
-   9.74,
-   0.0
+  "by_configuration": {
+   "outflow reconstruction": [
+    0.306,
+    0.651,
+    0.742
+   ],
+   "combined": [
+    0.549
+   ],
+   "inflow modulation": [
+    0.539
+   ],
+   "none": [
+    0.716
+   ]
+  },
+  "no_manoeuvre_inside_the_range_of_outflow_reconstruction": true,
+  "within_cohort_contrasts": [
+   {
+    "cohort": "Wang 2014",
+    "contrast": "inflow modulation against none",
+    "zR": [
+     0.539,
+     0.716
+    ],
+    "zF": [
+     4.122,
+     3.744
+    ],
+    "zP": [
+     2.22,
+     2.68
+    ],
+    "ratio_of_zR": 0.753,
+    "ratio_ci": [
+     0.643,
+     0.882
+    ],
+    "note": "groups of one cohort that were not randomised: the manoeuvre was chosen for the recipients who needed it"
+   }
   ],
-  "reconstructed_without_reported_outcome": [
-   "Wu 2011"
-  ],
-  "note": "configuration classified from the methods before seeing outcomes; outcome shown separately",
+  "outcome_pct": {
+   "Chan 2011 / right lobe with MHV, no modulation": 4.35,
+   "Yagi 2006 / PVP kept <20": 7.41,
+   "Wang 2014 / splenectomy": 9.74,
+   "Wang 2014 / no splenectomy": 19.67,
+   "Ishizaki 2012 / left lobe, no inflow modulation (gradient measured)": 0.0,
+   "Wu 2011 / right lobe, no inflow modulation": null
+  },
+  "note": "the cohort is the unit of the sign test; groups of one cohort are not independent. Configuration was classified from the methods of each paper; outcome is shown separately and is not evidence for the mechanism",
   "detail": [
    {
     "study": "Chan 2011",
     "group": "right lobe with MHV, no modulation",
+    "cohort_id": "Chan 2011",
+    "configuration": "outflow reconstruction",
     "outflow": "reconstructed (right lobe with middle hepatic vein)",
+    "n": 46,
     "zP": 1.2,
-    "zF": 3.93,
+    "zF": 3.926,
     "ratio": 0.306,
     "ratio_ci": [
-     0.252,
-     0.364
+     0.254,
+     0.367
     ],
-    "prob_below_one": 1.0,
+    "ratio_ci_by_correlation": {
+     "-0.5": [
+      0.244,
+      0.383
+     ],
+     "+0.5": [
+      0.268,
+      0.348
+     ]
+    },
+    "dispersion_reported": true,
+    "interval_below_one": true,
     "outcome_pct": 4.35
    },
    {
     "study": "Yagi 2006",
     "group": "PVP kept <20",
+    "cohort_id": "Yagi 2006",
+    "configuration": "combined",
     "outflow": "reconstructed (outflow venoplasty, pressure kept <20)",
+    "n": 27,
     "zP": 1.8,
-    "zF": 3.28,
+    "zF": 3.278,
     "ratio": 0.549,
     "ratio_ci": [
-     0.458,
-     0.651
+     0.439,
+     0.688
     ],
-    "prob_below_one": 1.0,
+    "ratio_ci_by_correlation": {
+     "-0.5": [
+      0.419,
+      0.72
+     ],
+     "+0.5": [
+      0.465,
+      0.648
+     ]
+    },
+    "dispersion_reported": false,
+    "interval_below_one": true,
     "outcome_pct": 7.41
    },
    {
     "study": "Wang 2014",
     "group": "splenectomy",
-    "outflow": "reconstructed (splenectomy, higher compliance)",
+    "cohort_id": "Wang 2014",
+    "configuration": "inflow modulation",
+    "outflow": "standard",
+    "n": 154,
     "zP": 2.22,
-    "zF": 4.12,
+    "zF": 4.122,
     "ratio": 0.539,
     "ratio_ci": [
-     0.505,
-     0.573
+     0.483,
+     0.6
     ],
-    "prob_below_one": 1.0,
+    "ratio_ci_by_correlation": {
+     "-0.5": [
+      0.472,
+      0.614
+     ],
+     "+0.5": [
+      0.498,
+      0.583
+     ]
+    },
+    "dispersion_reported": false,
+    "interval_below_one": true,
     "outcome_pct": 9.74
    },
    {
     "study": "Wang 2014",
     "group": "no splenectomy",
+    "cohort_id": "Wang 2014",
+    "configuration": "none",
     "outflow": "standard",
-    "zP": 2.6799999999999997,
-    "zF": 3.74,
+    "n": 122,
+    "zP": 2.68,
+    "zF": 3.744,
     "ratio": 0.716,
     "ratio_ci": [
-     0.671,
-     0.762
+     0.638,
+     0.803
     ],
-    "prob_below_one": 1.0,
+    "ratio_ci_by_correlation": {
+     "-0.5": [
+      0.623,
+      0.822
+     ],
+     "+0.5": [
+      0.657,
+      0.78
+     ]
+    },
+    "dispersion_reported": false,
+    "interval_below_one": true,
     "outcome_pct": 19.67
    },
    {
     "study": "Ishizaki 2012",
     "group": "left lobe, no inflow modulation (gradient measured)",
+    "cohort_id": "Ishizaki 2012",
+    "configuration": "outflow reconstruction",
     "outflow": "reconstructed (left lobe with middle and left hepatic vein trunk)",
+    "n": 42,
     "zP": 2.48,
-    "zF": 3.34,
+    "zF": 3.344,
     "ratio": 0.742,
     "ratio_ci": [
-     0.646,
-     0.848
+     0.597,
+     0.92
     ],
-    "prob_below_one": 0.99975,
+    "ratio_ci_by_correlation": {
+     "-0.5": [
+      0.57,
+      0.964
+     ],
+     "+0.5": [
+      0.634,
+      0.868
+     ]
+    },
+    "dispersion_reported": true,
+    "interval_below_one": true,
     "outcome_pct": 0.0
    },
    {
     "study": "Wu 2011",
     "group": "right lobe, no inflow modulation",
+    "cohort_id": "Wu 2011",
+    "configuration": "outflow reconstruction",
     "outflow": "reconstructed (right lobe, anterior-section veins by iliac vein graft in 44 of 64)",
+    "n": 64,
     "zP": 2.12,
-    "zF": 3.25,
+    "zF": 3.255,
     "ratio": 0.651,
     "ratio_ci": [
-     0.574,
-     0.732
+     0.568,
+     0.747
     ],
-    "prob_below_one": 1.0,
+    "ratio_ci_by_correlation": {
+     "-0.5": [
+      0.551,
+      0.77
+     ],
+     "+0.5": [
+      0.591,
+      0.718
+     ]
+    },
+    "dispersion_reported": true,
+    "interval_below_one": true,
     "outcome_pct": null
    }
   ],
+  "model_against_observed": {
+   "groups": [
+    {
+     "study": "Chan 2011",
+     "group": "right lobe with MHV, no modulation",
+     "configuration": "outflow reconstruction",
+     "zF": 3.926,
+     "zR_predicted": [
+      0.811,
+      0.892
+     ],
+     "zR_observed": 0.306,
+     "zR_observed_ci": [
+      0.254,
+      0.367
+     ],
+     "observed_minus_predicted": [
+      -0.586,
+      -0.505
+     ],
+     "share_of_the_departure_from_one_predicted": [
+      0.16,
+      0.27
+     ],
+     "interval_reaches_the_prediction": false
+    },
+    {
+     "study": "Yagi 2006",
+     "group": "PVP kept <20",
+     "configuration": "combined",
+     "zF": 3.278,
+     "zR_predicted": [
+      0.811,
+      0.899
+     ],
+     "zR_observed": 0.549,
+     "zR_observed_ci": [
+      0.439,
+      0.688
+     ],
+     "observed_minus_predicted": [
+      -0.35,
+      -0.261
+     ],
+     "share_of_the_departure_from_one_predicted": [
+      0.22,
+      0.42
+     ],
+     "interval_reaches_the_prediction": false
+    },
+    {
+     "study": "Wang 2014",
+     "group": "splenectomy",
+     "configuration": "inflow modulation",
+     "zF": 4.122,
+     "zR_predicted": [
+      0.811,
+      0.89
+     ],
+     "zR_observed": 0.539,
+     "zR_observed_ci": [
+      0.483,
+      0.6
+     ],
+     "observed_minus_predicted": [
+      -0.352,
+      -0.272
+     ],
+     "share_of_the_departure_from_one_predicted": [
+      0.24,
+      0.41
+     ],
+     "interval_reaches_the_prediction": false
+    },
+    {
+     "study": "Wang 2014",
+     "group": "no splenectomy",
+     "configuration": "none",
+     "zF": 3.744,
+     "zR_predicted": [
+      0.811,
+      0.894
+     ],
+     "zR_observed": 0.716,
+     "zR_observed_ci": [
+      0.638,
+      0.803
+     ],
+     "observed_minus_predicted": [
+      -0.178,
+      -0.095
+     ],
+     "share_of_the_departure_from_one_predicted": [
+      0.37,
+      0.67
+     ],
+     "interval_reaches_the_prediction": false
+    },
+    {
+     "study": "Ishizaki 2012",
+     "group": "left lobe, no inflow modulation (gradient measured)",
+     "configuration": "outflow reconstruction",
+     "zF": 3.344,
+     "zR_predicted": [
+      0.811,
+      0.898
+     ],
+     "zR_observed": 0.742,
+     "zR_observed_ci": [
+      0.597,
+      0.92
+     ],
+     "observed_minus_predicted": [
+      -0.157,
+      -0.069
+     ],
+     "share_of_the_departure_from_one_predicted": [
+      0.39,
+      0.73
+     ],
+     "interval_reaches_the_prediction": true
+    },
+    {
+     "study": "Wu 2011",
+     "group": "right lobe, no inflow modulation",
+     "configuration": "outflow reconstruction",
+     "zF": 3.255,
+     "zR_predicted": [
+      0.811,
+      0.899
+     ],
+     "zR_observed": 0.651,
+     "zR_observed_ci": [
+      0.568,
+      0.747
+     ],
+     "observed_minus_predicted": [
+      -0.248,
+      -0.159
+     ],
+     "share_of_the_departure_from_one_predicted": [
+      0.29,
+      0.54
+     ],
+     "interval_reaches_the_prediction": false,
+     "zR_predicted_with_the_arterial_flow_measured_in_that_series": [
+      0.823,
+      0.857
+     ]
+    }
+   ],
+   "lowest_predicted": 0.811,
+   "mean_observed": 0.584,
+   "mean_predicted": 0.853,
+   "rmse": 0.306,
+   "mean_error": -0.269,
+   "groups_below_the_prediction": 6,
+   "groups_whose_interval_is_below_the_prediction": 5,
+   "share_of_the_departure_predicted": [
+    0.16,
+    0.73
+   ],
+   "verdict": "the network gives the direction of the departure of zR from one and under-predicts its size in every group",
+   "note": "inputs: geometry of the network, arterial share of the donor, flow load of the group. No pressure of a recipient enters"
+  },
+  "uncertainty": {
+   "groups": [
+    {
+     "study": "Chan 2011",
+     "group": "right lobe with MHV, no modulation",
+     "cohort_id": "Chan 2011",
+     "zR": 0.306,
+     "zR_predicted_lowest": 0.811,
+     "upper_limits": {
+      "ci_sampling": 0.3672357542794614,
+      "ci_sampling_widest": 0.38269851599330773,
+      "ci_references": 0.3955283035508699,
+      "ci_total": 0.4220038445376861,
+      "ci_total_widest": 0.43329453212289265
+     },
+     "flow_cv_reported": true,
+     "gradient_sd_reported": true,
+     "cvp_assumed": false,
+     "donor_flow_measured_in_series": true,
+     "ci_sampling": [
+      0.254,
+      0.367
+     ],
+     "ci_sampling_widest": [
+      0.244,
+      0.383
+     ],
+     "widest_at": {
+      "flow_cv": 0.44585812986496026,
+      "gradient_sd": 2.7135480439628203,
+      "correlation": -0.5
+     },
+     "sweep": {
+      "combinations": 3,
+      "upper_limit_below_one": 3,
+      "upper_limit_below_prediction": 3,
+      "upper_limit_range": [
+       0.348,
+       0.383
+      ]
+     },
+     "ci_references": [
+      0.242,
+      0.396
+     ],
+     "ci_total": [
+      0.226,
+      0.422
+     ],
+     "ci_total_widest": [
+      0.22,
+      0.433
+     ],
+     "prob_below_one": 1.0,
+     "prob_below_prediction": 1.0,
+     "share_of_variance_from_references": 0.67
+    },
+    {
+     "study": "Yagi 2006",
+     "group": "PVP kept <20",
+     "cohort_id": "Yagi 2006",
+     "zR": 0.549,
+     "zR_predicted_lowest": 0.811,
+     "upper_limits": {
+      "ci_sampling": 0.6875140585219998,
+      "ci_sampling_widest": 0.7638274403625667,
+      "ci_references": 0.7106101724812239,
+      "ci_total": 0.7784197299887047,
+      "ci_total_widest": 0.8436876396199974
+     },
+     "flow_cv_reported": true,
+     "gradient_sd_reported": false,
+     "cvp_assumed": false,
+     "donor_flow_measured_in_series": false,
+     "ci_sampling": [
+      0.439,
+      0.688
+     ],
+     "ci_sampling_widest": [
+      0.395,
+      0.764
+     ],
+     "widest_at": {
+      "flow_cv": 0.3238512035010941,
+      "gradient_sd": 6.0,
+      "correlation": -0.5
+     },
+     "sweep": {
+      "combinations": 12,
+      "upper_limit_below_one": 12,
+      "upper_limit_below_prediction": 12,
+      "upper_limit_range": [
+       0.616,
+       0.764
+      ]
+     },
+     "ci_references": [
+      0.434,
+      0.711
+     ],
+     "ci_total": [
+      0.395,
+      0.778
+     ],
+     "ci_total_widest": [
+      0.364,
+      0.844
+     ],
+     "prob_below_one": 1.0,
+     "prob_below_prediction": 0.987,
+     "share_of_variance_from_references": 0.57
+    },
+    {
+     "study": "Wang 2014",
+     "group": "splenectomy",
+     "cohort_id": "Wang 2014",
+     "zR": 0.539,
+     "zR_predicted_lowest": 0.811,
+     "upper_limits": {
+      "ci_sampling": 0.6002819850551812,
+      "ci_sampling_widest": 0.6384346399208051,
+      "ci_references": 0.7291716304907895,
+      "ci_total": 0.7432690955561946,
+      "ci_total_widest": 0.7596579548150805
+     },
+     "flow_cv_reported": false,
+     "gradient_sd_reported": false,
+     "cvp_assumed": true,
+     "donor_flow_measured_in_series": false,
+     "ci_sampling": [
+      0.483,
+      0.6
+     ],
+     "ci_sampling_widest": [
+      0.454,
+      0.638
+     ],
+     "widest_at": {
+      "flow_cv": 0.7,
+      "gradient_sd": 6.0,
+      "correlation": -0.5
+     },
+     "sweep": {
+      "combinations": 60,
+      "upper_limit_below_one": 60,
+      "upper_limit_below_prediction": 60,
+      "upper_limit_range": [
+       0.559,
+       0.638
+      ]
+     },
+     "ci_references": [
+      0.317,
+      0.729
+     ],
+     "ci_total": [
+      0.312,
+      0.743
+     ],
+     "ci_total_widest": [
+      0.306,
+      0.76
+     ],
+     "prob_below_one": 1.0,
+     "prob_below_prediction": 0.994,
+     "share_of_variance_from_references": 0.94
+    },
+    {
+     "study": "Wang 2014",
+     "group": "no splenectomy",
+     "cohort_id": "Wang 2014",
+     "zR": 0.716,
+     "zR_predicted_lowest": 0.811,
+     "upper_limits": {
+      "ci_sampling": 0.8030214468842617,
+      "ci_sampling_widest": 0.8549958340580531,
+      "ci_references": 0.95295568106056,
+      "ci_total": 0.9746707712746897,
+      "ci_total_widest": 0.9995137695817453
+     },
+     "flow_cv_reported": false,
+     "gradient_sd_reported": false,
+     "cvp_assumed": true,
+     "donor_flow_measured_in_series": false,
+     "ci_sampling": [
+      0.638,
+      0.803
+     ],
+     "ci_sampling_widest": [
+      0.599,
+      0.855
+     ],
+     "widest_at": {
+      "flow_cv": 0.7,
+      "gradient_sd": 6.0,
+      "correlation": -0.5
+     },
+     "sweep": {
+      "combinations": 60,
+      "upper_limit_below_one": 60,
+      "upper_limit_below_prediction": 47,
+      "upper_limit_range": [
+       0.745,
+       0.855
+      ]
+     },
+     "ci_references": [
+      0.453,
+      0.953
+     ],
+     "ci_total": [
+      0.445,
+      0.975
+     ],
+     "ci_total_widest": [
+      0.435,
+      1.0
+     ],
+     "prob_below_one": 0.983,
+     "prob_below_prediction": 0.835,
+     "share_of_variance_from_references": 0.92
+    },
+    {
+     "study": "Ishizaki 2012",
+     "group": "left lobe, no inflow modulation (gradient measured)",
+     "cohort_id": "Ishizaki 2012",
+     "zR": 0.742,
+     "zR_predicted_lowest": 0.811,
+     "upper_limits": {
+      "ci_sampling": 0.9204537938341009,
+      "ci_sampling_widest": 0.9638447262969786,
+      "ci_references": 0.9595467002348899,
+      "ci_total": 1.0447708799163125,
+      "ci_total_widest": 1.0806106829514137
+     },
+     "flow_cv_reported": true,
+     "gradient_sd_reported": true,
+     "cvp_assumed": false,
+     "donor_flow_measured_in_series": false,
+     "ci_sampling": [
+      0.597,
+      0.92
+     ],
+     "ci_sampling_widest": [
+      0.57,
+      0.964
+     ],
+     "widest_at": {
+      "flow_cv": 0.5548172757475083,
+      "gradient_sd": 4.4,
+      "correlation": -0.5
+     },
+     "sweep": {
+      "combinations": 3,
+      "upper_limit_below_one": 3,
+      "upper_limit_below_prediction": 0,
+      "upper_limit_range": [
+       0.868,
+       0.964
+      ]
+     },
+     "ci_references": [
+      0.586,
+      0.96
+     ],
+     "ci_total": [
+      0.537,
+      1.045
+     ],
+     "ci_total_widest": [
+      0.52,
+      1.081
+     ],
+     "prob_below_one": 0.952,
+     "prob_below_prediction": 0.681,
+     "share_of_variance_from_references": 0.59
+    },
+    {
+     "study": "Wu 2011",
+     "group": "right lobe, no inflow modulation",
+     "cohort_id": "Wu 2011",
+     "zR": 0.651,
+     "zR_predicted_lowest": 0.811,
+     "upper_limits": {
+      "ci_sampling": 0.7467676458774234,
+      "ci_sampling_widest": 0.7697821866599212,
+      "ci_references": 0.8429147518227198,
+      "ci_total": 0.8756795329523143,
+      "ci_total_widest": 0.8899277784377396
+     },
+     "flow_cv_reported": true,
+     "gradient_sd_reported": true,
+     "cvp_assumed": false,
+     "donor_flow_measured_in_series": true,
+     "ci_sampling": [
+      0.568,
+      0.747
+     ],
+     "ci_sampling_widest": [
+      0.551,
+      0.77
+     ],
+     "widest_at": {
+      "flow_cv": 0.3616666061771858,
+      "gradient_sd": 4.5,
+      "correlation": -0.5
+     },
+     "sweep": {
+      "combinations": 3,
+      "upper_limit_below_one": 3,
+      "upper_limit_below_prediction": 3,
+      "upper_limit_range": [
+       0.718,
+       0.77
+      ]
+     },
+     "ci_references": [
+      0.515,
+      0.843
+     ],
+     "ci_total": [
+      0.496,
+      0.876
+     ],
+     "ci_total_widest": [
+      0.487,
+      0.89
+     ],
+     "prob_below_one": 1.0,
+     "prob_below_prediction": 0.916,
+     "share_of_variance_from_references": 0.78
+    }
+   ],
+   "of": 6,
+   "cohorts": 5,
+   "groups_with_interval_below_one": {
+    "ci_sampling": 6,
+    "ci_sampling_widest": 6,
+    "ci_references": 6,
+    "ci_total": 5,
+    "ci_total_widest": 5
+   },
+   "groups_with_interval_below_prediction": {
+    "ci_sampling": 5,
+    "ci_sampling_widest": 4,
+    "ci_references": 3,
+    "ci_total": 3,
+    "ci_total_widest": 2
+   },
+   "cohorts_with_interval_below_one": {
+    "ci_sampling": 5,
+    "ci_sampling_widest": 5,
+    "ci_references": 5,
+    "ci_total": 4,
+    "ci_total_widest": 4
+   },
+   "cohorts_with_interval_below_prediction": {
+    "ci_sampling": 4,
+    "ci_sampling_widest": 3,
+    "ci_references": 2,
+    "ci_total": 2,
+    "ci_total_widest": 1
+   },
+   "grids": {
+    "flow_cv": [
+     0.25,
+     0.35,
+     0.45,
+     0.55,
+     0.7
+    ],
+    "gradient_sd_mmHg": [
+     2.5,
+     3.5,
+     4.5,
+     6.0
+    ],
+    "correlation": [
+     -0.5,
+     0.0,
+     0.5
+    ],
+    "donor_flow": [
+     80.0,
+     100.0
+    ],
+    "normal_gradient_mmHg": [
+     4.0,
+     6.0
+    ],
+    "assumed_cvp_mmHg": [
+     3.0,
+     9.0
+    ],
+    "draws": 40000
+   },
+   "note": "sampling: error of the two group means. references: donor flow, normal gradient and assumed CVP drawn uniformly over their ranges. The intervals with references are marginal for each group; the references are shared between groups"
+  },
   "reference_sweep": {
    "groups": 6,
    "grid": [
@@ -323,6 +1061,106 @@
     "assumed_cvp": 3.0,
     "max_zR": 1.142,
     "max_group": "Wang 2014 / no splenectomy"
+   },
+   "joint": {
+    "combinations": 60,
+    "all_below_one": 54,
+    "all_below_model": 34,
+    "model_lowest": 0.811,
+    "per_group": {
+     "Chan 2011 / right lobe with MHV, no modulation": {
+      "share_below_one": 1.0,
+      "share_below_model": 1.0
+     },
+     "Yagi 2006 / PVP kept <20": {
+      "share_below_one": 1.0,
+      "share_below_model": 1.0
+     },
+     "Wang 2014 / splenectomy": {
+      "share_below_one": 1.0,
+      "share_below_model": 0.967
+     },
+     "Wang 2014 / no splenectomy": {
+      "share_below_one": 0.95,
+      "share_below_model": 0.783
+     },
+     "Ishizaki 2012 / left lobe, no inflow modulation (gradient measured)": {
+      "share_below_one": 0.933,
+      "share_below_model": 0.6
+     },
+     "Wu 2011 / right lobe, no inflow modulation": {
+      "share_below_one": 1.0,
+      "share_below_model": 0.667
+     }
+    },
+    "not_all_below_one": [
+     {
+      "donor_ref_flow": 90.0,
+      "normal_gradient": 4.0,
+      "assumed_cvp": 3.0,
+      "max_zR": 1.028,
+      "groups_below_one": 5,
+      "groups_below_model": 3
+     },
+     {
+      "donor_ref_flow": 95.0,
+      "normal_gradient": 4.0,
+      "assumed_cvp": 3.0,
+      "max_zR": 1.085,
+      "groups_below_one": 5,
+      "groups_below_model": 2
+     },
+     {
+      "donor_ref_flow": 100.0,
+      "normal_gradient": 4.0,
+      "assumed_cvp": 3.0,
+      "max_zR": 1.142,
+      "groups_below_one": 4,
+      "groups_below_model": 2
+     },
+     {
+      "donor_ref_flow": 100.0,
+      "normal_gradient": 4.0,
+      "assumed_cvp": 5.0,
+      "max_zR": 1.03,
+      "groups_below_one": 5,
+      "groups_below_model": 3
+     },
+     {
+      "donor_ref_flow": 100.0,
+      "normal_gradient": 4.0,
+      "assumed_cvp": 7.0,
+      "max_zR": 1.03,
+      "groups_below_one": 5,
+      "groups_below_model": 3
+     },
+     {
+      "donor_ref_flow": 100.0,
+      "normal_gradient": 4.0,
+      "assumed_cvp": 9.0,
+      "max_zR": 1.03,
+      "groups_below_one": 5,
+      "groups_below_model": 4
+     }
+    ],
+    "by_normal_gradient": {
+     "4 mmHg": {
+      "all_below_one": 14,
+      "all_below_model": 0,
+      "of": 20
+     },
+     "5 mmHg": {
+      "all_below_one": 20,
+      "all_below_model": 14,
+      "of": 20
+     },
+     "6 mmHg": {
+      "all_below_one": 20,
+      "all_below_model": 20,
+      "of": 20
+     }
+    },
+    "note": "60 combinations of donor reference flow, normal gradient and assumed CVP, varied together"
    },
    "note": "flow and gradient references crossed on a grid; the assumed CVP swept separately at the default references; the worst corner crosses all three and is reported for completeness"
   }
@@ -2567,7 +3405,12 @@
      2.7557437419891357
     ],
     "tau_beta": 0.19169636070728302,
-    "prob_positive": 0.997875
+    "prob_positive": 0.997875,
+    "slope_in_a_new_centre": [
+     0.3697926059681285,
+     2.8483560675817468
+    ],
+    "prob_new_centre_positive": 0.994
    },
    {
     "tau_prior": 0.5,
@@ -2577,7 +3420,12 @@
      2.787879705429077
     ],
     "tau_beta": 0.36505094170570374,
-    "prob_positive": 0.990375
+    "prob_positive": 0.990375,
+    "slope_in_a_new_centre": [
+     -0.015070353462363545,
+     3.0886890219071894
+    ],
+    "prob_new_centre_positive": 0.97425
    },
    {
     "tau_prior": 1.0,
@@ -2587,9 +3435,73 @@
      2.8356704711914062
     ],
     "tau_beta": 0.6580564379692078,
-    "prob_positive": 0.969875
+    "prob_positive": 0.969875,
+    "slope_in_a_new_centre": [
+     -0.9673824925948106,
+     3.6329676615050785
+    ],
+    "prob_new_centre_positive": 0.9215
    }
   ],
+  "interval_excludes_zero_under_every_prior": false,
+  "slope_in_a_new_centre": {
+   "primary (SFSS or early dysfunction)": {
+    "interval": [
+     -0.015070353462363545,
+     3.0886890219071894
+    ],
+    "prob_positive": 0.97425
+   },
+   "secondary (mortality or graft loss)": {
+    "interval": [
+     0.21199028638290437,
+     3.187398419184754
+    ],
+    "prob_positive": 0.98325
+   },
+   "exploratory (all outcomes)": {
+    "interval": [
+     0.6026760801989718,
+     2.937170405786926
+    ],
+    "prob_positive": 0.99325
+   }
+  },
+  "same_cohort_contrast": [
+   {
+    "cohort": "Wang 2014",
+    "study": "Wang 2014",
+    "groups": [
+     "no splenectomy",
+     "splenectomy"
+    ],
+    "outcome_pct": [
+     19.67,
+     9.74
+    ],
+    "events": [
+     24,
+     15
+    ],
+    "n": [
+     122,
+     154
+    ],
+    "odds_ratio": 2.269387755102041,
+    "fisher_two_sided_p": 0.023382267515621852,
+    "zP": [
+     2.6799999999999997,
+     2.22
+    ],
+    "zF": [
+     3.7444444444444445,
+     4.122222222222222
+    ],
+    "worse_group_has_higher_pressure_load": true,
+    "worse_group_has_higher_flow_load": false
+   }
+  ],
+  "reading": "an association between groups of one cohort (ecological), with groups often defined by the pressure itself or by a manoeuvre chosen because of it: not the effect of pressure on a patient and not a causal effect",
   "conditional_iecv": [
    {
     "centre": "Cairo",
@@ -2633,14 +3545,15 @@
     "groups_with_no_events": 0,
     "median_group_size": 39.0,
     "zP_span": 0.9979999999999998,
-    "mu_beta": 1.555848240852356,
+    "mu_beta": 1.5470263957977295,
     "mu_beta_ci": [
-     0.3490765392780304,
-     2.812110424041748
+     0.3255254626274109,
+     2.787879705429077
     ],
-    "prob_positive": 0.9925,
-    "OR": 4.739104270935059,
-    "tau_beta": 0.36651861667633057
+    "prob_positive": 0.990375,
+    "OR": 4.697481155395508,
+    "tau_beta": 0.36505094170570374,
+    "is_the_primary_fit": true
    },
    "zF, flow per lobule": {
     "index": "zF",
@@ -2656,21 +3569,22 @@
     "groups_with_no_events": 2,
     "median_group_size": 9.5,
     "zP_span": 1.788135593220339,
-    "mu_beta": 0.858415961265564,
+    "mu_beta": 0.8367543816566467,
     "mu_beta_ci": [
-     -0.5763123035430908,
-     2.355341672897339
+     -0.5915546417236328,
+     2.3640644550323486
     ],
-    "prob_positive": 0.8854166666666666,
-    "OR": 2.3594202995300293,
-    "tau_beta": 0.8697574138641357
+    "prob_positive": 0.8715,
+    "OR": 2.308861017227173,
+    "tau_beta": 0.8801840543746948,
+    "is_the_primary_fit": false
    },
    "matched_on_outcome": true,
-   "prob_pressure_slope_exceeds_flow_slope": 0.7676,
    "shared_series": [
     "Wang 2014"
    ],
-   "pressure_carries_the_association": true
+   "slopes_compared": false,
+   "note": "exploratory. The two arms are different cohorts except for the shared series, so the two slopes are not compared: no probability that one exceeds the other is reported. The comparison inside one cohort is predictions.same_cohort_contrast"
   },
   "with_cutoff_groups": {
    "tau_prior": 0.5,
@@ -3900,200 +4814,200 @@
     "groups": 7,
     "strata": 3,
     "events": 76,
-    "mu_beta": 1.555848240852356,
+    "mu_beta": 1.5470263957977295,
     "mu_beta_ci": [
-     0.3490765392780304,
-     2.812110424041748
+     0.3255254626274109,
+     2.787879705429077
     ],
-    "prob_positive": 0.9925,
-    "OR_per_zP": 4.739104270935059
+    "prob_positive": 0.990375,
+    "OR_per_zP": 4.697481155395508
    },
    {
     "spec": "secondary outcome (mortality or graft loss)",
     "groups": 4,
     "strata": 2,
     "events": 28,
-    "mu_beta": 1.7102333307266235,
+    "mu_beta": 1.7407922744750977,
     "mu_beta_ci": [
-     0.5397918224334717,
-     2.8296988010406494
+     0.5967058539390564,
+     2.8572311401367188
     ],
-    "prob_positive": 0.99375,
-    "OR_per_zP": 5.530251502990723
+    "prob_positive": 0.997375,
+    "OR_per_zP": 5.7018585205078125
    },
    {
     "spec": "all outcomes",
     "groups": 11,
     "strata": 5,
     "events": 104,
-    "mu_beta": 1.8027937412261963,
+    "mu_beta": 1.7947458028793335,
     "mu_beta_ci": [
-     0.9795576930046082,
-     2.6096608638763428
+     0.9658632874488831,
+     2.637160062789917
     ],
     "prob_positive": 1.0,
-    "OR_per_zP": 6.066572189331055
+    "OR_per_zP": 6.0179443359375
    },
    {
     "spec": "gradients reported or derived only",
     "groups": 5,
     "strata": 2,
     "events": 50,
-    "mu_beta": 1.9284354448318481,
+    "mu_beta": 1.9538443088531494,
     "mu_beta_ci": [
-     0.43181338906288147,
-     3.3079335689544678
+     0.43048956990242004,
+     3.3886852264404297
     ],
-    "prob_positive": 0.9925,
-    "OR_per_zP": 6.878739833831787
+    "prob_positive": 0.99175,
+    "OR_per_zP": 7.055760383605957
    },
    {
     "spec": "no imputed CVP",
     "groups": 5,
     "strata": 2,
     "events": 50,
-    "mu_beta": 1.9284354448318481,
+    "mu_beta": 1.9538443088531494,
     "mu_beta_ci": [
-     0.43181338906288147,
-     3.3079335689544678
+     0.43048956990242004,
+     3.3886852264404297
     ],
-    "prob_positive": 0.9925,
-    "OR_per_zP": 6.878739833831787
+    "prob_positive": 0.99175,
+    "OR_per_zP": 7.055760383605957
    },
    {
     "spec": "events reported only (no counts from percentages)",
     "groups": 7,
     "strata": 3,
     "events": 76,
-    "mu_beta": 1.555848240852356,
+    "mu_beta": 1.5470263957977295,
     "mu_beta_ci": [
-     0.3490765392780304,
-     2.812110424041748
+     0.3255254626274109,
+     2.787879705429077
     ],
-    "prob_positive": 0.9925,
-    "OR_per_zP": 4.739104270935059
+    "prob_positive": 0.990375,
+    "OR_per_zP": 4.697481155395508
    },
    {
     "spec": "one Kyoto publication (Ogura 2010)",
     "groups": 6,
     "strata": 3,
     "events": 66,
-    "mu_beta": 1.886274814605713,
+    "mu_beta": 1.8974782228469849,
     "mu_beta_ci": [
-     0.8717257380485535,
-     2.8556935787200928
+     0.8662157654762268,
+     2.8659517765045166
     ],
-    "prob_positive": 0.9995833333333334,
-    "OR_per_zP": 6.594756603240967
+    "prob_positive": 0.999625,
+    "OR_per_zP": 6.669055461883545
    },
    {
     "spec": "one Kyoto publication (Uemura 2016)",
     "groups": 7,
     "strata": 3,
     "events": 76,
-    "mu_beta": 1.555848240852356,
+    "mu_beta": 1.5470263957977295,
     "mu_beta_ci": [
-     0.3490765392780304,
-     2.812110424041748
+     0.3255254626274109,
+     2.787879705429077
     ],
-    "prob_positive": 0.9925,
-    "OR_per_zP": 4.739104270935059
+    "prob_positive": 0.990375,
+    "OR_per_zP": 4.697481155395508
    },
    {
     "spec": "one Kyoto publication (Yagi 2005)",
     "groups": 6,
     "strata": 3,
     "events": 54,
-    "mu_beta": 1.4924418926239014,
+    "mu_beta": 1.5004254579544067,
     "mu_beta_ci": [
-     0.5649789571762085,
-     2.4385695457458496
+     0.532174289226532,
+     2.4609391689300537
     ],
-    "prob_positive": 0.9991666666666666,
-    "OR_per_zP": 4.447943687438965
+    "prob_positive": 0.997375,
+    "OR_per_zP": 4.483596324920654
    },
    {
     "spec": "tau prior HalfNormal(0.25)",
     "groups": 11,
     "strata": 5,
     "events": 104,
-    "mu_beta": 1.824058175086975,
+    "mu_beta": 1.813073754310608,
     "mu_beta_ci": [
-     1.0778781175613403,
-     2.62551212310791
+     1.0439761877059937,
+     2.6081044673919678
     ],
     "prob_positive": 1.0,
-    "OR_per_zP": 6.196956157684326
+    "OR_per_zP": 6.129258155822754
    },
    {
     "spec": "tau prior HalfNormal(1.0)",
     "groups": 11,
     "strata": 5,
     "events": 104,
-    "mu_beta": 1.7469565868377686,
+    "mu_beta": 1.7625718116760254,
     "mu_beta_ci": [
-     0.7647045254707336,
-     2.6657583713531494
+     0.7664474844932556,
+     2.6711032390594482
     ],
-    "prob_positive": 0.99625,
-    "OR_per_zP": 5.737114906311035
+    "prob_positive": 0.997875,
+    "OR_per_zP": 5.827404975891113
    },
    {
     "spec": "one stratum per centre, not per publication",
     "groups": 13,
     "strata": 4,
     "events": 106,
-    "mu_beta": 0.9168986082077026,
+    "mu_beta": 0.9204867482185364,
     "mu_beta_ci": [
-     0.19512535631656647,
-     1.6452324390411377
+     0.1976316124200821,
+     1.6672141551971436
     ],
-    "prob_positive": 0.9895833333333334,
-    "OR_per_zP": 2.5015203952789307
+    "prob_positive": 0.98925,
+    "OR_per_zP": 2.510512113571167
    },
    {
     "spec": "assumed CVP 3 mmHg",
     "groups": 11,
     "strata": 5,
     "events": 104,
-    "mu_beta": 1.8027937412261963,
+    "mu_beta": 1.7947458028793335,
     "mu_beta_ci": [
-     0.9795576930046082,
-     2.6096608638763428
+     0.9658632874488831,
+     2.637160062789917
     ],
     "prob_positive": 1.0,
-    "OR_per_zP": 6.066572189331055
+    "OR_per_zP": 6.0179443359375
    },
    {
     "spec": "assumed CVP 7 mmHg",
     "groups": 11,
     "strata": 5,
     "events": 104,
-    "mu_beta": 1.8027937412261963,
+    "mu_beta": 1.7947458028793335,
     "mu_beta_ci": [
-     0.9795576930046082,
-     2.6096608638763428
+     0.9658632874488831,
+     2.637160062789917
     ],
     "prob_positive": 1.0,
-    "OR_per_zP": 6.066572189331055
+    "OR_per_zP": 6.0179443359375
    },
    {
     "spec": "assumed CVP 9 mmHg",
     "groups": 11,
     "strata": 5,
     "events": 104,
-    "mu_beta": 1.8027937412261963,
+    "mu_beta": 1.7947458028793335,
     "mu_beta_ci": [
-     0.9795576930046082,
-     2.6096608638763428
+     0.9658632874488831,
+     2.637160062789917
     ],
     "prob_positive": 1.0,
-    "OR_per_zP": 6.066572189331055
+    "OR_per_zP": 6.0179443359375
    }
   ],
   "mu_range_across_specifications": [
-   0.9168986082077026,
-   1.9284354448318481
+   0.9204867482185364,
+   1.9538443088531494
   ],
   "all_specifications_positive": true,
   "measurement_monte_carlo": {
@@ -4108,31 +5022,73 @@
   "design_recovery": [
    {
     "mu_true": 0.0,
-    "mean_estimate": 0.04278473295271397,
-    "bias": 0.04278473295271397,
+    "tau_true": 0.3,
+    "mean_estimate": -0.06535508185625076,
+    "bias": -0.06535508185625076,
+    "bias_mc_se": 0.08189020344805661,
     "coverage": 1.0,
+    "coverage_ci": [
+     0.8315665290169147,
+     1.0
+    ],
     "power_to_exclude_zero": 0.0,
-    "reps": 10
+    "power_ci": [
+     0.0,
+     0.1684334709830853
+    ],
+    "reps": 20,
+    "intercepts": "one per stratum, the logit of its pooled observed rate"
    },
    {
     "mu_true": 1.0,
-    "mean_estimate": 0.7879007905721664,
-    "bias": -0.21209920942783356,
+    "tau_true": 0.3,
+    "mean_estimate": 0.9823866069316864,
+    "bias": -0.017613393068313554,
+    "bias_mc_se": 0.06338876293503383,
     "coverage": 1.0,
-    "power_to_exclude_zero": 0.5,
-    "reps": 10
+    "coverage_ci": [
+     0.8315665290169147,
+     1.0
+    ],
+    "power_to_exclude_zero": 0.75,
+    "power_ci": [
+     0.5089541282920425,
+     0.9134285308985655
+    ],
+    "reps": 20,
+    "intercepts": "one per stratum, the logit of its pooled observed rate"
    },
    {
     "mu_true": 2.0,
-    "mean_estimate": 1.7451765060424804,
-    "bias": -0.2548234939575196,
-    "coverage": 1.0,
+    "tau_true": 0.3,
+    "mean_estimate": 1.679869505763054,
+    "bias": -0.32013049423694606,
+    "bias_mc_se": 0.08248331174128612,
+    "coverage": 0.95,
+    "coverage_ci": [
+     0.7512672372279723,
+     0.9987349105020502
+    ],
     "power_to_exclude_zero": 1.0,
-    "reps": 10
+    "power_ci": [
+     0.8315665290169147,
+     1.0
+    ],
+    "reps": 20,
+    "intercepts": "one per stratum, the logit of its pooled observed rate"
    }
   ]
  },
  "P4_thresholds": {
+  "title": "Exploratory comparison of haemodynamic thresholds across liver diseases and surgical settings",
+  "reading": "comparison of scales, exploratory; the thresholds are each about 10 mmHg, so they sit at 2 by the choice of a 5 mmHg reference; HVPG and the portocaval gradient of a graft are different measurements",
+  "agreement_is_by_construction": true,
+  "thresholds_mmHg": {
+   "cirrhosis_HVPG": 10,
+   "graft_PVP_minus_CVP": 10,
+   "resection_HVPG": 10,
+   "variceal_HVPG": 12
+  },
   "reference_sensitivity": {
    "4 mmHg reference": {
     "cirrhosis_HVPG_10": 2.5,

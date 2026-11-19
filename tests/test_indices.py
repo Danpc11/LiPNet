@@ -32,8 +32,10 @@ def test_load_identity():
     assert np.allclose(both.zF * both.zR, both.zP), 'zP = zF * zR must hold exactly'
     Rd = indices.R(indices.NORMAL_GRADIENT, indices.DEFAULT_DONOR_REF)
     assert abs(indices.zR(Rd, Rd) - 1.0) < 1e-12, 'a graft at donor resistance has zR = 1'
-    rec = both[both.outflow.str.startswith('reconstructed')]
-    assert len(rec) == 5 and all(rec.zR < 1), 'every group with reconstructed outflow has zR below one'
+    assert all(both.zR < 1) and both.cohort_id.nunique() == 5, 'six groups from five cohorts: two are Wang 2014'
+    assert both.configuration.value_counts().to_dict() == {'outflow reconstruction': 3, 'combined': 1, 'inflow modulation': 1, 'none': 1}
+    w = d[(d.study == 'Wang 2014') & (d.group == 'splenectomy')].iloc[0]; assert w.outflow == 'standard' and w.configuration == 'inflow modulation', 'a splenectomy is not an outflow reconstruction'
+    assert set(d.configuration) == {'outflow reconstruction', 'inflow modulation', 'portosystemic shunt', 'combined', 'none', 'not separable'}
 
 def test_indices_and_baseline():
     assert indices.zP(15, 5) == 2.0                    # PVP 15 at CVP 5 is twice the normal gradient
@@ -168,18 +170,50 @@ def test_model_predictions():
     assert P['P1_allometry']['tau0_invariant'], 'P1: the scale of the design must not scale with body mass'
     assert 'best_b' not in P['P1_allometry'], 'P1 must not select a value of b that fits the observation'
     p2 = P['P2_discordance']
-    assert p2['all_below_one'] and p2['reconstructed'] >= 4, 'P2: every reconstructed outflow below one'
-    assert p2['min_prob_below_one'] > 0.9, 'P2: with measurement uncertainty'
-    assert max(p2['outcome_reconstructed_pct']) <= 10, 'P2: those grafts did well (reported separately)'
+    # the cohort is the unit: five cohorts, exact sign test in the direction the network gives
+    assert (p2['groups_with_both'], p2['cohorts'], p2['cohorts_below_one']) == (6, 5, 5)
+    assert abs(p2['sign_test_cohorts_one_sided_p'] - 0.5 ** 5) < 1e-12 and abs(p2['sign_test_cohorts_two_sided_p'] - 2 * 0.5 ** 5) < 1e-12
+    assert p2['groups_with_interval_below_one'] == 6, 'at any correlation between the two means from -0.5 to +0.5'
+    assert all(x['ratio_ci_by_correlation']['+0.5'][1] < x['ratio_ci'][1] < x['ratio_ci_by_correlation']['-0.5'][1] for x in p2['detail']), 'a positive correlation narrows the ratio'
+    # the six groups are five units: no arm of Wang 2014 and no single cohort carries the sign test
+    ss = p2['sign_test_sensitivity']
+    assert (ss['unit_centre']['below_one'], ss['unit_centre']['of']) == (5, 5) and all(x['below_one'] == x['of'] == 5 for x in ss['one_group_per_cohort']) and len(ss['one_group_per_cohort']) == 2
+    assert len(ss['leave_one_cohort_out']) == 5 and all(abs(x['one_sided_p'] - 0.0625) < 1e-12 for x in ss['leave_one_cohort_out']) and ss['smallest_one_sided_p_attainable'] == 0.5 ** 5
+    # the uncertainty of each zR by source: sampling (dispersions and correlation swept) apart from the references
+    u = p2['uncertainty']; G = {(g['study'], g['group']): g for g in u['groups']}
+    assert u['grids']['flow_cv'][0] < 0.33 and u['grids']['flow_cv'][-1] > 0.56 and u['grids']['gradient_sd_mmHg'][-1] > 4.5, 'the sweep must go beyond the reported dispersions on both sides'
+    assert sum(g['sweep']['combinations'] for g in u['groups']) == 141 and all(g['sweep']['upper_limit_below_one'] == g['sweep']['combinations'] for g in u['groups']), 'sampling error alone brings no group to one'
+    assert all(g['ci_sampling_widest'][0] <= g['ci_sampling'][0] and g['ci_sampling'][1] <= g['ci_sampling_widest'][1] and g['ci_total'][1] >= g['ci_sampling'][1] and g['ci_total'][1] >= g['ci_references'][1] for g in u['groups'])
+    assert [g['sweep']['combinations'] for g in u['groups'] if g['flow_cv_reported'] and g['gradient_sd_reported']] == [3, 3, 3], 'a reported dispersion is not swept, only the correlation'
+    assert u['groups_with_interval_below_one'] == dict(ci_sampling=6, ci_sampling_widest=6, ci_references=6, ci_total=5, ci_total_widest=5)
+    assert u['cohorts_with_interval_below_one']['ci_total'] == 4 and u['groups_with_interval_below_prediction']['ci_sampling'] == 5 and u['groups_with_interval_below_prediction']['ci_total'] == 3
+    assert G[('Ishizaki 2012', 'left lobe, no inflow modulation (gradient measured)')]['ci_total'][1] > 1 > G[('Ishizaki 2012', 'left lobe, no inflow modulation (gradient measured)')]['ci_sampling_widest'][1]
+    assert all(g['share_of_variance_from_references'] > 0.5 for g in u['groups']) and max(u['groups'], key=lambda g: g['share_of_variance_from_references'])['cvp_assumed'], 'the references are the larger source, most where the CVP is assumed'
+    assert p2['by_configuration']['none'] == [0.716] and p2['no_manoeuvre_inside_the_range_of_outflow_reconstruction'], 'configuration does not order the groups'
+    wc = p2['within_cohort_contrasts']; assert len(wc) == 1 and wc[0]['cohort'] == 'Wang 2014' and wc[0]['ratio_ci'][1] < 1
+    # the prediction of the network uses no pressure of a recipient, and it is too high in every group
+    m = p2['model_against_observed']
+    assert 0.80 < m['lowest_predicted'] < 0.82 and m['groups_below_the_prediction'] == 6 and m['groups_whose_interval_is_below_the_prediction'] == 5
+    assert m['mean_error'] < -0.2 and 0.25 < m['rmse'] < 0.35 and m['share_of_the_departure_predicted'][1] < 0.8
+    assert all(x['zR_predicted'][0] > x['zR_observed'] for x in m['groups'])
     sw = p2['reference_sweep']                                  # the normalisation does not manufacture zR < 1
     assert sw['groups'] == 6 and sw['combinations'] == 15
-    assert p2['all_groups_below_one'] and abs(p2['sign_test_all_p'] - 0.5 ** 6) < 1e-12 and p2['min_prob_below_one_all'] > 0.9
-    assert p2['groups_with_both'] == 6 and p2['reconstructed_without_reported_outcome'] == ['Wu 2011']
+    j = sw['joint']                                             # the three references together: where each statement stops holding
+    assert (j['combinations'], j['all_below_one'], j['all_below_model']) == (60, 54, 34)
+    assert j['by_normal_gradient']['4 mmHg']['all_below_model'] == 0 and j['by_normal_gradient']['6 mmHg']['all_below_model'] == 20, 'being below the network depends on the donor gradient'
+    assert sum(v['share_below_model'] == 1.0 for v in j['per_group'].values()) == 2 and all(x['normal_gradient'] == 4.0 for x in j['not_all_below_one'])
     assert sw['combinations_all_below_one'] == 14 and len(sw['exceptions']) == 1
     assert (sw['exceptions'][0]['donor_ref_flow'], sw['exceptions'][0]['normal_gradient']) == (100.0, 4.0)
     assert 1.0 < sw['exceptions'][0]['max_zR'] < 1.05, 'the one exception is the extreme corner, barely above one'
     assert sw['cvp_sweep_all_below_one'], 'the assumed CVP alone never lifts a group above one'
     p3 = P['P3_within_cohort']
+    assert not p3['interval_excludes_zero_under_every_prior'], 'under HalfNormal(1.0) on tau the interval of the mean slope reaches zero'
+    assert p3['slope_in_a_new_centre']['primary (SFSS or early dysfunction)']['interval'][0] < 0 < p3['slope_in_a_new_centre']['exploratory (all outcomes)']['interval'][0]
+    sc = p3['same_cohort_contrast']; assert len(sc) == 1 and sc[0]['worse_group_has_higher_pressure_load'] and not sc[0]['worse_group_has_higher_flow_load'] and sc[0]['fisher_two_sided_p'] < 0.05
+    assert 'pressure_carries_the_association' not in p3['index_contrast'], 'two arms from different cohorts are not a comparison of the indices'
+    assert 'ecological' in p3['reading'] and 'exploratory' in P['P4_thresholds']['reading']
+    p4 = P['P4_thresholds']; assert p4['title'].startswith('Exploratory comparison') and p4['agreement_is_by_construction'] and set(p4['thresholds_mmHg'].values()) == {10, 12}, 'P4: each threshold is about 10 mmHg before any normalisation'
+    rec = p3['design_recovery']; assert all(r['reps'] >= 20 and r['coverage_ci'][0] <= r['coverage'] <= r['coverage_ci'][1] and r['power_ci'][0] <= r['power_to_exclude_zero'] <= r['power_ci'][1] and 'stratum' in r['intercepts'] for r in rec), 'recovery: Monte Carlo error reported, one level per stratum'
     assert p3['every_pair_in_predicted_direction'], 'P3: every within-study pair in the predicted direction'
     for k in ('primary', 'secondary', 'exploratory'):           # the prespecified order
         r = p3[k]
@@ -191,7 +225,8 @@ def test_model_predictions():
     ic = p3['index_contrast']                                   # same model on each index, matched on outcome
     assert ic['matched_on_outcome'], 'the two arms must be restricted to the same outcome definition'
     assert ic['zP, pressure per lobule']['mu_beta_ci'][0] > 0, 'the pressure interval must exclude zero'
-    assert 'prob_pressure_slope_exceeds_flow_slope' in ic, 'the comparison must be reported as a probability'
+    assert 'prob_pressure_slope_exceeds_flow_slope' not in ic and ic['slopes_compared'] is False, 'arms from different cohorts that share one series: no probability that one slope exceeds the other'
+    assert ic['zP, pressure per lobule']['is_the_primary_fit'] and ic['zP, pressure per lobule']['mu_beta'] == p3['primary']['mu_beta'] and ic['zP, pressure per lobule']['mu_beta_ci'] == p3['primary']['mu_beta_ci'], 'one primary estimate, not two runs of the sampler'
     assert ic['zF, flow per lobule']['events'] < ic['zP, pressure per lobule']['events'], 'and its weakness stated'
     a = p3['accounting']                                        # the material must be reported in full
     assert a['series'] == 18 and a['groups'] == 32 and a['series_with_a_within_study_contrast'] == 5
@@ -237,7 +272,8 @@ def test_readme_matches_results():
         assert f"{int(r.groups)}groups" in flat and f"={r.spearman_rho:.2f}" in flat and f"p={r.p:.3f}" in flat
     assert 'P1.' in docs and 'P2.' in docs and 'P3.' in docs and 'P4.' in docs, 'the README must state the predictions'
     E = json.load(open(os.path.join(ROOT, 'results', 'bayes_extra.json')))['index_contrast']
-    assert f"{E['prob_pressure_slope_exceeds_flow_slope']:.2f}" in docs, 'the docs must report the index comparison'
+    assert 'prob_pressure_slope_exceeds_flow_slope' not in E and r'\mu_{z_P}>\mu_{z_F}' not in docs, 'the two slopes are not compared'
+    assert f"{E['zF, flow per lobule']['mu_beta']:+.2f}" in docs and f"{E['zP, pressure per lobule']['mu_beta']:+.2f} ({E['zP, pressure per lobule']['mu_beta_ci'][0]:+.2f}, {E['zP, pressure per lobule']['mu_beta_ci'][1]:+.2f})" in docs, 'the docs must give the two arms, the pressure arm as the primary estimate'
     A = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))['P1_allometry']
     assert f"{100*A['fraction_compatible']:.0f}%" in docs, 'the docs must report P1 over the whole range of b'
     assert '0.89–0.90 at b' not in docs, 'stale cherry-picked P1 claim'

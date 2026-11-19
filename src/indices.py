@@ -9,12 +9,12 @@ Since zP / zF = (dP_graft / dP_donor) / (Q_graft / Q_donor) = R_graft / R_donor,
     zP = zF * zR        pressure load = flow load x resistance load
 
 R_donor uses the reference gradient (5 mmHg) and the donor reference flow. With clinical data R_graft is estimated
-as gradient / flow, so the identity is an exact decomposition of the pressure load, not an empirical test; the
-empirical content is which surgical configurations give zR < 1 (prediction P2).
+as gradient / flow, so the identity is an exact decomposition of the pressure load and cannot be evidence of a
+mechanism. Three things are kept apart (predictions.py, P2): the identity, exact by definition; the value of zR the
+network predicts for a partial graft from its geometry and its two inflows, with no pressure of a recipient in it;
+and whether the zR the cohorts report differs between surgical configurations.
 
-All three equal 1 in a healthy donor. The identity is why flow and pressure stop being interchangeable: they
-coincide only while zR = 1, and any manoeuvre that enlarges the venous outflow lowers zR, which is how a graft can
-carry three or four times the donor's flow without the pressure that would normally come with it.
+All three equal 1 in a healthy donor. Flow and pressure carry the same information only while zR = 1.
 
     python src/indices.py     -> results/series_with_indices.tsv, results/within_study_fit.json,
                                  results/meta_slope.json, results/sensitivity.tsv, results/pooled_fit.json
@@ -31,7 +31,9 @@ slope, fitted with one intercept per study and a common slope:
 
     logit(p) = alpha_study + beta * zP
 
-The primary estimate of the effect is the hierarchical model in src/bayes.py (NUTS, zP centred within study);
+The primary estimate of the slope is the hierarchical model in src/bayes.py (NUTS, zP centred within study). It is
+an association between groups of one cohort (ecological), with groups often defined by the pressure itself or by a
+manoeuvre chosen because of it: not the effect of pressure on a patient, and not a causal effect;
 this stratified fit provides the per-series levels used by the calculator and the descriptive views; meta_slope() repeats it as a random-effects meta-analysis of the
 per-stratum slopes (sensitivity, and a measure of the heterogeneity), overdispersion() checks for extra-binomial
 spread and centred() is a descriptive view on a common scale. beta is the transferable parameter (the change in odds per unit of zP, i.e. per 5 mmHg of gradient); alpha is

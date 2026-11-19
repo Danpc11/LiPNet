@@ -81,4 +81,5 @@ def bare(ax, keep='bottom'):
 
 def save(fig, name, out):
     os.makedirs(out, exist_ok=True)
-    fig.savefig(f'{out}/{name}.pdf'); fig.savefig(f'{out}/{name}.png', dpi=300); plt.close(fig); print('saved', name)
+    fig.savefig(f'{out}/{name}.pdf', metadata={'CreationDate': None, 'ModDate': None})       # no dates: the same inputs give the same bytes
+    fig.savefig(f'{out}/{name}.png', dpi=300, metadata={'Software': None}); plt.close(fig); print('saved', name)

@@ -131,7 +131,7 @@ Measured in adults: portal diameter 10.7 mm by ultrasound and 13.3 mm by CT (poo
 mean velocity 15 ± 4 and 16.5 ± 4.9 cm/s; flow 648 ± 186 and 899 ± 284 mL/min [11], below the 1350 mL/min that 90
 mL/min per 100 g gives a liver of 1500 g. In donors the pressure of the right portal vein is 8 ± 1.8 mmHg [20].
 The calibration does not move the result of `docs/LIVER.md`, section 6: the six observed resistance loads (0.31 to
-0.74) lie below every value in the table.
+0.74) lie below every value in the table at the reference values of the manuscript (a donor gradient of 5 mmHg).
 
 ## 6. Two inflows, measured
 

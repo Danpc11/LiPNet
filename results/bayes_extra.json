@@ -13,14 +13,15 @@
    "groups_with_no_events": 0,
    "median_group_size": 39.0,
    "zP_span": 0.9979999999999998,
-   "mu_beta": 1.555848240852356,
+   "mu_beta": 1.5470263957977295,
    "mu_beta_ci": [
-    0.3490765392780304,
-    2.812110424041748
+    0.3255254626274109,
+    2.787879705429077
    ],
-   "prob_positive": 0.9925,
-   "OR": 4.739104270935059,
-   "tau_beta": 0.36651861667633057
+   "prob_positive": 0.990375,
+   "OR": 4.697481155395508,
+   "tau_beta": 0.36505094170570374,
+   "is_the_primary_fit": true
   },
   "zF, flow per lobule": {
    "index": "zF",
@@ -36,21 +37,22 @@
    "groups_with_no_events": 2,
    "median_group_size": 9.5,
    "zP_span": 1.788135593220339,
-   "mu_beta": 0.858415961265564,
+   "mu_beta": 0.8367543816566467,
    "mu_beta_ci": [
-    -0.5763123035430908,
-    2.355341672897339
+    -0.5915546417236328,
+    2.3640644550323486
    ],
-   "prob_positive": 0.8854166666666666,
-   "OR": 2.3594202995300293,
-   "tau_beta": 0.8697574138641357
+   "prob_positive": 0.8715,
+   "OR": 2.308861017227173,
+   "tau_beta": 0.8801840543746948,
+   "is_the_primary_fit": false
   },
   "matched_on_outcome": true,
-  "prob_pressure_slope_exceeds_flow_slope": 0.7676,
   "shared_series": [
    "Wang 2014"
   ],
-  "pressure_carries_the_association": true
+  "slopes_compared": false,
+  "note": "exploratory. The two arms are different cohorts except for the shared series, so the two slopes are not compared: no probability that one exceeds the other is reported. The comparison inside one cohort is predictions.same_cohort_contrast"
  },
  "with_cutoff_groups": {
   "tau_prior": 0.5,

@@ -126,24 +126,40 @@ def overlap_sets(d, **kw):
 
 def recovery(d, mu_true=(0.0, 0.5, 1.0, 2.0), tau_true=0.3, reps=40, seed=0, **kw):
     """Can this design recover the effect? Keep the real sizes, gradients and strata, simulate outcomes with a
-    known mu_beta and tau_beta, refit, and report bias, coverage and the power to exclude zero."""
+    known mu_beta and tau_beta, refit, and report bias, coverage and the power to exclude zero.
+
+    What the simulation is and is not:
+      * each stratum keeps its own level, the logit of its pooled observed rate, as the fitted model has one alpha per
+        stratum; the predictor is the observed one, taken as exact;
+      * the heterogeneity of the slope is set, not estimated: tau_true is one value chosen beforehand (0.3 by default),
+        so the answer holds for that much heterogeneity and no more;
+      * outcomes are binomial with no overdispersion inside a group, the assumption of the model itself: the simulation
+        asks whether the sampler and the priors recover a slope from this design, not whether the model is right;
+      * coverage and power are proportions over `reps` refits and carry their own error, reported as the exact
+        (Clopper-Pearson) 95% interval; the refits use a shorter sampler (2 chains) than the analysis.
+    """
+    from scipy.stats import binomtest
     d0, strata, S, z_c = _prep(d, kw.get('by_outcome', True), kw.get('by_centre', False))
     n = d0.n.values.astype(int); rng = np.random.default_rng(seed)
-    p_obs = np.clip(d0.events.values / n, 1e-3, 1 - 1e-3)
-    base = float(np.log(p_obs / (1 - p_obs)).mean())          # logit of the observed rates, not log
+    pooled = np.array([d0.events.values[S == s].sum() / n[S == s].sum() for s in range(len(strata))])
+    pooled = np.clip(pooled, 1e-3, 1 - 1e-3); base = np.log(pooled / (1 - pooled))          # one level per stratum
+    ci = lambda k: [float(x) for x in binomtest(int(k), reps).proportion_ci(method='exact')]
     rows = []
     for mt in mu_true:
         est, cov, pos = [], [], []
         for r in range(reps):
             b = mt + tau_true * rng.standard_normal(len(strata))
-            p = 1 / (1 + np.exp(-(base + b[S] * z_c)))
+            p = 1 / (1 + np.exp(-(base[S] + b[S] * z_c)))
             ev = rng.binomial(n, p)
             sim = d0.copy(); sim['events'] = ev
             f = fit(sim, warmup=600, samples=800, chains=2, seed=r, **kw)
-            jax.clear_caches()          # thirty refits otherwise keep thirty compiled samplers in memory
+            jax.clear_caches()          # the refits otherwise keep one compiled sampler each in memory
             est.append(f['mu_beta']); cov.append(f['mu_beta_ci'][0] <= mt <= f['mu_beta_ci'][1]); pos.append(f['mu_beta_ci'][0] > 0)
-        rows.append(dict(mu_true=mt, mean_estimate=float(np.mean(est)), bias=float(np.mean(est) - mt),
-                         coverage=float(np.mean(cov)), power_to_exclude_zero=float(np.mean(pos)), reps=reps))
+        rows.append(dict(mu_true=mt, tau_true=tau_true, mean_estimate=float(np.mean(est)), bias=float(np.mean(est) - mt),
+                         bias_mc_se=float(np.std(est, ddof=1) / np.sqrt(reps)),
+                         coverage=float(np.mean(cov)), coverage_ci=ci(np.sum(cov)),
+                         power_to_exclude_zero=float(np.mean(pos)), power_ci=ci(np.sum(pos)), reps=reps,
+                         intercepts='one per stratum, the logit of its pooled observed rate'))
     return rows
 
 
@@ -215,41 +231,42 @@ def monte_carlo_measurement(d, draws=200, seed=0, **kw):
                 prob_positive=float((mus > 0).mean()))
 
 
-def index_contrast(d, quick=True, match_outcome=True, seed=0):
-    """The model's sharpest claim, tested as a contrast between the two indices.
+def index_contrast(d, pressure_fit=None, match_outcome=True, **kw):
+    """Exploratory: the same hierarchical model fitted to each index on the series that provide a within-study contrast
+    for it. What each arm supports on its own, and nothing about which index predicts better.
 
-    zP is the pressure per lobule, which the model says is the damaging variable; zF is the flow per lobule, which
-    tracks it only at donor outflow resistance. The same hierarchical model is fitted to each index on the series
-    that provide a within-study contrast for it. Two things must be kept in view when reading the comparison:
-      * the arms are matched on outcome definition (both restricted to SFSS or early dysfunction by default),
-        because otherwise the pressure arm would also carry the mortality series;
-      * they are not equally informative. The flow arm rests on much smaller groups, several with no events, so a
-        wide interval there is a statement about the material, not evidence that flow is irrelevant.
-    Wang 2014 contributes to both arms, so the two posteriors are not fully independent; the reported probability
-    that the pressure slope exceeds the flow slope treats them as independent and is therefore approximate.
+      * The pressure arm is the primary analysis (same groups, same model). `pressure_fit` hands that fit over, so
+        that the slope quoted for it is the one of the primary analysis and not a second run of the sampler.
+      * The flow arm rests on much smaller groups, several with no events, so a wide interval there is a statement
+        about the material, not evidence that flow is irrelevant.
+      * The two slopes are not compared. The arms are different cohorts except for the shared series, so their
+        posteriors are neither the same recipients nor independent, and a probability that one slope exceeds the
+        other would need a joint model of series that report both loads and an outcome. There is one such cohort
+        (predictions.same_cohort_contrast), which is described and not modelled.
+    Both arms are matched on outcome definition (SFSS or early dysfunction by default), because otherwise the pressure
+    arm would also carry the mortality series.
     """
-    kw = dict(warmup=800, samples=1200, chains=2) if quick else {}
-    out = {}; draws = {}
+    out = {}
     for name, col in (('zP, pressure per lobule', 'zP'), ('zF, flow per lobule', 'zF')):
         sub = d[d.in_main_analysis & d[col].notna() & d.events.notna()].copy()
         if match_outcome: sub = sub[sub.outcome_type == 'SFSS_or_dysfunction']
         sub['zP'] = sub[col]
-        f = fit(sub, keep_draws=2000, **kw)
+        reuse = col == 'zP' and pressure_fit is not None
+        f = pressure_fit if reuse else fit(sub, **kw)
         p_, _, _, _ = _prep(sub)
+        if reuse and (f['groups'], f['events'], f['patients']) != (len(p_), int(p_.events.sum()), int(p_.n.sum())):
+            raise ValueError('pressure_fit is not the fit of the pressure arm')
         out[name] = dict(index=col, groups=f['groups'], strata=f['strata'], events=f['events'], patients=f['patients'],
                          groups_with_no_events=int((p_.events == 0).sum()), median_group_size=float(p_.n.median()),
                          zP_span=float((p_.zP - p_.groupby('stratum').zP.transform('mean')).abs().max() * 2),
                          mu_beta=f['mu_beta'], mu_beta_ci=f['mu_beta_ci'], prob_positive=f['prob_mu_positive'],
-                         OR=f['OR_per_zP'], tau_beta=f['tau_beta'])
-        draws[col] = np.array(f['mu_draws'])
-    rng = np.random.default_rng(seed)
-    a = rng.choice(draws['zP'], 20000); b = rng.choice(draws['zF'], 20000)
+                         OR=f['OR_per_zP'], tau_beta=f['tau_beta'], is_the_primary_fit=bool(reuse))
     out['matched_on_outcome'] = bool(match_outcome)
-    out['prob_pressure_slope_exceeds_flow_slope'] = float((a > b).mean())
     out['shared_series'] = sorted(set(x.split(' / ')[0] for x in out['zP, pressure per lobule']['strata'])
                                   & set(x.split(' / ')[0] for x in out['zF, flow per lobule']['strata']))
-    out['pressure_carries_the_association'] = bool(out['zP, pressure per lobule']['mu_beta_ci'][0] > 0
-                                                   and out['zF, flow per lobule']['mu_beta_ci'][0] <= 0)
+    out['slopes_compared'] = False
+    out['note'] = ('exploratory. The two arms are different cohorts except for the shared series, so the two slopes are not compared: '
+                   'no probability that one exceeds the other is reported. The comparison inside one cohort is predictions.same_cohort_contrast')
     return out
 
 
@@ -261,9 +278,11 @@ def with_cutoff_groups(d, **kw):
     return fit(plus, **kw)
 
 
-def spec_curve(d, quick=True):
+def spec_curve(d, quick=False):
     """One table instead of many scattered sensitivities: the same quantity, mu_beta, under every reasonable
-    specification. The message should not depend on any single one of them."""
+    specification. The message should not depend on any single one of them. Every specification is fitted with the
+    sampler of the analysis itself, so the rows that repeat a main fit (primary, secondary, all outcomes) give its
+    numbers and not those of a shorter run; quick=True is for exploring."""
     kw = dict(warmup=800, samples=1200, chains=2) if quick else {}
     prim = d[d.outcome_type == 'SFSS_or_dysfunction']; sec = d[d.outcome_type != 'SFSS_or_dysfunction']
     specs = [('primary outcome (SFSS or early dysfunction)', prim, {}),
@@ -298,22 +317,23 @@ def spec_curve(d, quick=True):
 
 
 def main():
-    """Fit and cache everything the primary analysis needs (a few minutes)."""
-    import json, os, indices
+    """Fit and cache everything the primary analysis needs (a few minutes). Each file is stamped with the fingerprint
+    of the table and of the model code it was computed from (src/cache.py)."""
+    import json, os, indices, cache
     root = os.path.join(os.path.dirname(__file__), '..'); out = f'{root}/results'; os.makedirs(out, exist_ok=True)
     d = indices.compute(pd.read_csv(f'{root}/data/series.tsv', sep='\t'))
     c = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]
     pri = c[c.outcome_type == 'SFSS_or_dysfunction']; sec = c[c.outcome_type != 'SFSS_or_dysfunction']
     main_ = {'primary (SFSS or early dysfunction)': fit(pri), 'secondary (mortality or graft loss)': fit(sec),
              'exploratory (all outcomes)': fit(c)}
-    json.dump(main_, open(f'{out}/bayes_main.json', 'w'), indent=1)
+    json.dump(main_, open(f'{out}/bayes_main.json', 'w'), indent=1); cache.stamp('bayes_main')
     for name, res in (('bayes_priors', prior_sensitivity(pri)), ('bayes_overlap', overlap_sets(c)),
                       ('bayes_iecv', conditional_iecv(c)), ('spec_curve', spec_curve(c))):
-        json.dump(res, open(f'{out}/{name}.json', 'w'), indent=1); print('wrote', name)
-    json.dump(monte_carlo_measurement(c, draws=40), open(f'{out}/bayes_measurement.json', 'w'), indent=1); print('wrote bayes_measurement')
-    json.dump(recovery(c, mu_true=(0.0, 1.0, 2.0), reps=10), open(f'{out}/bayes_recovery.json', 'w'), indent=1); print('wrote bayes_recovery')
-    json.dump(dict(index_contrast=index_contrast(d), with_cutoff_groups=with_cutoff_groups(d)),
-              open(f'{out}/bayes_extra.json', 'w'), indent=1); print('wrote bayes_extra')
+        json.dump(res, open(f'{out}/{name}.json', 'w'), indent=1); cache.stamp(name); print('wrote', name)
+    json.dump(monte_carlo_measurement(c, draws=40), open(f'{out}/bayes_measurement.json', 'w'), indent=1); cache.stamp('bayes_measurement'); print('wrote bayes_measurement')
+    json.dump(recovery(c, mu_true=(0.0, 1.0, 2.0), reps=20), open(f'{out}/bayes_recovery.json', 'w'), indent=1); cache.stamp('bayes_recovery'); print('wrote bayes_recovery')
+    json.dump(dict(index_contrast=index_contrast(d, pressure_fit=main_['primary (SFSS or early dysfunction)']), with_cutoff_groups=with_cutoff_groups(d)),
+              open(f'{out}/bayes_extra.json', 'w'), indent=1); cache.stamp('bayes_extra'); print('wrote bayes_extra')
     r = main_['primary (SFSS or early dysfunction)']
     print(f"primary: mu {r['mu_beta']:+.2f} ({r['mu_beta_ci'][0]:+.2f} to {r['mu_beta_ci'][1]:+.2f}), "
           f"P(mu>0) = {r['prob_mu_positive']:.3f}, R-hat {r['rhat']['max']:.3f}, divergences {r['divergences']}")

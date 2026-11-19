@@ -1,26 +1,59 @@
 [
  {
   "mu_true": 0.0,
-  "mean_estimate": 0.04278473295271397,
-  "bias": 0.04278473295271397,
+  "tau_true": 0.3,
+  "mean_estimate": -0.06535508185625076,
+  "bias": -0.06535508185625076,
+  "bias_mc_se": 0.08189020344805661,
   "coverage": 1.0,
+  "coverage_ci": [
+   0.8315665290169147,
+   1.0
+  ],
   "power_to_exclude_zero": 0.0,
-  "reps": 10
+  "power_ci": [
+   0.0,
+   0.1684334709830853
+  ],
+  "reps": 20,
+  "intercepts": "one per stratum, the logit of its pooled observed rate"
  },
  {
   "mu_true": 1.0,
-  "mean_estimate": 0.7879007905721664,
-  "bias": -0.21209920942783356,
+  "tau_true": 0.3,
+  "mean_estimate": 0.9823866069316864,
+  "bias": -0.017613393068313554,
+  "bias_mc_se": 0.06338876293503383,
   "coverage": 1.0,
-  "power_to_exclude_zero": 0.5,
-  "reps": 10
+  "coverage_ci": [
+   0.8315665290169147,
+   1.0
+  ],
+  "power_to_exclude_zero": 0.75,
+  "power_ci": [
+   0.5089541282920425,
+   0.9134285308985655
+  ],
+  "reps": 20,
+  "intercepts": "one per stratum, the logit of its pooled observed rate"
  },
  {
   "mu_true": 2.0,
-  "mean_estimate": 1.7451765060424804,
-  "bias": -0.2548234939575196,
-  "coverage": 1.0,
+  "tau_true": 0.3,
+  "mean_estimate": 1.679869505763054,
+  "bias": -0.32013049423694606,
+  "bias_mc_se": 0.08248331174128612,
+  "coverage": 0.95,
+  "coverage_ci": [
+   0.7512672372279723,
+   0.9987349105020502
+  ],
   "power_to_exclude_zero": 1.0,
-  "reps": 10
+  "power_ci": [
+   0.8315665290169147,
+   1.0
+  ],
+  "reps": 20,
+  "intercepts": "one per stratum, the logit of its pooled observed rate"
  }
 ]

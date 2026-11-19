@@ -2,6 +2,52 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.6.1] – 2026-11-19
+
+Answer to the second round of the external review: the inference of P2, the wording of P4, one primary estimate, and what was still open in reproducibility. No simulation of the network was added.
+
+### Changed
+- **One primary estimate.** The slope of the primary outcome appeared as +1.55 (+0.33 to +2.79) in the main fit and as +1.56 (+0.35 to +2.81) in two places that refitted the same model with a shorter sampler: the pressure row of `bayes.index_contrast` and the first row of the specification curve. `index_contrast` now takes the primary fit itself, and `spec_curve` uses the sampler of the main fits, so every row that repeats a main fit carries its numbers. The specification curve spans +0.92 to +1.95 (was +0.92 to +1.93). The value +1.56 that remains in `docs/IPD.md` is the Metropolis sampler of the dispersion analysis at zero spread, and is labelled as such.
+- **The two slopes are not compared.** `index_contrast` no longer returns `prob_pressure_slope_exceeds_flow_slope` (0.77). The two fits are different cohorts except for Wang 2014, which enters both, so their posteriors are neither the same recipients nor independent, and a joint model needs cohorts with both loads and an outcome; there is one. The comparison is labelled exploratory; the flow row, on the full sampler, is +0.84 (−0.59 to +2.36).
+- **P4 is retitled** "Exploratory comparison of haemodynamic thresholds across liver diseases and surgical settings" in `THEORY.md`, `predictions.py` and the article. The thresholds are each a gradient of about 10 mmHg before any normalisation, so their place at $z_P=2$ follows from the 5 mmHg reference: `P4_thresholds.agreement_is_by_construction`. No common physiological regime is claimed.
+- **Recovery simulation.** Each stratum keeps its own level (it was one common intercept), 20 refits per value (it was 10), and coverage and power carry their exact 95% interval. The limits that remain are written in the docstring, in `THEORY.md` and in the supplement: heterogeneity set to 0.3, binomial outcomes, the predictor taken as exact. A slope of 1 is detected in 15 of 20 refits (0.51 to 0.91).
+
+### Added
+- `predictions.p2_uncertainty`: the uncertainty of each $z_R$ by source. Sampling error, with the unreported dispersions swept (flow CV 0.25 to 0.70, gradient SD 2.5 to 6 mmHg) and the correlation between the two means over −0.5, 0 and +0.5: the upper limit stays below one in all 141 combinations. References (donor flow, normal gradient, assumed central venous pressure) drawn over their ranges: with both, five of six groups and four of five cohorts stay below one, and three groups below the prediction of the network. Figure 2B draws the two intervals.
+- `P2_discordance.sign_test_sensitivity`: by cohort, by centre, without either arm of Wang 2014 (five of five each time) and leaving one cohort out (0.0625); the smallest one-sided $p$ five units can give is 0.031.
+- `src/model/verify_campaigns.py`: reruns the 2D and 3D campaigns and the exact certificate and compares them with the cached tables in `data/`. The 35 rows are reproduced with a relative difference of zero. `run_all.sh --clean` runs it; `tests/test_campaigns.py` runs the two smallest sizes.
+- Provenance of the figures: `paper_figures.py` records the hash of what each figure reads, of the scripts and of the images (`results/figures_provenance.json`), and `python src/manifest.py check` verifies figures and cached tables as well as numbers. The images carry no date.
+- `tests/test_article.py` compares counts exactly and sampled numbers within a stated tolerance; `LIPNET_EXACT=1` asks for the printed digits on the locked environment.
+
+### Notes
+- The main fits, the prior sensitivity, the overlap analysis, the validation and the measurement Monte Carlo are identical to v0.6.0 to the last digit.
+- `run_all.sh` listed a 2D campaign at $R=12$ that the cached table never contained; the comment now lists the sizes of the table.
+
+## [0.6.0] – 2026-11-19
+
+Answer to an external review of the method and the code. What is identity, what is prediction and what is association are separated in the code, the table and the text; three statements were weakened because the analysis the review asked for did not support them as written.
+
+### Changed, because the review was right
+- **The cohort is the unit of the sign test.** Two of the six groups with both loads are the two arms of Wang 2014. Five of five cohorts lie below one: exact sign test, one-sided in the direction the network gives, $p=0.031$ (two-sided 0.06). The six-group value, 0.016, counted one cohort twice and is no longer reported.
+- **A splenectomy is not an outflow reconstruction.** `data/series.tsv` has a new column `configuration` for every group (outflow reconstruction, inflow modulation, portosystemic shunt, combined, none, not separable), and the `outflow` of the splenectomy arm of Wang 2014 is `standard`. Among the six groups: three with outflow reconstruction alone (0.31, 0.65, 0.74), one with venoplasty and pressure control (0.55), one with splenectomy (0.54), one with no manoeuvre (0.72). The article no longer says that the groups with both loads had adverse outcomes of 0 to 10%: the arm with no manoeuvre had 19.7%.
+- **Being below the network depends on the donor gradient.** With the donor flow, the normal gradient and the assumed central venous pressure varied together (60 combinations), every group is below one in 54 and below the network in 34: in none of the 20 with a normal gradient of 4 mmHg and in all 20 at 6 mmHg (`reference_sweep.joint`).
+- **The outcome slope is an ecological association.** Stated as such in `indices.py`, `predictions.py`, `THEORY.md` and the article, with confounding by indication. Reported next to the mean slope: its dependence on the prior on $\tau_\beta$ (under HalfNormal(1.0) the interval reaches zero: $+1.46$, $-0.07$ to $+2.84$) and the slope expected in a new centre ($-0.02$ to $+3.09$ for the primary outcome).
+- **P1 is a check of consistency and P4 a comparison of scales.** The exponent of $\tau_0$ follows from the inputs of the closure; the comparison it did not use is met in 5 of 28 combinations. HVPG and the portocaval gradient of a graft are different measurements and no equivalence between the thresholds is claimed.
+- `bayes.index_contrast` no longer returns `pressure_carries_the_association`: its two arms are mostly different cohorts and are not a comparison of the two loads.
+
+### Added
+- `predictions.p2_model_against_observed`: the prediction of the network for each group, from geometry, the arterial share and the flow load, with no pressure of a recipient, against the observed $z_R$. Mean 0.85 against 0.58, error $-0.27$, root-mean-square error 0.31; too high in the six groups; 16 to 73% of the departure from one.
+- `predictions.same_cohort_contrast`: the one cohort with both loads and an outcome in the same recipients. The arm with the worse outcome (19.7% against 9.7%, Fisher $p=0.023$) had the higher pressure load and the lower flow load.
+- Within-cohort contrast of $z_R$ (splenectomy against none, 0.75, 0.64 to 0.88) and the interval of each ratio repeated for a correlation of $-0.5$ and $+0.5$ between the sampling errors of the two means (`audit.paired`). `predictions.py` takes its intervals from `audit.paired`, with the dispersions each paper reports, in place of a fixed 3.5 mmHg and 25%.
+- `src/cache.py`: a cached fit is reused only if it was computed from the current `data/series.tsv`, `src/bayes.py` and `src/indices.py` (`results/bayes_inputs.json`); otherwise `predictions.py` fits again. `LIPNET_REBUILD=1` ignores every cache. The former `if os.path.exists(f): return json.load(open(f))` is gone.
+- `run_all.sh --clean` empties `results/` and recomputes everything; `src/manifest.py` writes and checks `results/MANIFEST.json` (hash of every input and result, versions, commit).
+- `requirements-lock.txt` is now the complete environment, every package and dependency at an exact version.
+- `tests/test_article.py`: each number the article quotes against the results on disk (28 claims). `tests/test_cache.py`.
+- Figure 2 shows the mechanistic class by symbol and the cohort-level test; Figure 3A shows the interval expected in a new centre.
+
+### Notes
+- The hierarchical fits were run again from the new table and are identical to the last digit: the new column does not enter them.
+
 ## [0.5.2] – 2026-11-19
 
 ### Changed

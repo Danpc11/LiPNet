@@ -118,7 +118,7 @@ and 0.79, and the model then gives 0.82 to 0.90 against an observed 0.65 ([HUMAN
 | observed | 0.31, 0.54, 0.55, 0.65, 0.72, 0.74 |
 
 In physical units, with the lobular drop shared with the lobule layer, a lobar graft is at 0.96 to 1.00 and at 0.82 to
-0.90 with the arterial inflow ([HUMAN.md](HUMAN.md), section 5). All six observed values lie below the lowest value the model reaches. The model has the sign of the departure and
+0.90 with the arterial inflow ([HUMAN.md](HUMAN.md), section 5). At the reference values all six observed values lie below the lowest value the model reaches; with the donor references varied together this holds for every group in 34 of 60 combinations, and in none with a normal gradient of 4 mmHg (THEORY.md, P2). The model has the sign of the departure and
 not its size. Widening the outlet anastomosis in `whole_graft.py` lowers $z_R$ to 0.95 at most, because that
 anastomosis holds 5% of the resistance.
 
@@ -151,7 +151,8 @@ anastomosis holds 5% of the resistance.
 
 Uemura 2016 separates its groups by 0.37 mmHg against a within-group standard deviation of 3 to 4 mmHg and carries
 no information on the slope: the primary estimate is +1.55 (+0.33 to +2.79) with it and +1.53 (+0.30 to +2.77)
-without it, on 46 events in 352 recipients from two series. The same model fitted to the flow load gives +0.86
-(−0.58 to +2.36) on 48 events; the probability that the pressure slope exceeds the flow slope is 0.77. The network
+without it, on 46 events in 352 recipients from two series. The same model fitted to the flow load gives +0.84
+(−0.59 to +2.36) on 48 events, mostly from other cohorts; the two slopes are not compared, because the two fits
+share one series and a joint model would need cohorts with both loads and an outcome. The network
 model enters this analysis only through the normalisation of the predictor: it contains no relation between load
 and outcome.

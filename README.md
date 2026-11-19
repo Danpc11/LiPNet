@@ -22,9 +22,11 @@ $$z_F=\frac{\text{graft PVF per }100\,\text{g}}{\text{donor PVF per }100\,\text{
 z_P=\frac{\text{PVP}-\text{CVP}}{5\ \text{mmHg}},\qquad
 z_R=\frac{R_{\text{graft}}}{R_{\text{donor}}}$$
 
-Because $z_P/z_F=(\Delta P_{\text{graft}}/\Delta P_{\text{donor}})/(Q_{\text{graft}}/Q_{\text{donor}})=R_{\text{graft}}/R_{\text{donor}}$, the identity holds exactly. Its empirical content is the value of $z_R$.
+Because $z_P/z_F=(\Delta P_{\text{graft}}/\Delta P_{\text{donor}})/(Q_{\text{graft}}/Q_{\text{donor}})=R_{\text{graft}}/R_{\text{donor}}$, the identity holds exactly, by definition: it is not evidence of a mechanism. What can be wrong is the value of $z_R$ the network predicts, and what the cohorts report is a third thing.
 
-All three loads equal 1 in a healthy donor. Flow and pressure therefore carry the same information only while $z_R=1$. The network keeps a partial graft between 0.8 and 1. In the six published groups that report both loads, at three to four times the donor's flow, $z_R = 0.31,\;0.54,\;0.55,\;0.65,\;0.72,\;0.74$: all below one, and all below what the network accounts for. Flow load and pressure load are not interchangeable, and the resistance load measures by how much they separate. The surgical configuration does not order the groups: the one with standard outflow is at 0.72, inside the range of the five with reconstructed or enlarged outflow.
+All three loads equal 1 in a healthy donor. Flow and pressure therefore carry the same information only while $z_R=1$. The network keeps a partial graft between 0.8 and 1. That prediction uses the geometry of the network and the two inflows, and no pressure of a recipient. In the six published groups that report both loads (five cohorts), at three to four times the donor's flow, $z_R = 0.31,\;0.54,\;0.55,\;0.65,\;0.72,\;0.74$: all below one (exact sign test over cohorts, one-sided $p=0.031$), and at the reference values all below the prediction, which is 0.85 on average against an observed 0.58. The model has the direction of the separation and under-predicts its size. The surgical configuration does not order the groups: the one with no manoeuvre is at 0.72, inside the range of the three with outflow reconstruction alone (0.31 to 0.74).
+
+The outcome analysis is an association between groups of one cohort, not the effect of pressure on a patient. The comparison of clinical thresholds is exploratory: the thresholds are each about 10 mmHg, so their agreement at $z_P=2$ follows from the 5 mmHg reference and is not a prediction. [THEORY.md](THEORY.md) keeps the three levels apart: identity, prediction of the network, association in the series.
 
 The derivation, the four predictions that follow from it and all the numbers are in **[THEORY.md](THEORY.md)**.
 
@@ -178,6 +180,15 @@ src/ipd/
 src/plots.py
     Generates 19 stand-alone figures
 
+src/cache.py, src/manifest.py
+    Fingerprint of the inputs behind each cached fit; manifest of inputs,
+    results and versions of a run; check of figures and cached tables
+
+src/model/verify_campaigns.py
+    Reruns the model campaigns and compares them with the cached tables
+    Output:
+    results/campaign_check.json
+
 src/paper_figures.py
     The ten figures of the article (Figures 1 to 4, S1 to S6)
     Output:
@@ -235,17 +246,30 @@ Install the dependencies:
 pip install -r requirements.txt
 ```
 
-To reproduce the cached posterior summaries to the last digit rather than to Monte Carlo error, also install the versions they were computed with:
+`requirements-lock.txt` is the complete environment, every package and dependency at an exact version, in which this release was rebuilt from an empty `results/` and its tests passed. Use it to reproduce the cached posterior summaries to the last digit rather than to Monte Carlo error:
 
 ```bash
-pip install -r requirements-lock.txt
+python -m venv .venv && . .venv/bin/activate && pip install -r requirements-lock.txt
 ```
 
 Run the complete workflow:
 
 ```bash
-./run_all.sh
+./run_all.sh            # reuses a cached fit only if it was computed from this table and this model code
+./run_all.sh --clean    # deletes every generated result and recomputes everything: the run to do before quoting a number
+python src/manifest.py check    # numbers, figures and cached tables on disk are the ones their inputs give
 ```
+
+Four things make a result on disk traceable to its inputs.
+
+| What | How | Where |
+|---|---|---|
+| Cached fits | A fit carries the fingerprint of `data/series.tsv`, `src/bayes.py` and `src/indices.py`. If any of the three changes, `predictions.py` fits again instead of reading the cache; `LIPNET_REBUILD=1` ignores every cache. | `src/cache.py`, `results/bayes_inputs.json` |
+| Cached tables of the model | The 2D and 3D campaigns and the exact certificate in `data/` are not rebuilt by `run_all.sh`. `python src/model/verify_campaigns.py` reruns the code behind them and compares every number; `run_all.sh --clean` does it. In this release the 35 rows are reproduced with a relative difference of zero. | `results/campaign_check.json` |
+| Figures | When a figure is drawn, the hash of every file it reads, of the two scripts that draw it and of the two images is recorded. The check names a figure whose input, script or image has changed since. | `results/figures_provenance.json` |
+| Everything | `run_all.sh` ends by writing the hash of every input and every numeric result, the versions of Python and the packages, and the commit. | `results/MANIFEST.json` |
+
+`tests/test_article.py` checks the numbers quoted in the article against the results. Counts and arithmetic are compared exactly. Posterior means and interval limits are reproducible to the last digit only on the locked environment, and move in the second decimal on another version of the numerical libraries, so they are compared within a stated tolerance (0.05 for a posterior mean, 0.10 for a limit of a 95% interval); `LIPNET_EXACT=1 pytest tests/test_article.py` asks for the printed digits.
 
 This reproduces:
 
@@ -255,7 +279,7 @@ This reproduces:
 - figures,
 - calculator.
 
-Typical runtime is approximately three minutes.
+Typical runtime is about four minutes with the cached fits, and about 25 with `--clean`, which fits the hierarchical models again and recomputes the cached tables of the model.
 
 To run only the four main predictions:
 
@@ -463,7 +487,7 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo. The article uses release v0.5.2, which receives its own DOI when the release is published; the last archived version is v0.4.2:
+The software is archived on Zenodo. The article uses release v0.6.1, which receives its own DOI when the release is published; the last archived version is v0.4.2:
 
 **DOI: 10.5281/zenodo.23656741** (v0.4.2) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 

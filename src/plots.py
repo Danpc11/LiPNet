@@ -50,7 +50,7 @@ def fit():
 
 # ------------------------------------------------------------------ clinical plots
 def predictions():
-    """The four predictions of the model on one page: allometry, discordance, within-cohort ordering, thresholds."""
+    """The four predictions of the model on one page: allometry, discordance, within-cohort ordering, and the exploratory comparison of thresholds."""
     import json as _json
     f = f'{OUT}/predictions.json'
     if not os.path.exists(f): import predictions as _p; _p.main()
@@ -67,8 +67,8 @@ def predictions():
     ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Exponent of the design scale τ0\nwith body mass')
     ax.legend(fontsize=5.5)
     # P2 discordance
-    ax = axs[0, 1]; lab(ax, 'P2  flow and pressure separate when outflow is enlarged')
-    b = d.dropna(subset=['zP', 'zF']); rec = b[b.outflow.str.startswith('reconstructed')]; std = b[b.outflow == 'standard']
+    ax = axs[0, 1]; lab(ax, 'P2  resistance load of a partial graft')
+    b = d.dropna(subset=['zP', 'zF'])
     ax.plot([0, 5], [0, 5], 'k--', lw=0.8); ax.text(3.3, 3.75, 'donor resistance', fontsize=6, rotation=45, ha='center')
     for _, r in b.iterrows():
         c = C_SIN if r.pct > 10 else ('#f28c28' if r.pct > 5 else C_OUT)
@@ -77,7 +77,7 @@ def predictions():
     ax.plot(1, 1, 'ko', ms=5); ax.annotate('donor', (1, 1), xytext=(4, 2), textcoords='offset points', fontsize=6)
     ax.set_xlim(0, 5); ax.set_ylim(0, 5); ax.set_aspect('equal')
     ax.set_xlabel('z$_F$'); ax.set_ylabel('z$_P$')
-    ax.text(0.03, 0.97, f"reconstructed outflow: z$_P$/z$_F$ = {', '.join(f'{x:.2f}' for x in P['P2_discordance']['ratio_reconstructed'])}\noutcomes 0–10%",
+    ax.text(0.03, 0.97, f"z$_R$ = {', '.join(f'{x:.2f}' for x in sorted(P['P2_discordance']['ratio_all']))}\nnetwork: {P['P2_discordance']['model_against_observed']['lowest_predicted']:.2f} to 1",
             transform=ax.transAxes, va='top', fontsize=6)
     # P3 within-cohort
     ax = axs[1, 0]; lab(ax, 'P3  common slope, centre-specific level')
@@ -95,7 +95,7 @@ def predictions():
                         f"P($\\mu_\\beta$ > 0) = {pr['prob_mu_positive']:.2f}; all outcomes {ex['OR_per_zP']:.2f}",
             transform=ax.transAxes, va='top', fontsize=6)
     # P4 thresholds
-    ax = axs[1, 1]; lab(ax, 'P4  three fields, one threshold')
+    ax = axs[1, 1]; lab(ax, 'P4  thresholds on one scale (exploratory)')
     items = [('Cirrhosis\nHVPG ≥ 10 mmHg', 2.0, '#7b3fa0'), ('Graft\nPVP 15 at CVP 5', 2.0, C_IN),
              ('Resection\nHVPG 10 → remnant', 2.0, C_OUT), ('Variceal bleeding\nHVPG ≥ 12 mmHg', 2.4, C_SIN)]
     y = np.arange(len(items))[::-1]

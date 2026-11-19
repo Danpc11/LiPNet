@@ -1,6 +1,33 @@
-# Exact versions behind the cached fits in results/bayes_*.json. With these the NUTS draws, and so every posterior
-# summary in the article, are reproduced to the last digit; with a newer jax they are reproduced to Monte Carlo
+# Complete environment in which release v0.6.0 was reproduced from an empty results/ directory and its tests passed:
+# Python 3.13.18 on Linux x86-64. Every package the pipeline imports, with its dependencies, at an exact version.
+#     python -m venv .venv && . .venv/bin/activate && pip install -r requirements-lock.txt
+# With jax, jaxlib and numpyro at these versions the NUTS draws, and so every posterior summary of the article, are
+# reproduced to the last digit on that platform; on another platform or with a newer jax they are reproduced to Monte Carlo
 # error (primary slope +1.56, +0.37 to +2.76 under jax 0.12.1, against +1.55, +0.33 to +2.79).
+# requirements.txt holds the lower bounds for a current environment.
+adjustText==1.4.0
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.67.0
+iniconfig==2.3.0
 jax==0.11.2
 jaxlib==0.11.2
+kiwisolver==1.5.1
+matplotlib==3.11.2
+ml_dtypes==0.7.0
+multipledispatch==1.0.0
+networkx==3.7
+numpy==2.5.3
 numpyro==0.22.0
+opt_einsum==3.4.0
+packaging==26.3
+pandas==3.0.5
+pillow==12.3.0
+pluggy==1.6.0
+Pygments==2.21.0
+pyparsing==3.3.3
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+scipy==1.18.1
+six==1.17.0
+tqdm==4.70.1

@@ -5,7 +5,8 @@
 
 Figure 1    A the model: one lobule and the network; B, C the optimum in two and three dimensions; D load per lobule against
             graft size; E the flow-pressure plane with the identity zP = zF zR
-Figure 2    A the six groups that report both loads in that plane; B their resistance load with its sampling interval
+Figure 2    A the six groups that report both loads in that plane; B their resistance load with its sampling interval (thick)
+            and the interval that also carries the uncertainty of the references (thin)
 Figure 3    A slope per stratum; B outcome against pressure load with the fitted curve of each stratum; C specification curve
 Figure 4    A clinical thresholds on the pressure-load scale; B pressure load of the remnant after resection
 Figure S1   A scaling of the optimum with the number of lobules; B, C allometric closure
@@ -27,7 +28,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, FancyBboxPatch, RegularPolygon
 from matplotlib.path import Path
-import indices, audit
+import indices
 
 fs.use()
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); OUT = f'{ROOT}/results'; DATA = f'{ROOT}/data'
@@ -146,29 +147,36 @@ def label_of(r):
     return r.study + (', ' + ('splenectomy' if r.group == 'splenectomy' else 'no splenectomy') if r.study == 'Wang 2014' else '')
 
 
+# the mechanistic class of a group is a symbol, never a colour: (marker, filled, label)
+CONFIGURATION = {'outflow reconstruction': ('o', True, 'Outflow reconstruction'), 'combined': ('D', True, 'Outflow and pressure control'),
+                 'inflow modulation': ('^', True, 'Inflow modulation (splenectomy)'), 'none': ('o', False, 'No manoeuvre')}
+
+
 def figure_2():
     d = series(); p = d.dropna(subset=['zF', 'zP']); flow_only = d[d.zF.notna() & d.zP.isna() & d.in_main_analysis]; P = load('predictions')['P2_discordance']
-    A = {(g['study'], g['group']): g for g in audit.paired(d)['groups']}; med = float(np.median(p.zR))
+    U = {(g['study'], g['group']): g for g in P['uncertainty']['groups']}; med = float(np.median(p.zR))
     fig = fs.figure(76); a = fs.axes(fig, 12, 12, 56, 56); b = fs.axes(fig, 126, 12, 51, 56)
     plane(a); a.plot([0, 5], [0, 5 * med], color=MUTED, lw=LW_REF, zorder=2); a.text(4.62, 4.62 * med + 0.2, f'Median {med:.2f}', fontsize=FS_SMALL, ha='center', va='center', color=MUTED, rotation=np.degrees(np.arctan(med)))
     a.plot(flow_only.zF, np.zeros(len(flow_only)), '|', ms=7, mew=0.9, color=MUTED, clip_on=False, zorder=4)
     order = {(r.study, r.group): k + 1 for k, r in enumerate(sorted(p.itertuples(), key=lambda r: r.zR))}; left = {'Yagi 2006', 'Wu 2011', 'Ishizaki 2012'}
     for _, r in p.iterrows():
-        std = not r.outflow.startswith('reconstructed'); ms = 3.2 + r.n ** 0.5 / 3.2; dx = (0.09 + ms / 95) * (-1 if r.study in left else 1)
-        a.plot(r.zF, r.zP, 'o', ms=ms, mfc='white' if std else BLUE, mec=BLUE, mew=1.0, zorder=6)
+        mk, filled, _ = CONFIGURATION[r.configuration]; ms = (3.2 + r.n ** 0.5 / 3.2) * (0.85 if mk == 'D' else 1); dx = (0.09 + ms / 95) * (-1 if r.study in left else 1)
+        a.plot(r.zF, r.zP, mk, ms=ms, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, zorder=6)
         a.text(r.zF + dx, r.zP, str(order[(r.study, r.group)]), fontsize=FS_IN, ha='right' if r.study in left else 'left', va='center', zorder=7)
     a.text(0.72, 1.28, 'Donor', fontsize=FS_IN, ha='right'); a.text(2.5, 0.22, 'Flow load only', fontsize=FS_IN, color=MUTED, ha='center', va='bottom')
-    a.legend(handles=[Line2D([], [], marker='o', ls='', ms=4.5, mfc=BLUE, mec=BLUE, label='Reconstructed outflow'), Line2D([], [], marker='o', ls='', ms=4.5, mfc='white', mec=BLUE, mew=1.0, label='Standard outflow')],
+    a.legend(handles=[Line2D([], [], marker=mk, ls='', ms=4.2 if mk != 'D' else 3.8, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, label=lab) for mk, filled, lab in CONFIGURATION.values()],
              loc='upper left', handletextpad=0.2, borderaxespad=0.1)
     rows = sorted(p.itertuples(), key=lambda r: r.zR); top = len(rows) - 0.35
     b.fill_between(MODEL_ZR, -0.6, top, zorder=0, **fs.MODEL_TINT); b.plot([1, 1], [-0.6, top], color=INK, lw=LW_REF, ls=DASH, zorder=1)
     for k, r in enumerate(rows):
-        y = len(rows) - 1 - k; g = A[(r.study, r.group)]; lo, hi = g['zR_ci_sampling']; std = not r.outflow.startswith('reconstructed')
-        b.plot([lo, hi], [y, y], color=BLUE, zorder=2); b.plot(r.zR, y, 'o', ms=5, mfc='white' if std else BLUE, mec=BLUE, mew=1.0, zorder=3)
+        y = len(rows) - 1 - k; g = U[(r.study, r.group)]; mk, filled, _ = CONFIGURATION[r.configuration]
+        b.plot(g['ci_total'], [y, y], color=BLUE, lw=0.6, solid_capstyle='butt', zorder=2); b.plot(g['ci_sampling'], [y, y], color=BLUE, lw=2.2, solid_capstyle='butt', zorder=2); b.plot(r.zR, y, mk, ms=5 if mk != 'D' else 4.4, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, zorder=3)
         b.text(-0.04, y + 0.13, f'{k + 1}  ' + label_of(r), fontsize=FS_IN, ha='right', va='center'); b.text(r.zR, y + 0.2, f'{r.zR:.2f}', fontsize=FS_IN, ha='center', va='bottom')
         b.text(-0.04, y - 0.2, f'$n$ = {int(r.n)}, {ZF} = {r.zF:.2f}', fontsize=FS_SMALL, color=MUTED, ha='right', va='center')
+    for yk, lw, lab in ((0.62, 2.2, 'Sampling'), (0.27, 0.6, 'With references')):          # key in the empty corner, away from the band of the model
+        b.plot([0.03, 0.09], [yk, yk], color=BLUE, lw=lw, solid_capstyle='butt', zorder=2); b.text(0.11, yk, lab, fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
     b.text(np.mean(MODEL_ZR), top + 0.07, 'Network\nmodel', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95)
-    b.text(-0.04, top + 0.3, f"All six below 1\nExact sign test, $P$ = {P['sign_test_all_p']:.3f}", fontsize=FS_IN, ha='right', va='center')
+    b.text(-0.04, top + 0.3, f"{P['cohorts_below_one']} of {P['cohorts']} cohorts below 1\nExact sign test, one-sided $P$ = {P['sign_test_cohorts_one_sided_p']:.3f}", fontsize=FS_IN, ha='right', va='center')
     b.set_xlim(0, 1.2); b.set_ylim(-0.6, len(rows) + 0.45); fs.bare(b); b.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]); b.set_xlabel(f'Resistance load, {ZR} = {ZP} / {ZF}')
     fs.letter(fig, a, 'A', 10, 4); fs.letter(fig, b, 'B', 44, 4); save(fig, 'Figure_2')
 
@@ -181,12 +189,14 @@ def figure_3():
     for s in sorted(strata): shapes[s] = 'os^Dv'[sum(centre[name(t)] == centre[name(s)] for t in shapes)]
     col = {s: hue[centre[name(s)]] for s in strata}
     fig = fs.figure(68); a = fs.axes(fig, 19, 12, 31, 49); b = fs.axes(fig, 66, 12, 48, 49); c = fs.axes(fig, 152, 12, 25, 49)
-    top = len(strata) - 0.45; a.fill_betweenx([-0.6, top], *E['mu_beta_ci'], color=BAND, lw=0, zorder=0); a.plot([E['mu_beta']] * 2, [-0.6, top], color=INK, lw=0.9, zorder=1, solid_capstyle='butt'); a.plot([0, 0], [-0.6, top], color=MUTED, lw=0.5, ls=DASH)
+    top = len(strata) - 0.45; a.fill_betweenx([-0.55, top], *E['mu_beta_ci'], color=BAND, lw=0, zorder=0); a.plot([E['mu_beta']] * 2, [-0.55, top], color=INK, lw=0.9, zorder=1, solid_capstyle='butt'); a.plot([0, 0], [-1.4, top], color=MUTED, lw=0.5, ls=DASH)
     for k, s in enumerate(strata):
         v = E['beta_by_stratum'][s]; a.plot(v['ci'], [k, k], color=col[s], zorder=2); a.plot(v['mean'], k, shapes[s], ms=4.8, mfc=col[s], zorder=3, **DOT)
         a.text(-0.62, k + 0.14, name(s), fontsize=FS_IN, ha='right', va='center'); a.text(-0.62, k - 0.2, centre[name(s)], fontsize=FS_SMALL, color=MUTED, ha='right', va='center')
-    pp = E['prob_mu_positive']; a.text(E['mu_beta'], len(strata) - 0.3, f"$\\mu_\\beta$ = {E['mu_beta']:+.2f}\n$P$($\\mu_\\beta$ > 0) " + ('> 0.999' if pp > 0.999 else f'= {pp:.3f}'), fontsize=FS_IN, ha='center', va='bottom', linespacing=1.05)
-    a.set_xlim(-0.5, 3.5); a.set_ylim(-0.6, len(strata) + 0.75); fs.bare(a); a.set_xticks([0, 1, 2, 3]); a.set_xlabel(f'Slope per unit of {ZP}')
+    pp = E['prob_mu_positive']; new = E['prediction_interval']; a.plot(new, [-0.95, -0.95], color=INK, lw=0.9, zorder=2, solid_capstyle='butt'); a.plot(new, [-0.95, -0.95], '|', ms=4, mew=0.9, color=INK, ls='')
+    a.text(-0.62, -0.95, 'New centre', fontsize=FS_IN, ha='right', va='center')
+    a.text(E['mu_beta'], len(strata) - 0.3, f"$\\mu_\\beta$ = {E['mu_beta']:+.2f}\n$P$($\\mu_\\beta$ > 0) " + ('> 0.999' if pp > 0.999 else f'= {pp:.3f}'), fontsize=FS_IN, ha='center', va='bottom', linespacing=1.05)
+    a.set_xlim(-0.5, 3.5); a.set_ylim(-1.4, len(strata) + 0.75); fs.bare(a); a.set_xticks([0, 1, 2, 3]); a.set_xlabel(f'Slope per unit of {ZP}')
     m = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]; m = m.assign(stratum=m.study + ' / ' + m.outcome_type); m = m[m.stratum.isin(E['strata'])]
     b.axvspan(1, 2, color=BAND, lw=0, zorder=0)
     for s in E['strata']:
@@ -396,7 +406,35 @@ def figure_s6():
     fs.letter(fig, a, 'A', 11, 4); fs.letter(fig, b, 'B', 11, 4); fs.letter(fig, c, 'C', 11, 4); fs.letter(fig, d, 'D', 54, 4); save(fig, 'Figure_S6')
 
 
+READS = {                                    # what each figure is drawn from; hashed when the figure is drawn (results/figures_provenance.json)
+    '1': ('src/model/network.py', 'src/model/network3d.py', 'src/model/scaling.py'),
+    '2': ('data/series.tsv', 'results/predictions.json', 'src/indices.py'),
+    '3': ('data/series.tsv', 'results/bayes_main.json', 'results/spec_curve.json', 'src/indices.py'),
+    '4': ('results/predictions.json', 'src/indices.py'),
+    'S1': ('data/graph_scaling_all.tsv', 'data/graph3d_all.tsv', 'src/model/scaling.py'),
+    'S2': ('src/model/whole_graft.py',),
+    'S3': ('results/ipd_ecological.json',),
+    'S4': ('src/ipd/patient_level.py', 'data/patient_level'),
+    'S5': ('src/model/human.py', 'src/model/liver.py'),
+    'S6': ('src/model/human.py', 'src/model/liver.py')}
 FIGURES = {'1': figure_1, '2': figure_2, '3': figure_3, '4': figure_4, 'S1': figure_s1, 'S2': figure_s2, 'S3': figure_s3, 'S4': figure_s4, 'S5': figure_s5, 'S6': figure_s6}
 
+def provenance(k):
+    """Record what figure k was drawn from: the hash of every file it reads, of the two scripts that draw it, and of the
+    two images written. python src/manifest.py check then says whether a figure on disk is still the one its inputs give."""
+    import glob, hashlib
+    sha = lambda f: hashlib.sha256(open(f, 'rb').read()).hexdigest()
+    def hashes(paths):
+        out = {}
+        for p in paths:
+            for f in ([f'{ROOT}/{p}'] if os.path.isfile(f'{ROOT}/{p}') else sorted(x for x in glob.glob(f'{ROOT}/{p}/**/*', recursive=True) if os.path.isfile(x))):
+                out[os.path.relpath(f, ROOT).replace(os.sep, '/')] = sha(f)
+        return out
+    name = f"Figure_{k}"; f = f'{OUT}/figures_provenance.json'; rec = json.load(open(f)) if os.path.exists(f) else {}
+    rec[name] = dict(function=FIGURES[k].__name__, reads=hashes(READS[k]), drawn_by=hashes(('src/paper_figures.py', 'src/figstyle.py')),
+                     files={e: sha(f'{OUT}/{name}.{e}') for e in ('pdf', 'png')})
+    json.dump(dict(sorted(rec.items())), open(f, 'w'), indent=1)
+
+
 if __name__ == '__main__':
-    for k in (sys.argv[1:] or FIGURES): FIGURES[k.upper()]()
+    for k in (sys.argv[1:] or FIGURES): FIGURES[k.upper()](); provenance(k.upper())

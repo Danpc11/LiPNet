@@ -46,7 +46,7 @@ palette), and no panel uses more than three unordered colours. Figure 3 has five
 | Figure | Function | Reads |
 |---|---|---|
 | 1 | `figure_1` | the model itself: `model/network.py` and `model/network3d.py` recompute the optimum at $b=0.75$ for panels B and C |
-| 2 | `figure_2` | `data/series.tsv`, `audit.paired`, `results/predictions.json` |
+| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`) |
 | 3 | `figure_3` | `results/bayes_main.json`, `results/spec_curve.json`, `data/series.tsv` |
 | 4 | `figure_4` | `results/predictions.json` |
 | S1 | `figure_s1` | `data/graph_scaling_all.tsv`, `data/graph3d_all.tsv`, `model/scaling.py` |
@@ -55,6 +55,18 @@ palette), and no panel uses more than three unordered colours. Figure 3 has five
 | S4 | `figure_s4` | `ipd/patient_level.py` |
 | S5, S6 | `figure_s5`, `figure_s6` | `model/human.py` |
 
-Figures 2, 3, 4 and S3 need the results of `run_all.sh`; the others run on a clean clone. The stand-alone plots of
+Figures 2, 3, 4 and S3 need the results of `run_all.sh`; the others run on a clean clone.
+
+## Provenance
+
+`READS` in `src/paper_figures.py` is the table above in code. When a figure is drawn, the script writes to
+`results/figures_provenance.json` the SHA-256 of every file the figure reads, of `paper_figures.py` and `figstyle.py`,
+and of the PDF and the PNG. `python src/manifest.py check` compares that record with the files on disk and names any
+figure whose input, script or image is no longer the one recorded. The images carry no date, so the same inputs on the
+same environment give the same bytes.
+
+In Figure 2B each group has two intervals: the thick bar is the sampling error of the two group means, the thin bar
+adds the uncertainty of the references (donor flow, normal gradient, assumed central venous pressure).
+ The stand-alone plots of
 `src/plots.py`, `src/fem/` and `src/ipd/` are working plots of the repository and are not figures of the article;
 they share its three vascular colours.

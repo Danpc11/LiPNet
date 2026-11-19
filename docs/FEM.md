@@ -265,9 +265,9 @@ With the gain set to zero this is identically 1, which is the rigid Poiseuille e
 graph currently uses, so the two models are nested and the test suite checks it. Mean wall
 shear scales exactly with $z_F$, as it must at prescribed flow whatever the calibre does.
 
-The interpretation needs care. The published $z_R < 1$ values come from grafts with
-reconstructed or enlarged venous outflow, and that is a macroscopic effect this model says
-nothing about. What the lobule adds is an independent, same-signed contribution: a
+The interpretation needs care. The published $z_R < 1$ values come from grafts of several
+surgical configurations, one of them with no manoeuvre, and the lobule layer says nothing about the
+macroscopic part of the graft. What the lobule adds is an independent, same-signed contribution: a
 hyperperfused graft dilates its own sinusoidal bed, so part of the measured drop in
 resistance load is microcirculatory and would appear even with the outflow untouched. The
 model gives the *shape* of $R(Q)$ rather than assuming linearity, and it bounds how much of
