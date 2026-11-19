@@ -59,8 +59,9 @@ def test_allometry_reports_the_physical_shear():
 def test_audit_of_the_table_and_the_paired_groups():
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     t = audit.table_checks(d)
-    assert t['pct_disagrees_with_events_over_n'] == 0 and t['gradient_disagrees_with_PVP_minus_CVP'] == 0 and t['groups_with_both'] == 5
-    p = audit.paired(d); assert len(p['groups']) == 5
+    assert t['pct_disagrees_with_events_over_n'] == 0 and t['gradient_disagrees_with_PVP_minus_CVP'] == 0 and t['groups_with_both'] == 6
+    p = audit.paired(d); assert len(p['groups']) == 6
+    w = [g for g in p['groups'] if g['study'] == 'Wu 2011'][0]; assert abs(w['zR'] - (10.6 / 5) / (275.53 / 84.66)) < 1e-9, 'Wu 2011 is read against its own donor flow'
     for g in p['groups']:
         assert g['zR_ci_sampling'][0] < g['zR'] < g['zR_ci_sampling'][1] < 1
         assert abs(g['donor_gradient_at_which_zR_is_one_mmHg'] - 5 * g['zR']) < 1e-12
@@ -69,7 +70,7 @@ def test_audit_of_the_table_and_the_paired_groups():
     assert abs(s['flow'] + s['resistance'] + s['covariance'] - 1) < 1e-9 and s['flow'] < 0.2 and abs(l['spearman_zF_zP']) < 0.3
     sl = audit.slope(d); u = [r for r in sl['strata'] if r['stratum'].startswith('Uemura')][0]
     assert u['span_mmHg'] < 0.5 and u['own_slope_se'] > 5, 'Uemura 2016 carries no information about the slope'
-    m = audit.model_against_data(d); assert m['observed_below_lowest_model_value'] == 5 and 0.75 < m['lowest_model_value'] < 0.9
+    m = audit.model_against_data(d); assert m['observed_below_lowest_model_value'] == 6 and 0.75 < m['lowest_model_value'] < 0.9
 
 
 if __name__ == '__main__':

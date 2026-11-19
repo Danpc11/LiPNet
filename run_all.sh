@@ -12,6 +12,8 @@ python src/fem/run_fem.py all --quiet   # lobule finite elements -> results/fem_
 python src/model/liver.py > /dev/null    # the model applied to a human liver and a partial graft -> results/model_liver.json
 python src/model/human.py > /dev/null    # the model in physical units, growth and regrowth -> results/model_human.json
 python src/audit.py                     # what the table and the fits support -> results/audit.json
+python src/main_figures.py              # data panels of Figures 1 to 4 of the article -> results/main_figure_*.pdf/.png
+python src/human_figures.py             # Figs S5 and S6: the model in a human liver, growth and regrowth -> results/human_liver_*.pdf/.png
 # Long model campaigns behind the cached tables in data/ (optional, 1-2 h):
 #   for R in 3.0 4.5 6.5 9.0 12.0; do python src/model/graph_scaling.py $R; done
 #   for R in 3.0 4.0 5.0 6.5 8.5;  do python src/model/network3d.py $R results; done

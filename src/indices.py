@@ -335,7 +335,7 @@ def main(boot=2000, seed=0):
                         ('including groups defined by a cut-off', {'zP': d, 'zF': d}),
                         ('no imputed or filled value in the index itself', {'zP': d[~d.zP_imputed & d.in_main_analysis], 'zF': d[~d.zF_imputed & d.in_main_analysis]})):
         for col in ('zP', 'zF'):
-            s = subs[col].dropna(subset=[col])
+            s = subs[col].dropna(subset=[col, 'pct'])                     # a rank correlation with outcome needs an outcome
             if len(s) >= 3:
                 rho, p = spearmanr(s[col], s.pct); rows.append(dict(analysis=label, index=col, groups=len(s), spearman_rho=rho, p=p))
                 print(f'{label[:46]:46s} {col}: {len(s):2d} groups, Spearman rho = {rho:+.2f}, p = {p:.3f}')

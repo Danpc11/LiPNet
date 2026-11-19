@@ -13,6 +13,7 @@ a spread say they did not:
     Ishizaki 2012                  gradient 12.4 mmHg  SD 4.4
     Botha 2010                     gradient 6.2 mmHg   SD 3.9  (computed from Table 5)
     Chan 2011                      gradient 6 mmHg     SD 2.7  (from the range, n = 46)
+    Wu 2011                        gradient 10.6 mmHg  SD 4.5
 
 Two of those numbers are not standard deviations. Ogura's Results section reports the same
 cohort's MELD as 23.2 +/- 1.1 (n = 86) and 22.9 +/- 1.7 (n = 43), while its own Table 1
@@ -23,7 +24,7 @@ deviations of 2.8 and 2.6 mmHg, not 0.3 and 0.4. `sem_to_sd` does this and
 `WITHIN_GROUP_SD` records it.
 
 Once corrected, every series that reports a dispersion agrees: the within-group standard
-deviation of the portocaval gradient is 2.6 to 4.4 mmHg, which is comparable to the whole
+deviation of the portocaval gradient is 2.6 to 4.5 mmHg, which is comparable to the whole
 between-group range of the meta-analysis. Fitting group means as if they
 were patient values is the ecological fallacy, and in a logistic model it attenuates the
 slope towards zero.
@@ -64,7 +65,7 @@ def sem_to_sd(sem, n):
 # patient-level table (patient_level.group_row). Chan: estimated from the published range
 # (patient_level.sd_from_range). Others: as reported.
 WITHIN_GROUP_SD = {'Ogura 2010': (2.78, 2.62), 'Uemura 2016': (4.1, 3.8, 3.1),
-                   'Ishizaki 2012': (4.4,), 'Botha 2010': (3.91,), 'Chan 2011': (2.71,)}
+                   'Ishizaki 2012': (4.4,), 'Botha 2010': (3.91,), 'Chan 2011': (2.71,), 'Wu 2011': (4.5,)}
 
 
 def corrected_sigma_mmHg():

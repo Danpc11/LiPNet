@@ -3,12 +3,12 @@
     python src/predictions.py        -> results/predictions.json, printed summary
 
 The model (src/model/) describes the liver as a dissipation-optimal perfusion network at fixed vascular maintenance
-cost. It fixes the wall shear set-point tau0 = sqrt(D*/C), the scaling of the optimum with the number of lobules,
+cost. It fixes the scale of the design tau0 = sqrt(D*/C) (a wall shear stress only at b = 1), the scaling of the optimum with the number of lobules,
 and the local relation dP = f * R, from which the two indices follow. It says nothing about recipient severity,
 donor age or steatosis. Four predictions follow, and each is tested here against data the model was not fitted to:
 
-  P1  Comparative anatomy. With portal pressure invariant across mammals, the set-point shear must be invariant with
-      body mass and the vascular mass must scale close to the observed exponent of hepatic blood volume (0.86).
+  P1  Comparative anatomy. With portal pressure invariant across mammals, the scale of the design tau0 must be nearly
+      invariant with body mass and the vascular mass must scale close to the observed exponent of hepatic blood volume (0.86).
   P2  zP = zF * zR: flow and pressure are the same variable only while the resistance load zR equals 1. Grafts
       whose outflow was enlarged must have zR < 1 and carry high flow without the matching pressure.
   P3  Within a cohort, the outcome must increase with zP, with a common slope and a centre-specific level.
@@ -25,7 +25,7 @@ ROOT = os.path.join(os.path.dirname(__file__), '..'); OUT = f'{ROOT}/results'
 
 
 def p1_allometry():
-    """Set-point and vascular-mass exponents under an invariant portal pressure, for the measured flow and lobule
+    """Exponents of tau0 and of the vascular mass under an invariant portal pressure, for the measured flow and lobule
     scalings (Kruepunga 2019: portal flow ~ M^0.77, portocentral distance ~ M^0.10, portal pressure 6-11 mmHg)."""
     gs = np.arange(8, 19); rows = []
     for f, flab in ((0.77, 'portal flow ~ M^0.77'), (0.88, 'total hepatic flow ~ M^0.88')):
@@ -67,14 +67,18 @@ def p2_discordance(d, draws=4000, seed=0):
         q = np.percentile(zp / zf, [2.5, 97.5])
         detail.append(dict(study=r.study, group=r.group, outflow=r.outflow, zP=float(r.zP), zF=round(float(r.zF), 2),
                            ratio=round(float(r.ratio), 3), ratio_ci=[round(float(q[0]), 3), round(float(q[1]), 3)],
-                           prob_below_one=float((zp / zf < 1).mean()), outcome_pct=float(r.pct)))
+                           prob_below_one=float((zp / zf < 1).mean()), outcome_pct=float(r.pct) if pd.notna(r.pct) else None))
     rec = [x for x in detail if x['outflow'].startswith('reconstructed')]
-    k = sum(x['ratio'] < 1 for x in rec)
+    k = sum(x['ratio'] < 1 for x in rec); k_all = sum(x['ratio'] < 1 for x in detail)
     return dict(groups_with_both=int(len(b)), reconstructed=len(rec), standard=len(detail) - len(rec),
                 ratio_reconstructed=[x['ratio'] for x in rec], all_below_one=bool(k == len(rec)),
+                ratio_all=[x['ratio'] for x in detail], all_groups_below_one=bool(k_all == len(detail)),
+                sign_test_all_p=float(binomtest(k_all, len(detail), 0.5, alternative='greater').pvalue),
+                min_prob_below_one_all=float(min(x['prob_below_one'] for x in detail)),
                 sign_test_p=float(binomtest(k, len(rec), 0.5, alternative='greater').pvalue) if rec else None,
                 min_prob_below_one=float(min(x['prob_below_one'] for x in rec)) if rec else None,
-                outcome_reconstructed_pct=[x['outcome_pct'] for x in rec],
+                outcome_reconstructed_pct=[x['outcome_pct'] for x in rec if x['outcome_pct'] is not None],
+                reconstructed_without_reported_outcome=[x['study'] for x in rec if x['outcome_pct'] is None],
                 note='configuration classified from the methods before seeing outcomes; outcome shown separately',
                 detail=detail)
 
@@ -194,7 +198,7 @@ def main():
     json.dump(res, open(f'{OUT}/predictions.json', 'w'), indent=1)
     a, b2, c3, d4 = res['P1_allometry'], res['P2_discordance'], res['P3_within_cohort'], res['P4_thresholds']
     print('P1  comparative anatomy')
-    print(f"    over b = {a['b_range'][0]:.2f}-{a['b_range'][1]:.2f}: exponent of the shear set-point stays in "
+    print(f"    over b = {a['b_range'][0]:.2f}-{a['b_range'][1]:.2f}: exponent of the design scale tau0 stays in "
           f"[{a['tau0_exponent_range'][0]:+.3f}, {a['tau0_exponent_range'][1]:+.3f}] -> invariant: {a['tau0_invariant']}")
     print(f"    vascular mass exponent spans {a['vascular_mass_exponent_range'][0]:.2f}-{a['vascular_mass_exponent_range'][1]:.2f}; "
           f"{100*a['fraction_compatible']:.0f}% of the range is compatible with the observed {a['observed_range']}")
@@ -202,6 +206,7 @@ def main():
     print(f"    normalised resistance load zR in the {b2['reconstructed']} reconstructed-outflow groups: "
           f"{[round(x,2) for x in b2['ratio_reconstructed']]}, all below 1: {b2['all_below_one']} "
           f"(sign test p = {b2['sign_test_p']:.3f}; smallest posterior probability of being below 1: {b2['min_prob_below_one']:.2f})")
+    print(f"    all {b2['groups_with_both']} groups that report both loads: {b2['ratio_all']}, all below 1: {b2['all_groups_below_one']} (sign test p = {b2['sign_test_all_p']:.3f}; smallest probability of being below 1: {b2['min_prob_below_one_all']:.2f})")
     print(f"    their outcomes, reported separately: {b2['outcome_reconstructed_pct']}%")
     sw = b2['reference_sweep']
     print(f"    reference sweep: every paired group below 1 in {sw['combinations_all_below_one']} of {sw['combinations']} "

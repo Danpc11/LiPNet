@@ -19,7 +19,7 @@ Available plots (results/<name>.pdf and .png):
     network_2d         dissipation-optimal perfusion network on a 2D lobule field (recomputed, ~20 s)
     network_3d         the same on a hemispheric liver (recomputed, ~30 s)
     scaling            exponent of D*/F2 with the number of lobules, 2D and 3D graphs vs closed form (cached campaign data)
-    allometry          allometric closure across species: set-point and vascular-mass exponents vs b
+    allometry          allometric closure across species: exponents of tau0 and of the vascular mass vs b
     shear_profile      wall shear along the three human hepatic trees from measured diameter ratios
     certificate        heuristic vs exhaustive optimum on a 7-lobule domain (cached)
     whole_graft        Fig. S2: inlet and outlet obstruction of a whole graft in the flow-pressure plane
@@ -58,13 +58,13 @@ def predictions():
     fig, axs = plt.subplots(2, 2, figsize=(7.6, 6.4)); fig.subplots_adjust(hspace=0.38, wspace=0.3)
     lab = lambda ax, t: ax.set_title(t, loc='left', fontsize=7.5, fontweight='bold')
     # P1 allometric closure
-    ax = axs[0, 0]; lab(ax, 'P1  set-point invariant across mammals')
+    ax = axs[0, 0]; lab(ax, 'P1  design scale invariant across mammals')
     t = pd.read_csv(f'{OUT}/prediction_allometry.tsv', sep='\t')
     for (fl, l), g in t.groupby(['flow', 'lobule_exponent']):
         ax.plot(g.b, g.tau0_exponent, '-' if l > 0 else ':', marker='o', ms=3,
                 label=f"{fl.split('~')[0].strip()}, lobule M^{l:.2f}")
     ax.axhspan(-0.05, 0.05, color='0.9', lw=0); ax.axhline(0, color='k', lw=0.6)
-    ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Exponent of the shear set-point\nwith body mass')
+    ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Exponent of the design scale τ0\nwith body mass')
     ax.legend(fontsize=5.5)
     # P2 discordance
     ax = axs[0, 1]; lab(ax, 'P2  flow and pressure separate when outflow is enlarged')
@@ -328,8 +328,8 @@ def allometry():
     fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
     for (fl, l), gr in cl.groupby(['flow', 'l']):
         axs[0].plot(gr.b, gr.tau0_exp, '-' if l > 0 else ':', marker='o', ms=3, label=f'{fl}, lobule ~ M^{l:.2f}'); axs[1].plot(gr.b, gr.V_exp, '-' if l > 0 else ':', marker='s', ms=3, label=f'{fl}, lobule ~ M^{l:.2f}')
-    axs[0].axhline(0, color='k', lw=0.6); axs[0].axhspan(-0.05, 0.05, color='0.9', lw=0); axs[0].set_xlabel('Maintenance exponent b'); axs[0].set_ylabel('Exponent of the shear set-point with body mass'); axs[0].legend(fontsize=6)
-    axs[1].axhspan(0.84, 0.88, color=C_OUT, alpha=0.25, lw=0, label='hepatic blood volume ~ M^0.86'); axs[1].set_xlabel('Maintenance exponent b'); axs[1].set_ylabel('Exponent of vascular mass with body mass'); axs[1].legend(fontsize=6)
+    axs[0].axhline(0, color='k', lw=0.6); axs[0].axhspan(-0.05, 0.05, color='0.9', lw=0); axs[0].set_xlabel('Maintenance exponent b'); axs[0].set_ylabel('Exponent of the design scale τ0 with body mass'); axs[0].legend(fontsize=6)
+    axs[1].axhspan(0.80, 0.92, color=C_OUT, alpha=0.25, lw=0, label='hepatic blood volume ~ M^0.86 (0.80 to 0.92)'); axs[1].set_ylim(0.79, 1.12); axs[1].set_xlabel('Maintenance exponent b'); axs[1].set_ylabel('Exponent of vascular mass with body mass'); axs[1].legend(fontsize=6, loc='upper right')
     fig.tight_layout(); save(fig, 'allometry')
 
 def shear_profile():
@@ -342,7 +342,7 @@ def certificate():
     ce = pd.read_csv(f'{DATA}/certificate_small.tsv', sep='\t'); fig, ax = plt.subplots(figsize=(3.6, 3.0))
     ax.bar(ce.b.astype(str), ce.frac_seeds_at_opt * 100, color=C_IN, width=0.5)
     for i, r in ce.iterrows(): ax.text(i, r.frac_seeds_at_opt * 100 + 2, f'gap {abs(r.rel_gap):.0e}', ha='center', fontsize=6.5)
-    ax.set_ylim(0, 115); ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Random starts reaching the exact optimum (%)'); ax.set_title('7 lobules, 279 936 trees enumerated', fontsize=8); save(fig, 'certificate')
+    ax.set_ylim(0, 115); ax.set_xlabel('Maintenance exponent b'); ax.set_ylabel('Random starts reaching the exact optimum (%)'); ax.set_title('7 lobules, 279 936 configurations enumerated', fontsize=8); save(fig, 'certificate')
 
 def whole_graft(h=1.5):
     """Fig. S2: a whole graft in the same identity. (A) the resistance chain with the two anastomoses; (B) flow and

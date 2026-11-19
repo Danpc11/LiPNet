@@ -5,7 +5,7 @@
 Four blocks, each a set of facts about data/series.tsv and the cached fits:
 
   table      arithmetic and provenance of the table itself
-  paired     the five groups that report both loads: what each ingredient of zR is, how uncertain the ratio is with
+  paired     the six groups that report both loads: what each ingredient of zR is, how uncertain the ratio is with
              the dispersions the papers report, and which reference values would move it across one
   loads      how much of the pressure load is readable from the flow load, with no reference value involved
   slope      what each stratum of the outcome model contributes: how the groups are defined, how far apart they are
@@ -20,7 +20,7 @@ import indices
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
-# Dispersions the papers report for the five paired groups, with where each comes from. cv_flow is SD / mean of the
+# Dispersions the papers report for the six paired groups, with where each comes from. cv_flow is SD / mean of the
 # portal flow per 100 g; sd_grad the SD of the portocaval gradient in mmHg; n_flow and n_grad the recipients measured.
 REPORTED = {
     ('Chan 2011', 'right lobe with MHV, no modulation'): dict(
@@ -34,6 +34,9 @@ REPORTED = {
     ('Ishizaki 2012', 'left lobe, no inflow modulation (gradient measured)'): dict(
         cv_flow=167.0 / 301.0, sd_grad=4.4, n_flow=38, n_grad=31,
         basis='PVF 301 +- 167 (n = 38), gradient 12.4 +- 4.4 (n = 26 to 31 of 42) (notes)'),
+    ('Wu 2011', 'right lobe, no inflow modulation'): dict(
+        cv_flow=99.65 / 275.53, sd_grad=4.5, n_flow=64, n_grad=64,
+        basis='PVF 275.53 +- 99.65 mL/min/100 g, gradient 10.6 +- 4.5 mmHg (Table 1 and Results)'),
 }
 
 

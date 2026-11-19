@@ -431,7 +431,7 @@ let the fork be explored, not to assert a number. What the fork does establish i
 two branches straddle 1 and both stay within 9% of it at the graft level, which is the next
 section's point.
 
-### Against the five published groups
+### Against the six published groups
 
 `predict_series` runs the prediction over the groups in `data/series.tsv` that report both
 indices:
@@ -443,9 +443,10 @@ indices:
 | Wang 2014 | reconstructed | 4.12 | 0.539 | 0.913 |
 | Wang 2014 | standard | 3.74 | 0.716 | 0.915 |
 | Ishizaki 2012 | reconstructed | 3.34 | 0.742 | 0.917 |
+| Wu 2011 | reconstructed | 3.25 | 0.651 | 0.918 |
 
-The flow load barely varies across them, from 3.3 to 4.1, so the lobule model predicts the
-same $z_R$ to three decimals for all five. The observed spread is 0.436; the predicted
+The flow load barely varies across them, from 3.3 to 4.1, so the lobule model predicts a
+$z_R$ between 0.913 and 0.918 for all six. The observed spread is 0.436; the predicted
 spread is 0.004. A factor of a hundred.
 
 This is the cleanest form of the result. Whatever separates a $z_R$ of 0.31 from one of

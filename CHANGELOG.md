@@ -2,6 +2,28 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.5.0] – 2026-11-19
+
+The release of the article. Wu 2011 enters the table as the sixth group with both loads, the text of the repository says what the model supports about the separation of flow and pressure, and the data panels of the figures are drawn by the code.
+
+### Added
+- `data/series.tsv`: Wu 2011 (Linkou, 64 right-lobe recipients, no inflow modulation), read against its own donor reference: $z_F=3.25$, $z_P=2.12$, $z_R=0.65$, gradient 10.6 ± 4.5 mmHg. It reports no outcome and enters no outcome model. The table has 32 groups from 18 series and 11 centres, 22 with a pressure load and 15 with a flow load.
+- Six groups report both loads: $z_R$ 0.31, 0.54, 0.55, 0.65, 0.72 and 0.74. `predictions.py` adds `ratio_all`, `all_groups_below_one` and `sign_test_all_p` (exact sign test over the six, $P=0.016$; over the five with reconstructed outflow, $P=0.031$). All six lie below 0.81, the lowest value the network reaches with the arterial inflow.
+- `src/main_figures.py`: the data panels of Figures 1 to 4 of the article (1D-E, 2A-B, 3A-C, 4A-B) from the table and the cached results.
+- `src/human_figures.py`: Supplementary Figures S5 and S6 (the model against the human cast; growth with the body and regrowth of a graft). Supplementary Figure S1 is `scaling` over `allometry` of `plots.py`.
+
+### Changed
+- `THEORY.md` and `README.md`: $\tau_0=\sqrt{D^*/C}$ is the scale of the design, the dissipation per unit of maintenance cost, and the wall shear of a vessel is $\tau_0 m_e^{(b-1)/2}$, a wall shear stress only at $b=1$. The plots and docstrings no longer call it a shear set-point. Prediction P1 is the near invariance of that scale across body mass; prediction P2 is that flow load and pressure load are not interchangeable, and it is no longer attributed to venous reconstruction: the one group with standard outflow (0.72) sits inside the range of the other five.
+- `src/ipd/ecological.py`: the dispersion Wu 2011 reports joins the within-group standard deviations, now nine, 2.6 to 4.5 mmHg, pooled median 3.8 mmHg (0.76 in $z_P$ units; 3.45 mmHg before). The sweep of Table M13 is unchanged; the fit with each group's own dispersion gives $\mu_\beta=+1.68$ (+0.30 to +3.22), against +1.71 (+0.34 to +3.28).
+- `src/indices.py`: the rank correlations drop groups without an outcome instead of returning NaN.
+- `src/audit.py`: Wu 2011 in the sampling intervals of the paired groups (0.57 to 0.75).
+- `plots.py allometry`: the band of the observed scaling of hepatic blood volume is drawn at its stated range, 0.80 to 0.92, and 5 of the 28 combinations fall inside it, which is the 18% of `predictions.json`; the band was drawn at 0.84 to 0.88 before. The legend no longer covers it.
+- `plots.py certificate`: the 279,936 enumerated objects are configurations (one feeding triad per lobule), not trees.
+
+### Notes
+- The Bayesian fits of `bayes.py` are unchanged: Wu 2011 contributes no outcome.
+- The Zenodo DOI in `README.md`, `CITATION.cff` and `.zenodo.json` is that of v0.4.2 until this release is archived.
+
 ## [0.4.5] – 2026-11-19
 
 The human liver of 0.4.4 set against eighteen papers read in full: the macroscopic table of the cast, two series with both inflows measured, and the course of volume, inflow and portal pressure after transplantation. [docs/HUMAN.md](docs/HUMAN.md) is rewritten around them.

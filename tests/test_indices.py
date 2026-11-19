@@ -26,14 +26,14 @@ def test_load_identity():
     import pandas as pd, numpy as np
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     both = d.dropna(subset=['zP', 'zF', 'zR'])
-    assert len(both) == 5
+    assert len(both) == 6
     assert np.allclose(both.zR, both.R_graft / both.R_donor), 'zR must be the resistance ratio'
     assert np.allclose(both.zR, both.zP / both.zF), 'the resistance ratio must equal zP / zF'
     assert np.allclose(both.zF * both.zR, both.zP), 'zP = zF * zR must hold exactly'
     Rd = indices.R(indices.NORMAL_GRADIENT, indices.DEFAULT_DONOR_REF)
     assert abs(indices.zR(Rd, Rd) - 1.0) < 1e-12, 'a graft at donor resistance has zR = 1'
     rec = both[both.outflow.str.startswith('reconstructed')]
-    assert len(rec) == 4 and all(rec.zR < 1), 'every group with reconstructed outflow has zR below one'
+    assert len(rec) == 5 and all(rec.zR < 1), 'every group with reconstructed outflow has zR below one'
 
 def test_indices_and_baseline():
     assert indices.zP(15, 5) == 2.0                    # PVP 15 at CVP 5 is twice the normal gradient
@@ -50,7 +50,7 @@ def test_data_and_provenance():
     c = indices.compute(d)
     for col in ('PVP', 'CVP'):                          # a basis must not claim a value that is not there
         assert not (d[col].isna() & ~d[f'{col}_basis'].isin(['not applicable', 'imputed'])).any(), col
-    assert len(c) == 31 and c.zP.notna().sum() == 21 and c.zF.notna().sum() == 14
+    assert len(c) == 32 and c.zP.notna().sum() == 22 and c.zF.notna().sum() == 15
     assert set(c[~c.in_main_analysis].study) == {'Vasavada 2014', 'Yao 2018', 'Kanetkar 2017', 'Wang 2014'}
     m = indices.contributing(c[c.in_main_analysis & c.zP.notna() & c.events.notna()])
     assert m[m.study == 'Wang 2014'].n.sum() == 276, 'a cohort partitioned twice must count once'
@@ -165,14 +165,16 @@ def test_model_predictions():
     r = subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'predictions.py')], env=env, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr[-800:]
     P = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))
-    assert P['P1_allometry']['tau0_invariant'], 'P1: the shear set-point must not scale with body mass'
+    assert P['P1_allometry']['tau0_invariant'], 'P1: the scale of the design must not scale with body mass'
     assert 'best_b' not in P['P1_allometry'], 'P1 must not select a value of b that fits the observation'
     p2 = P['P2_discordance']
     assert p2['all_below_one'] and p2['reconstructed'] >= 4, 'P2: every reconstructed outflow below one'
     assert p2['min_prob_below_one'] > 0.9, 'P2: with measurement uncertainty'
     assert max(p2['outcome_reconstructed_pct']) <= 10, 'P2: those grafts did well (reported separately)'
     sw = p2['reference_sweep']                                  # the normalisation does not manufacture zR < 1
-    assert sw['groups'] == 5 and sw['combinations'] == 15
+    assert sw['groups'] == 6 and sw['combinations'] == 15
+    assert p2['all_groups_below_one'] and abs(p2['sign_test_all_p'] - 0.5 ** 6) < 1e-12 and p2['min_prob_below_one_all'] > 0.9
+    assert p2['groups_with_both'] == 6 and p2['reconstructed_without_reported_outcome'] == ['Wu 2011']
     assert sw['combinations_all_below_one'] == 14 and len(sw['exceptions']) == 1
     assert (sw['exceptions'][0]['donor_ref_flow'], sw['exceptions'][0]['normal_gradient']) == (100.0, 4.0)
     assert 1.0 < sw['exceptions'][0]['max_zR'] < 1.05, 'the one exception is the extreme corner, barely above one'
@@ -192,7 +194,7 @@ def test_model_predictions():
     assert 'prob_pressure_slope_exceeds_flow_slope' in ic, 'the comparison must be reported as a probability'
     assert ic['zF, flow per lobule']['events'] < ic['zP, pressure per lobule']['events'], 'and its weakness stated'
     a = p3['accounting']                                        # the material must be reported in full
-    assert a['series'] == 17 and a['groups'] == 31 and a['series_with_a_within_study_contrast'] == 5
+    assert a['series'] == 18 and a['groups'] == 32 and a['series_with_a_within_study_contrast'] == 5
     assert p3['with_cutoff_groups']['mu_beta_ci'][0] > 0, 'P3: adding cut-off groups must not overturn it'
     assert all(v['directions_correct'] and v['log_score_gain'] > 0 for v in p3['conditional_iecv']), 'P3: conditional validation'
     assert all(pr['prob_positive'] > 0.9 for pr in p3['prior_sensitivity']), 'P3: prior sensitivity'

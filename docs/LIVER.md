@@ -107,7 +107,7 @@ $$z_P=s_{in}z_F+(1-s_{in})\frac{z_F+\varphi a}{1+a}.$$
 The series of the table report no arterial flow. Two others measured it in the donor and in the graft: $\varphi$ is 0.66
 and 0.79, and the model then gives 0.82 to 0.90 against an observed 0.65 ([HUMAN.md](HUMAN.md), section 6).
 
-## 6. The model against the five paired groups
+## 6. The model against the six paired groups
 
 | | $z_R$ |
 |---|---|
@@ -115,10 +115,10 @@ and 0.79, and the model then gives 0.82 to 0.90 against an observed 0.65 ([HUMAN
 | explicit graphs | 0.90 to 0.96 |
 | with the arterial inflow, $\varphi\le1$ | 0.81 to 0.90 |
 | with the shear feedback of the lobule layer (`src/fem/network_link.py`) | 0.91 to 0.92 |
-| observed | 0.31, 0.54, 0.55, 0.72, 0.74 |
+| observed | 0.31, 0.54, 0.55, 0.65, 0.72, 0.74 |
 
 In physical units, with the lobular drop shared with the lobule layer, a lobar graft is at 0.96 to 1.00 and at 0.82 to
-0.90 with the arterial inflow ([HUMAN.md](HUMAN.md), section 5). All five observed values lie below the lowest value the model reaches. The model has the sign of the departure and
+0.90 with the arterial inflow ([HUMAN.md](HUMAN.md), section 5). All six observed values lie below the lowest value the model reaches. The model has the sign of the departure and
 not its size. Widening the outlet anastomosis in `whole_graft.py` lowers $z_R$ to 0.95 at most, because that
 anastomosis holds 5% of the resistance.
 
@@ -126,16 +126,17 @@ anastomosis holds 5% of the resistance.
 
 - Arithmetic of `data/series.tsv`: no disagreement between percentages and counts, or between stored gradients and
   the pressures they come from.
-- The donor flow reference is measured in three series (81, 91 and 118 mL/min/100 g) and set to 90 elsewhere. No
-  series reports a donor gradient; the normal gradient of 5 mmHg is assumed for all 21 groups with a pressure load.
+- The donor flow reference is measured in four series (81, 85, 91 and 118 mL/min/100 g) and set to 90 elsewhere. No
+  series reports a donor gradient; the normal gradient of 5 mmHg is assumed for all 22 groups with a pressure load.
   The table does not record when the flow was measured relative to the pressure.
 - Sampling intervals of $z_R$ with the dispersions the papers report (largest reported value where none is given)
-  stay below one: 0.25 to 0.37, 0.44 to 0.69, 0.48 to 0.60, 0.64 to 0.80, 0.60 to 0.92.
+  stay below one: 0.25 to 0.37, 0.44 to 0.69, 0.48 to 0.60, 0.64 to 0.80, 0.60 to 0.92 and, for Wu 2011, 0.57 to
+  0.75.
 - The reference values decide the level. A group reaches $z_R=1$ if the donor gradient is at or below 1.5, 2.7, 2.7,
-  3.6 and 3.7 mmHg respectively; at the largest measured donor reference (118) the two highest groups are at 0.94
-  and 0.97.
-- Without any reference: the flow load spans 1.26-fold across the five groups and the pressure load 2.23-fold;
-  their rank correlation is −0.10; 10% of the variance of $\log z_P$ is in $\log z_F$. In Wang 2014 the arm with
+  3.6, 3.7 and 3.3 mmHg respectively; at the largest measured donor reference (118) the two highest groups are at
+  0.94 and 0.97.
+- Without any reference: the flow load spans 1.27-fold across the six groups and the pressure load 2.23-fold;
+  their rank correlation is +0.09; 12% of the variance of $\log z_P$ is in $\log z_F$. In Wang 2014 the arm with
   10% more flow has 12% less portal pressure.
 
 ## 8. What the outcome model supports

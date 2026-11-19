@@ -2,7 +2,7 @@
 
 Optimal tree (rank-one loading, concave cost): D* = C^{-1/alpha} S^{1+1/alpha},
     S = sum_e a_e^{1/(1+alpha)} f_e^{2alpha/(1+alpha)},  alpha = b/2,  a_e = l_e^{3b/2}.
-Set-point scale: on every active edge D_e/c_e = lambda*alpha (Eq. 4 of the Letter), so
+Scale of the design: on every active edge D_e/c_e = lambda*alpha (Eq. 4 of the Letter), so
     D = lambda*alpha*C  and  tau0 = sqrt(lambda*alpha) = sqrt(D*/C).
 Vessel mass: c_e = m_e^b (with a_e = l^{3b/2}, alpha=b/2: a w^alpha = (r^2 l)^b), and at the
 optimum c_e ∝ s_e (the summand of S), so m_e = (C s_e/S)^{1/b}, V = sum_e m_e.
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # ---------- allometric closure ----------
     # D* ∝ F^2 C^{-2/b} N^{eD};  tau0^2 = D*/C ∝ F^2 C^{-(2+b)/b} N^{eD};  V ∝ C^{1/b} N^{eV}
     # Closure 1 (blood volume ∝ liver volume): V ∝ N  =>  C ∝ N^{b(1-eV)}
-    # Closure 2 (shear set-point invariant): tau0 = const  =>  F ∝ C^{(2+b)/(2b)} N^{-eD/2}
+    # Closure 2 (design scale tau0 invariant): tau0 = const  =>  F ∝ C^{(2+b)/(2b)} N^{-eD/2}
     print('\nAllometric closure (V ∝ N, tau0 invariant):  F ∝ N^gamma ;  empirical Kleiber+liver: F ∝ M^0.75, N ∝ M^0.87 => gamma_emp = 0.86')
     out = []
     for _, r in df.iterrows():

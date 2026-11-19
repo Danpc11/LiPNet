@@ -16,8 +16,8 @@ This document holds the physics and the four predictions. The [README](README.md
   - [Why resistance matters](#why-resistance-matters)
 - [What the model includes](#what-the-model-includes)
 - [Four predictions](#four-predictions)
-  - [P1. The hepatic shear set-point should be nearly invariant across mammals](#p1-the-hepatic-shear-set-point-should-be-nearly-invariant-across-mammals)
-  - [P2. Flow and pressure should separate when outflow resistance decreases](#p2-flow-and-pressure-should-separate-when-outflow-resistance-decreases)
+  - [P1. The scale of the design should be nearly invariant across mammals](#p1-the-scale-of-the-design-should-be-nearly-invariant-across-mammals)
+  - [P2. Flow load and pressure load are not interchangeable](#p2-flow-load-and-pressure-load-are-not-interchangeable)
   - [P3. Within a cohort, outcome should increase with pressure load](#p3-within-a-cohort-outcome-should-increase-with-pressure-load)
   - [Hierarchical model](#hierarchical-model)
   - [Primary clinical result](#primary-clinical-result)
@@ -65,9 +65,15 @@ This gives:
 
 $$D^* \propto F^{2}\,C^{-2/b}\,N^{(2-b)/b}\,L^{3},$$
 
-together with a characteristic wall-shear set-point:
+in the limit of many lobules (for $b<1$; at the size of a human liver the local exponent of $D^*$ with $N$ is 1.2 to 3.0 across $b$, [docs/LIVER.md](docs/LIVER.md)), together with the scale of the design:
 
 $$\tau_0=\sqrt{D^*/C},$$
+
+the dissipation per unit of maintenance cost, which is the same on every vessel of the optimum. The wall shear stress of a vessel of vascular mass $m_e$ is
+
+$$\tau_e=\tau_0\,m_e^{(b-1)/2},$$
+
+so $\tau_0$ is a wall shear stress only at $b=1$ (Murray's law); for $b<1$ the shear rises from the trunks to the sinusoids.
 
 and the pressure drop across a lobule:
 
@@ -80,7 +86,7 @@ Here:
 - $C$ represents vascular maintenance cost,
 - $N$ is the number of lobules,
 - $L$ is a characteristic transport length,
-- $\tau_0$ is the wall-shear set-point,
+- $\tau_0$ is the scale of the design,
 - $f$ is lobular flow,
 - $R$ is vascular resistance.
 
@@ -197,7 +203,7 @@ then:
 
 $$z_P=3.$$
 
-But if venous reconstruction reduces effective resistance to:
+But if the effective resistance of the graft is half the donor's:
 
 $$z_R=0.5,$$
 
@@ -207,16 +213,9 @@ $$z_P=3\times0.5=1.5.$$
 
 The graft therefore carries very high flow without developing the pressure expected from flow alone.
 
-This is the mechanism behind **portal flow-pressure decoupling** in LiPNet.
+This is **portal flow-pressure decoupling** in LiPNet: the two loads separate by exactly the resistance load.
 
-Any intervention that enlarges effective outflow can lower $z_R$.
-
-Examples include:
-
-- middle hepatic vein reconstruction,
-- venoplasty,
-- enlarged hepatic venous drainage,
-- haemodynamic interventions that increase effective compliance.
+The network itself keeps a partial graft close to the donor's resistance. A graft is the sub-network below a first-order branch, and loses only the trunks it left behind: $z_R$ is 0.93 to 1.00 on the closed-form network and 0.90 to 0.96 on explicit three-dimensional graphs. The hepatic artery joins the portal blood at the sinusoid, so a load read from portal flow alone overstates what the sinusoids and hepatic veins carry: with the arterial flow measured in donor and graft, $z_R$ is 0.82 to 0.90. The derivations are in [docs/LIVER.md](docs/LIVER.md) and [docs/HUMAN.md](docs/HUMAN.md). The model therefore expects $z_R$ between 0.8 and 1, and does not name the element that would lower it further.
 
 The model therefore interprets pressure as the combined result of flow and resistance.
 
@@ -263,13 +262,13 @@ The four predictions test different parts of the model.
 
 ---
 
-### P1. The hepatic shear set-point should be nearly invariant across mammals
+### P1. The scale of the design should be nearly invariant across mammals
 
 The first prediction does not use transplant data.
 
 Portal pressure remains within a relatively narrow physiological range across mammals despite large differences in body mass.
 
-If the liver vascular network operates near the predicted optimum, the characteristic wall-shear set-point $\tau_0$ should therefore change very little with body size.
+If the liver vascular network operates near the predicted optimum, the scale of the design $\tau_0$ should therefore change very little with body size.
 
 Using published allometric relationships:
 
@@ -287,7 +286,7 @@ over the full prespecified range of vascular maintenance exponents.
 
 This range is close to zero.
 
-The result therefore supports an approximately invariant hepatic shear set-point across mammals.
+The scale of the design is therefore approximately invariant across mammals. The wall shear stress it implies depends on the vessel: its body-mass exponent is $-0.077$ to $-0.003$ in the sinusoid and $-0.30$ to $-0.03$ in the trunk ([docs/LIVER.md](docs/LIVER.md)).
 
 The vascular mass prediction provides a second, weaker test.
 
@@ -311,64 +310,45 @@ It asks whether the same network principle can remain physiologically reasonable
 
 ---
 
-### P2. Flow and pressure should separate when outflow resistance decreases
+### P2. Flow load and pressure load are not interchangeable
 
-The central mechanistic prediction follows directly from:
+The central prediction follows directly from:
 
 $$z_P=z_Fz_R.$$
 
-If venous outflow is enlarged:
+Flow and pressure carry the same information only if $z_R=1$. The network keeps a partial graft between 0.8 and 1 (see [Why resistance matters](#why-resistance-matters)), so the model expects the pressure load to fall short of the flow load, by at most a fifth.
 
-$$z_R<1.$$
+Six published clinical groups reported both flow load and pressure load. Their resistance loads were:
 
-Portal pressure should then be lower than expected from portal flow alone.
+$$z_R=0.31,\;0.54,\;0.55,\;0.65,\;0.72,\;0.74.$$
 
-Five published clinical groups reported both flow load and pressure load.
+All six are below 1, at flow loads of 3.3 to 4.1. The exact sign test over the six groups gives:
 
-Four of these groups had reconstructed or functionally enlarged outflow:
+$$p=0.016.$$
 
-- right lobe with middle hepatic vein reconstruction,
-- outflow venoplasty,
-- left lobe with middle and left hepatic vein trunk,
-- splenectomy associated with increased haemodynamic compliance.
-
-Their resistance loads were:
-
-$$z_R=0.31,\;0.54,\;0.55,\;0.74.$$
-
-All four values were below 1, as predicted.
-
-The only group with standard outflow and both loads reported (Wang 2014, no splenectomy) had:
-
-$$z_R=0.72.$$
-
-It is also below 1, so these five groups show that partial grafts can carry high flow at reduced resistance, but they do not yet separate reconstructed from standard outflow. That contrast needs more series reporting both loads.
-
-Because $R_{\text{graft}}$ is estimated here from the measured gradient and flow, the identity itself is an exact decomposition, not an empirical test. The empirical content of P2 is the sign of $z_R-1$ under each surgical configuration.
-
-The exact sign test gives:
-
-$$p=0.06.$$
-
-When the reported uncertainty in flow and pressure is propagated, each reconstructed group remains below:
+When the reported uncertainty in flow and pressure is propagated, each group remains below:
 
 $$z_R=1$$
 
-with probability approximately 1.00.
+with probability approximately 1.00. The four groups that report an outcome among the five with reconstructed outflow had adverse outcome rates between 0% and 10%.
 
-These grafts had portal flow loads approximately three to four times the donor value, while reported adverse outcome rates remained between 0% and 10%.
+All six are also below 0.81, the lowest value the network reaches. The model has the sign of the separation and not its size. One series (Wu 2011) measured portal and arterial flow in the donor and in the graft, and its own donor reference: with those values the model gives 0.82 to 0.86 against an observed 0.65.
+
+The surgical configuration does not order the groups. Five had reconstructed or functionally enlarged outflow (right lobe with middle hepatic vein, outflow venoplasty, left lobe with the middle and left hepatic vein trunk, splenectomy, anterior-section veins by vein graft), at 0.31 to 0.74; the one with standard outflow (Wang 2014, no splenectomy) is at 0.72, inside that range. Within the model, widening the outlet anastomosis lowers $z_R$ to 0.95 at most.
+
+Because $R_{\text{graft}}$ is estimated here from the measured gradient and flow, the identity itself is an exact decomposition, not an empirical test. The empirical content of P2 is the value of $z_R$.
+
+Two references enter $z_R$: the donor's gradient, which no series measures and is taken as 5 mmHg, and the donor's portal flow, measured in four of the series (81, 85, 91 and 118 mL/min per 100 g) and taken as 90 elsewhere. Every group stays below 1 in 14 of 15 combinations of a donor flow of 80 to 100 and a gradient of 4 to 6 mmHg.
 
 #### What P2 shows
 
-The result shows why portal flow and portal pressure should not be treated as interchangeable measures.
-
-The same graft can have:
+Portal flow and portal pressure should not be treated as interchangeable measures. The same graft can have:
 
 - very high flow,
 - relatively moderate pressure,
 - low effective resistance.
 
-The most direct evidence for flow-pressure separation therefore comes from grafts in which both quantities were measured.
+The resistance load is what separates them, and it is lower in every published group than the network accounts for.
 
 ---
 
@@ -378,11 +358,11 @@ If $z_P$ reflects the haemodynamic burden experienced by the graft, higher press
 
 The complete dataset contains:
 
-- 17 clinical series,
-- 10 centres,
-- 31 groups,
-- 21 groups with pressure load,
-- 14 groups with flow load.
+- 18 clinical series,
+- 11 centres,
+- 32 groups,
+- 22 groups with pressure load,
+- 15 groups with flow load.
 
 A within-study slope requires at least two groups from the same study with the same outcome measured at different haemodynamic levels.
 

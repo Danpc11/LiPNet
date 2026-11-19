@@ -151,10 +151,10 @@ def share_vs_cost_exponent(radii=(3.0, 4.5, 6.5, 9.0), exponents=(0.5, 0.75, 1.0
 
 
 def predict_series(load, share, root=None, **kw):
-    """The prediction against the five published groups that report both indices.
+    """The prediction against the six published groups that report both indices.
 
     The flow load barely varies across them (z_F from 3.3 to 4.1), so the lobule model
-    predicts a z_R that is the same to three decimals for all five. Whatever separates
+    predicts a z_R between 0.913 and 0.918 for all six. Whatever separates
     0.31 from 0.74 in the data is not flow through the lobules.
     """
     import os

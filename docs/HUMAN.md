@@ -130,7 +130,7 @@ Liver of 1500 g, lobular drop imposed:
 Measured in adults: portal diameter 10.7 mm by ultrasound and 13.3 mm by CT (pooled) [9], 14.6 mm in the cast [2];
 mean velocity 15 ± 4 and 16.5 ± 4.9 cm/s; flow 648 ± 186 and 899 ± 284 mL/min [11], below the 1350 mL/min that 90
 mL/min per 100 g gives a liver of 1500 g. In donors the pressure of the right portal vein is 8 ± 1.8 mmHg [20].
-The calibration does not move the result of `docs/LIVER.md`, section 6: the five observed resistance loads (0.31 to
+The calibration does not move the result of `docs/LIVER.md`, section 6: the six observed resistance loads (0.31 to
 0.74) lie below every value in the table.
 
 ## 6. Two inflows, measured
@@ -155,9 +155,9 @@ before retrieval and the graft after reperfusion. `two_inflows_measured` puts th
 | $z_R$ of the model with all the resistance after the junction | 0.75 | 0.83 |
 
 The arterial flow per gram of the graft falls to 0.66 and 0.79 of the donor's while the portal flow per gram rises
-3.3 and 3.5 fold. Wu 2011 is a sixth group with both loads, with its own donor reference; it is not in
-`data/series.tsv`. Its resistance load, 0.65, is inside the range of the five groups of the table and below the
-model at any split of the resistance between the trees.
+3.3 and 3.5 fold. Wu 2011 is the sixth group of `data/series.tsv` with both loads, read against its own donor
+reference. Its resistance load, 0.65, is inside the range of the other five and below the model at any split of the
+resistance between the trees.
 
 ## 7. Growth with the body
 

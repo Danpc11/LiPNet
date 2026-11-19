@@ -173,12 +173,12 @@ def test_the_sampler_reproduces_the_published_fit_at_zero_spread():
 
 
 def test_every_series_agrees_on_the_size_of_the_within_group_spread():
-    """Once Ogura's standard errors are converted and Botha's table is used, all seven
-    dispersions fall between 2.6 and 4.4 mmHg, which is what licenses one pooled value."""
+    """Once Ogura's standard errors are converted and Botha's table is used, all nine
+    dispersions fall between 2.6 and 4.5 mmHg, which is what licenses one pooled value."""
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     assert d.gradient_sd.notna().sum() >= 5
     sds = ec.corrected_sigma_mmHg()
-    assert len(sds) >= 7, 'every series with a dispersion should be represented: %s' % sds
+    assert len(sds) == 9 and 2.6 < min(sds) and max(sds) == 4.5, 'every series with a dispersion should be represented: %s' % sds
     assert max(sds) / min(sds) < 2.0, \
         'after correction the dispersions should agree in magnitude: %s' % sds
     assert 0.0 < ec.pooled_sigma(primary()) < 2.0

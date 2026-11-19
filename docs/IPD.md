@@ -49,11 +49,11 @@ recipient, so the standard deviation comes straight from the ten measured gradie
 mmHg. Chan publishes a range for all 46 recipients, which the estimator of Wan et al.
 (*BMC Med Res Methodol* 2014) turns into 2.71 mmHg.
 
-With all four corrections, the eight dispersions run from 2.6 to 4.4 mmHg and agree within
-a factor of 1.7. That is the result: **the within-group spread of the portocaval gradient is
+With all four corrections, and the value Wu 2011 reports for its one group (4.5 mmHg), the
+nine dispersions run from 2.6 to 4.5 mmHg and agree within a factor of 1.7. That is the result: **the within-group spread of the portocaval gradient is
 about 3 to 4 mmHg in every series that measured it, which is as wide as the entire
-between-group range of the meta-analysis.** A single pooled value of 3.4 mmHg
-(0.69 in z_P units) is therefore defensible, where before the correction the dispersions
+between-group range of the meta-analysis.** A single pooled value of 3.8 mmHg
+(0.76 in z_P units) is therefore defensible, where before the correction the dispersions
 looked bimodal and no pooling would have been.
 
 ### The model
@@ -91,8 +91,8 @@ R-hat 1.005. That agreement is a test in `tests/test_ipd.py`, not a remark.
 | mu_beta | +1.56 | +1.58 | +1.66 | +1.74 | +1.68 | +1.59 | +1.39 |
 | odds ratio per unit z_P | 4.8 | 4.8 | 5.3 | 5.7 | 5.3 | 4.9 | 4.0 |
 
-Using each group's own reported SD, and the pooled median of 0.69 z_P units (3.45 mmHg)
-where it is missing, gives mu_beta = +1.71 (+0.34 to +3.28).
+Using each group's own reported SD, and the pooled median of 0.76 z_P units (3.8 mmHg)
+where it is missing, gives mu_beta = +1.68 (+0.30 to +3.22).
 
 Two things follow, and the second matters more than the first.
 
@@ -260,7 +260,7 @@ pressure before or after implantation.
 **It is also the strongest single case for the resistance reading.** This is the series with
 the widest venous outflow in the whole set, a right lobe including the middle hepatic vein
 with direct caval anastomosis, and it carries a flow load of 4.0 at a pressure load of 1.2:
-a resistance load of 0.30, the lowest of the five paired groups. The authors attribute it to
+a resistance load of 0.30, the lowest of the six paired groups. The authors attribute it to
 outflow: in their reading, residual portal hypertension after implantation is a
 manifestation of insufficient venous outflow, and a graft that drains freely raises the
 threshold at which sinusoidal injury appears.

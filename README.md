@@ -22,9 +22,9 @@ $$z_F=\frac{\text{graft PVF per }100\,\text{g}}{\text{donor PVF per }100\,\text{
 z_P=\frac{\text{PVP}-\text{CVP}}{5\ \text{mmHg}},\qquad
 z_R=\frac{R_{\text{graft}}}{R_{\text{donor}}}$$
 
-Because $z_P/z_F=(\Delta P_{\text{graft}}/\Delta P_{\text{donor}})/(Q_{\text{graft}}/Q_{\text{donor}})=R_{\text{graft}}/R_{\text{donor}}$, the identity holds exactly. Its empirical content is which surgical configurations give $z_R<1$.
+Because $z_P/z_F=(\Delta P_{\text{graft}}/\Delta P_{\text{donor}})/(Q_{\text{graft}}/Q_{\text{donor}})=R_{\text{graft}}/R_{\text{donor}}$, the identity holds exactly. Its empirical content is the value of $z_R$.
 
-All three loads equal 1 in a healthy donor. Flow and pressure therefore carry the same information only while $z_R=1$: whenever the venous outflow is enlarged, $z_R$ falls and a graft can take three or four times the donor's flow without the pressure that would normally come with it. In the five published groups that report both loads, the four with reconstructed or enlarged outflow had $z_R = 0.31,\;0.54,\;0.55,\;0.74$, all below one, with adverse outcomes of 0 to 10%. The fifth group, with standard outflow, had $z_R = 0.72$, so the contrast between configurations still needs more series.
+All three loads equal 1 in a healthy donor. Flow and pressure therefore carry the same information only while $z_R=1$. The network keeps a partial graft between 0.8 and 1. In the six published groups that report both loads, at three to four times the donor's flow, $z_R = 0.31,\;0.54,\;0.55,\;0.65,\;0.72,\;0.74$: all below one, and all below what the network accounts for. Flow load and pressure load are not interchangeable, and the resistance load measures by how much they separate. The surgical configuration does not order the groups: the one with standard outflow is at 0.72, inside the range of the five with reconstructed or enlarged outflow.
 
 The derivation, the four predictions that follow from it and all the numbers are in **[THEORY.md](THEORY.md)**.
 
@@ -38,7 +38,7 @@ The derivation, the four predictions that follow from it and all the numbers are
 
 ## Included clinical series
 
-Thirty-one groups from seventeen published series of adult living-donor liver transplantation. Every value in `data/series.tsv` carries its source table and page, and a provenance label.
+Thirty-two groups from eighteen published series of adult living-donor liver transplantation. Every value in `data/series.tsv` carries its source table and page, and a provenance label.
 
 | Series | Journal | Link |
 |---|---|---|
@@ -51,6 +51,7 @@ Thirty-one groups from seventeen published series of adult living-donor liver tr
 | Ogura 2010 | Liver Transpl 2010;16(6):718–728 | [10.1002/lt.22059](https://doi.org/10.1002/lt.22059) |
 | Ou 2010 | Transplant Proc 2010;42(3):876–878 | [10.1016/j.transproceed.2010.02.064](https://doi.org/10.1016/j.transproceed.2010.02.064) |
 | Chan 2011 | Liver Transpl 2011;17(2):115–121 | [10.1002/lt.22034](https://doi.org/10.1002/lt.22034) |
+| Wu 2011 | Liver Transpl 2011;17(9):1035–1045 | [10.1002/lt.22326](https://doi.org/10.1002/lt.22326) |
 | Ishizaki 2012 | Liver Transpl 2012;18(3):305–314 | [10.1002/lt.22440](https://doi.org/10.1002/lt.22440) |
 | Vasavada 2014 | Int J Surg 2014;12(2):177–180 | [10.1016/j.ijsu.2013.12.006](https://doi.org/10.1016/j.ijsu.2013.12.006) |
 | Wang 2014 | Surg Today 2015;45(8):979–985 | [10.1007/s00595-014-0999-9](https://doi.org/10.1007/s00595-014-0999-9) |
@@ -177,11 +178,22 @@ src/ipd/
 src/plots.py
     Generates 19 stand-alone figures
 
+src/main_figures.py
+    Data panels of Figures 1 to 4 of the article (1D-E, 2A-B, 3A-C, 4A-B)
+    Output:
+    results/main_figure_*.pdf and .png
+
+src/human_figures.py
+    Supplementary Figures S5 and S6: the model against the human cast,
+    growth with the body and regrowth of a graft
+    Output:
+    results/human_liver_values, results/human_liver_growth (.pdf and .png)
+
 src/build_app.py
     Rebuilds the browser calculator
 
 data/series.tsv
-    31 groups from 17 published clinical series
+    32 groups from 18 published clinical series
 
 sfss_calculator.html
 index.html
@@ -334,7 +346,7 @@ They are reported separately in:
 results/sensitivity.tsv
 ```
 
-The seventeen series and their links are listed in [Included clinical series](#included-clinical-series) above.
+The eighteen series and their links are listed in [Included clinical series](#included-clinical-series) above.
 
 ---
 
@@ -453,9 +465,9 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo. The version used in the article is v0.4.2:
+The software is archived on Zenodo. The article uses release v0.5.0, which receives its own DOI when the release is published; the last archived version is v0.4.2:
 
-**DOI: 10.5281/zenodo.23656741** (this version) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
+**DOI: 10.5281/zenodo.23656741** (v0.4.2) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 
 A machine-readable citation is also available in:
 
