@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 ROOT = os.path.join(os.path.dirname(__file__), '..'); DATA = f'{ROOT}/data'; OUT = f'{ROOT}/results'
 plt.rcParams.update({'font.family': ['Liberation Sans', 'Arial', 'DejaVu Sans'], 'font.size': 8, 'axes.spines.top': False, 'axes.spines.right': False, 'legend.frameon': False})
-C_IN, C_SIN, C_OUT = '#1f5fbf', '#c62828', '#2e7d32'
+import figstyle; C_IN, C_SIN, C_OUT = figstyle.PORTAL, figstyle.SINUSOID, figstyle.HEPATIC    # the colours of the article: portal, sinusoid, hepatic veins
 import indices
 series = lambda: indices.compute(pd.read_csv(f'{DATA}/series.tsv', sep='\t'))   # indices always recomputed from the raw columns
 def save(fig, name):

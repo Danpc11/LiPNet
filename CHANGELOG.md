@@ -2,6 +2,29 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.5.2] – 2026-11-19
+
+### Changed
+- The colours of the vessels follow the anatomical atlases: portal tree and inlet in purple, hepatic veins and outlet in blue, sinusoids in orange. Green had been given to the hepatic veins and is the colour of bile canaliculi and ducts in liver figures; red is left to the hepatic artery. The three colours pass the colour-vision checks of the palette for every pair. `figstyle.py` holds the assignment in one line; Figures 1, S1, S2 and S5 change, and `plots.py` follows.
+
+## [0.5.1] – 2026-11-19
+
+Every figure of the article from one script in one style. The rules and the inputs of each figure are in [docs/FIGURES.md](docs/FIGURES.md). No result changes.
+
+### Added
+- `src/figstyle.py`: the style. 180 or 88 mm wide, one sans family at 7 pt, panel letters in bold capitals, no titles, no grid, text in ink only, PDF in vector with embedded fonts and PNG at 300 dpi. One meaning per colour: blue for the portal tree and the inlet, orange for the sinusoids, aqua for the hepatic veins and the outlet, a blue ramp for an ordered parameter, red for the one recipient with an adverse outcome.
+- `src/paper_figures.py`: Figures 1 to 4 and S1 to S6. Figure 1 is now whole: panel A is a drawing of the model (one lobule with its six candidate paths, and the network of two trees), panels B and C the optimum recomputed in two and three dimensions. Figures S1 to S4 no longer come from `plots.py` and `run_ipd.py`.
+- Written in the panels: the exact sign test of Figure 2B ($P=0.016$), the median resistance load of the six groups in Figure 2A (0.60), the posterior probability of a positive slope in Figures 3A and S3, the exact probability of Figure S4 ($P=0.10$) with the medians, and the count of combinations inside the observed band in Figure S1C (5 of 28).
+- `tests/test_figures.py`.
+
+### Changed
+- Figure 3: the colour is the centre and the symbol the publication, because five unordered colours cannot all be told apart; the rows of panel A are the key of panel B.
+- Figure S5: sinusoids in orange and hepatic veins in aqua, as in Figure 1 (they were exchanged).
+- `plots.py` takes the three vascular colours from `figstyle.py`.
+
+### Removed
+- `src/main_figures.py` and `src/human_figures.py`, absorbed by `src/paper_figures.py`.
+
 ## [0.5.0] – 2026-11-19
 
 The release of the article. Wu 2011 enters the table as the sixth group with both loads, the text of the repository says what the model supports about the separation of flow and pressure, and the data panels of the figures are drawn by the code.

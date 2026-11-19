@@ -178,16 +178,13 @@ src/ipd/
 src/plots.py
     Generates 19 stand-alone figures
 
-src/main_figures.py
-    Data panels of Figures 1 to 4 of the article (1D-E, 2A-B, 3A-C, 4A-B)
+src/paper_figures.py
+    The ten figures of the article (Figures 1 to 4, S1 to S6)
     Output:
-    results/main_figure_*.pdf and .png
+    results/Figure_*.pdf and .png
 
-src/human_figures.py
-    Supplementary Figures S5 and S6: the model against the human cast,
-    growth with the body and regrowth of a graft
-    Output:
-    results/human_liver_values, results/human_liver_growth (.pdf and .png)
+src/figstyle.py
+    The one style those figures share (docs/FIGURES.md)
 
 src/build_app.py
     Rebuilds the browser calculator
@@ -224,6 +221,7 @@ docs/FEM.md
 docs/IPD.md
 docs/LIVER.md
 docs/HUMAN.md
+docs/FIGURES.md
 run_all.sh
 ```
 
@@ -465,7 +463,7 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo. The article uses release v0.5.0, which receives its own DOI when the release is published; the last archived version is v0.4.2:
+The software is archived on Zenodo. The article uses release v0.5.2, which receives its own DOI when the release is published; the last archived version is v0.4.2:
 
 **DOI: 10.5281/zenodo.23656741** (v0.4.2) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 
