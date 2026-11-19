@@ -55,7 +55,8 @@ One exponent does not describe both venous trees. A model with one exponent per 
 $m^b$ of the two trees then carry different units, and their joint optimum depends on one further number, the
 budget of one tree relative to the other, which the model does not supply. The exponent of the hepatic vein is
 reported and not used: by Poiseuille the same radii hold more than the gradient of the whole liver
-([HUMAN.md](HUMAN.md), section 3). Results are reported across $b$, and where they depend on the split between the
+([HUMAN.md](HUMAN.md), section 3). On the eleven measured generations of the cast the portal vein gives 0.73 and the
+hepatic artery 1.04. Results are reported across $b$, and where they depend on the split between the
 trees, over every split.
 
 ## 3. Where the pressure drop sits in a human liver
@@ -103,7 +104,8 @@ $$z_P=s_{in}z_F+(1-s_{in})\frac{z_F+\varphi a}{1+a}.$$
 | donor value ($\varphi=1$) | 0.84 to 0.90 | 0.81 to 1 |
 | scaling with the portal vein ($\varphi=z_F$) | 0.93 to 1.00 | the network value |
 
-The series report no arterial flow, so $\varphi$ is not observed.
+The series of the table report no arterial flow. Two others measured it in the donor and in the graft: $\varphi$ is 0.66
+and 0.79, and the model then gives 0.82 to 0.90 against an observed 0.65 ([HUMAN.md](HUMAN.md), section 6).
 
 ## 6. The model against the five paired groups
 

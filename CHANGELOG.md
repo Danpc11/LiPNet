@@ -2,6 +2,25 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.4.5] – 2026-11-19
+
+The human liver of 0.4.4 set against eighteen papers read in full: the macroscopic table of the cast, two series with both inflows measured, and the course of volume, inflow and portal pressure after transplantation. [docs/HUMAN.md](docs/HUMAN.md) is rewritten around them.
+
+### Added
+- The six generations measured on the whole cast (Debbaut et al., IEEE Trans Biomed Eng 2011, Tables II to IV) replace the end points and the extrapolated lengths used in 0.4.4. The portal tree now has eleven measured generations: the radius law of the optimum gives $b=0.73$ (0.71 to 0.74 leaving one generation out) and the absolute radii, with no fitted scale, 0.74 (rms error below 10% for 0.68 to 0.80; all eleven within 10% at $b=0.75$). The hepatic artery gives 1.04 (0.99 to 1.06), Murray's law.
+- `human.two_inflows_measured`: Wu 2011 and García-Valdecasas 2003 measured portal and arterial flow in the donor's right lobe and in the graft. The arterial flow per gram of the graft is 0.66 and 0.79 of the donor's, the arterial share of the donor 0.31 and 0.22. With these the model gives $z_R$ of 0.82 to 0.86 for Wu 2011, whose observed value is 0.65 ($z_F=3.25$ from its own donor reference of 84.7 mL/min per 100 g, gradient 10.6 mmHg).
+- `human.first_week` and the `inflow` argument of `human.regeneration`: in the first week the graft grows 1.57-fold (Yagi 2005) and its portal inflow falls to 0.70 (Wu 2011). The model gives a portal pressure of 0.78 of its value at reperfusion with calibres unchanged and 0.48 with calibres in proportion; the measured portal pressure is 0.91 (0.83 to 0.86 as a gradient above a caval pressure of 8 mmHg).
+- `GRAFT_VOLUME`: graft volume over implanted volume from nine groups of eight series, 1.6 to 1.9 at two weeks. `DONOR_PORTAL_PER_100G`: the five donor references measured so far, 70 to 118 mL/min per 100 g, median 85.
+- `tests/test_human.py`, eight tests.
+
+### Changed
+- The hepatic veins of the cast: seven measured generations hold 3.5 mmHg at donor flow ($b=0.42$). The authors of the cast report the same inconsistency and adjusted the unmeasured generations of their model for it.
+- `docs/LIVER.md`, section 5: $\varphi$ is no longer unobserved.
+
+### Notes
+- Wu 2011 has both loads and its own donor reference, and is not in `data/series.tsv`. Adding it would make six paired groups; the table, the fits and the manuscript are not changed by this release.
+- Kahn 1989 and Crawford 1998 do not give the size or number of lobules against age, so the share $s$ of growth by lobule enlargement stays free.
+
 ## [0.4.4] – 2026-11-18
 
 The model in physical units for a human liver, with the three inconsistencies that calibration exposed corrected, and its growth. Derivations, numbers and sources are in [docs/HUMAN.md](docs/HUMAN.md). The range of $b$ stays $[0.5,1]$.
