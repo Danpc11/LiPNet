@@ -81,8 +81,8 @@ if __name__ == '__main__':
 def test_the_passive_relations_span_the_observations_without_a_fitted_number():
     """src/model/distension.py: what the rigid network leaves out, from published relations for the normal liver only."""
     from model import distension as ds
-    assert ds.CUBE == 3.0 and ds.DOUBLING_MMHG == (8.0, 13.0) and ds.GREENWAY == dict(intercept=2.2, slope=(0.046, 0.030), control_flow=139.0), 'the published numbers, not tuned'
-    assert ds.FLOW_FIXED_SHARE == (0.256, 0.345)
+    assert ds.CUBE == 3.0 and ds.DOUBLING_MMHG == (8.0, 13.0) and ds.GREENWAY == dict(intercept=2.2, slope=0.030, slope_with_the_cannula=0.046, control_flow=139.0, portal_to_lobar=(0.0, 2.0)), 'the published numbers, not tuned'
+    assert ds.FLOW_FIXED_SHARE == (0.299, 0.345), 'on the portocaval gradient, without the rise of the caval pressure the outflow cannula adds'
     for law in ds.LAWS:                                   # the donor is a fixed point of every relation, and pressure rises far less than flow
         for p in ds.PARAMS[law]:
             r = ds.distensible(1.0, 1.0, 5.0, law, p); assert abs(r['zR'] - 1) < 1e-9 and abs(r['gradient_mmHg'] - 5) < 1e-9
@@ -90,11 +90,21 @@ def test_the_passive_relations_span_the_observations_without_a_fitted_number():
     s = ds.summary(); B = s['distension']['bracket']; fd = s['distension']['flow_doubled_from_the_donor']
     assert s['sinusoids']['zR_floor_relative_to_rigid'][0] > 0.8 and s['outflow']['zR_floor_relative_to_rigid'] == 0.95, 'sinusoids and outlet cannot close the distance alone'
     assert s['required']['reduction_missing'] == [0.28, 0.348], 'against the lowest and the highest network, not the midpoint'
-    assert all(1.5 < x < 2.3 for law in ('cube law', 'compliance') for x in fd[law]['rise_mmHg']) and all(3 < x < 4 for x in fd['pressure-flow']['rise_mmHg']), 'about 2 mmHg for a doubling, as the sources state, except the relation that stops distending'
+    assert all(1.5 < x < 2.3 for law in ('cube law', 'compliance') for x in fd[law]['rise_mmHg']) and all(3 < x < 3.6 for x in fd['pressure-flow']['rise_mmHg']), 'about 2 mmHg for a doubling, as the sources state, except the relation that stops distending'
     assert len(B['groups']) == 6 and B['within_the_relations'] == 5 and B['below_the_relations'] == ['Chan 2011 / right lobe with MHV, no modulation'] and not B['above_the_relations']
     assert B['below_the_rigid_network'] == 5 and (B['value_in_a_relation_that_keeps_distending'], B['value_in_the_relation_that_stops_distending']) == (1, 3)
     for g in B['groups']:
-        assert g['zR_keeps_distending'][1] < g['zR_stops_distending'][0] < g['zR_stops_distending'][1] < 0.83 and g['zR_rigid'][1] <= 1.0
+        assert g['zR_keeps_distending'][1] < g['zR_stops_distending'][0] < g['zR_stops_distending'][1] < 0.80 and g['zR_rigid'][1] <= 1.0
+        assert set(g['placement']) == {'rigid network', 'keeps distending', 'stops distending', 'all relations'} and all(set(v) == {'point', 'interval'} for v in g['placement'].values())
+        for reg, v in g['placement'].items():                   # one rule: an interval that does not reach a region is on the side of its point
+            assert v['interval'] == 'reaches' or v['interval'] == v['point']
+    ct = B['counts']; assert (ct['rigid network']['point_below'], ct['rigid network']['interval_below']) == (6, 5) and ct['all relations'] == dict(point_inside=5, point_below=1, point_above=0, interval_reaches=5, interval_below=1, interval_above=0)
+    C = s['consistency']['relations']                          # one definition of pressure and flow, composed once with the network
+    assert all(v['reference_error'] < 1e-12 and v['same_load_same_gradient_mmHg'] < 1e-9 and v['monotone'] and v['largest_local_exponent'] < 1.0 for v in C.values())
+    assert C['pressure-flow']['exponent_at_the_highest_flow'][0] > 0.95 and C['cube law']['exponent_at_the_highest_flow'][1] < 0.45 and C['compliance']['exponent_at_the_highest_flow'][1] < 0.45
+    H = s['heterogeneity']; assert all(v['sd_log'] < H['observed']['sd_log'] / 4 and v['spearman_p'] > 0.1 for v in H['relations'].values()), 'the relations set the level of zR, not the order of the groups'
+    W = s['wang_contrast']['models']; assert W['rigid network']['share_of_the_log_contrast'] < 0.05 and all(0.1 < W[k]['share_of_the_log_contrast'] < 0.25 for k in ('cube law', 'compliance')) and W['pressure-flow']['share_of_the_log_contrast'] < 0.1
+    assert all(v['ratio'][1] > s['wang_contrast']['observed_ratio'][2] for v in W.values()), 'from the flow loads alone no model reaches the contrast between the two arms of Wang 2014'
     band = s['distension']['band_in_the_plane']; assert all(lo <= hi for lo, hi in zip(band['zP_low'], band['zP_high']))
 
 
@@ -137,6 +147,6 @@ def test_the_published_relations_hold_in_a_species_they_were_not_derived_from():
         assert st[state]['predicted']['compliance']['within_two_se_of_the_measured_ratio'] and not st[state]['predicted']['pressure-flow']['within_two_se_of_the_measured_ratio']
     assert all(v['caval_pressure_consistent'] for v in st.values()), 'the caval pressure implied by the printed values is the same at both flows'
     e = c['largest_portal_pressure_error_mmHg']
-    assert e['compliance']['normal_livers'] < 1.2 and e['compliance']['after_cold_ischaemia'] > 2 and e['pressure-flow']['normal_livers'] > 4
+    assert e['compliance']['normal_livers'] < 1.2 and e['compliance']['after_cold_ischaemia'] > 2 and e['pressure-flow']['normal_livers'] > 3.5
     assert all(x < 0 for x in st['after 2 h of cold ischaemia']['predicted']['compliance']['portal_pressure_error_mmHg']), 'after cold ischaemia the liver distends less than the relation gives'
     assert abs(ds.RICCIARDI['after 2 h of cold ischaemia']['hvr'][0] / ds.RICCIARDI['isolated, perfused']['hvr'][0] - 2.0) < 0.01, 'after cold ischaemia the resistance is twice as high at the same flow'

@@ -2,6 +2,22 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.7.4] – 2026-11-20
+
+A second review of the distensibility analysis.
+
+### Fixed
+- **One definition of pressure in the pressure-flow relation.** Greenway et al. (1985) regressed the intrahepatic pressure, the mean of the portal and lobar venous pressures, on total hepatic flow, and their slope of 0.046 includes 0.015 of caval pressure raised by the outflow cannula. Only the slope relative to the caval pressure (0.030) is used, and the half of the 1 to 2 mmHg between portal and lobar veins that the portocaval gradient adds is included: the share of the control gradient that does not scale with flow is 0.30 to 0.35 (was 0.26 to 0.35). The relation now gives 0.61 to 0.79 (was 0.61 to 0.82), the span of the three 0.39 to 0.79, pig livers 0.78 to 0.81, and a doubled donor flow 3.3 to 3.5 mmHg.
+
+### Changed
+- **One rule for placing a group** (`bracket`). Each group is placed against four regions (rigid network, relations that keep distending, the one that stops, all three) by the same rule, with the point estimate and the 95% sampling interval reported apart; the counts are in the output. The placement is described as a description, not a probability.
+- The joint draws (`joint`) are reported as shares of draws over uniform plausible ranges, a sensitivity analysis, not as probabilities that a mechanism acts; the deterministic ranges remain the primary statement.
+
+### Added
+- `distension.consistency`: the three relations share the definition of pressure and flow and act on the load of the rigid network once; reference state $z_P=z_F=z_R=1$ at every CVP and parameter, the same gradient for the same effective load, monotone with no jump from 0.25 to 20 times the donor flow, and the local exponent at the highest flow.
+- `distension.heterogeneity`: the relations set the level of $z_R$, not the order of the groups (spread of $\log z_R$ 0.016 to 0.075 against 0.325 observed; rank correlation 0.49, P = 0.33).
+- `distension.wang_contrast`: the two arms of Wang 2014 solved from their flow loads only, with CVP, network and parameters common to both arms: observed ratio 0.74 (0.61 to 0.88), relations 0.95 to 0.99, 4 to 18% of the log contrast.
+
 ## [0.7.3] – 2026-11-20
 
 A review of the distensibility analysis and of the error of P2 (points H1 to H6).

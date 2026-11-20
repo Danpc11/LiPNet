@@ -26,7 +26,7 @@ Because $z_P/z_F=(\Delta P_{\text{graft}}/\Delta P_{\text{donor}})/(Q_{\text{gra
 
 All three loads equal 1 in a healthy donor. Flow and pressure therefore carry the same information only while $z_R=1$. The network keeps a partial graft between 0.8 and 1. That prediction uses the geometry of the network and the two inflows, and no pressure of a recipient. In the six published groups that report both loads (five cohorts), at three to four times the donor's flow, $z_R = 0.31,\;0.54,\;0.55,\;0.65,\;0.72,\;0.74$: all below one (exact sign test over cohorts, one-sided $p=0.031$), and at the reference values all below the prediction, which is 0.85 on average against an observed 0.58. The model has the direction of the separation and under-predicts its size. The surgical configuration does not order the groups: the one with no manoeuvre is at 0.72, inside the range of the three with outflow reconstruction alone (0.31 to 0.74).
 
-The network is rigid. Three published relations for the passive behaviour of the normal liver, with nothing fitted, give 0.39 to 0.82 at these flow loads: five of the six groups are compatible with that span (each within it with probability 0.35 to 0.68 once every uncertainty is drawn together), and Chan 2011 lies below it. Applied vessel by vessel, the relations reach the lower values only if the portal tree distends. They come from normal cat livers and are read as the largest plausible passive contribution, not a prediction for a reperfused graft ([docs/LIVER.md](docs/LIVER.md), section 7).
+The network is rigid. Three published relations for the passive behaviour of the normal liver, with nothing fitted, give 0.39 to 0.79 at these flow loads: five of the six groups are compatible with that span (each within it in 31 to 66% of draws over the joint range of every uncertainty), and Chan 2011 lies below it. Applied vessel by vessel, the relations reach the lower values only if the portal tree distends. They come from normal cat livers and are read as the largest plausible passive contribution, not a prediction for a reperfused graft ([docs/LIVER.md](docs/LIVER.md), section 7).
 
 The outcome analysis is an association between groups of one cohort, not the effect of pressure on a patient. The comparison of clinical thresholds is exploratory: the thresholds are each about 10 mmHg, so their agreement at $z_P=2$ follows from the 5 mmHg reference and is not a prediction. [THEORY.md](THEORY.md) keeps the three levels apart: identity, prediction of the network, association in the series.
 
@@ -492,7 +492,7 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo. The article uses release v0.7.3, which receives its own DOI when the release is published; the last archived version is v0.4.2:
+The software is archived on Zenodo. The article uses release v0.7.4, which receives its own DOI when the release is published; the last archived version is v0.4.2:
 
 **DOI: 10.5281/zenodo.23656741** (v0.4.2) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 

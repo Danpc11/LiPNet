@@ -157,12 +157,15 @@ cats say by how much; all were read in the original papers.
   doubling pressure is taken over 8 to 13 mmHg. With the length of the vessels fixed and Poiseuille flow, resistance
   goes as volume$^{-2}$: this takes the resistance vessels to distend as the capacitance vessels do, an assumption
   and an upper bound.
-- **Pressure-flow.** Intrahepatic pressure is linear in total hepatic flow, measured up to 240 mL/min/100 g of portal
-  flow, about 2.2 times the control total flow; nonlinear fits were worse [L8]. The intercept is 2.2 mmHg at zero flow
-  and the slope 0.046 mmHg per mL/min/100 g, or 0.030 once the outflow cannula is subtracted, at a control flow of 139.
-  A share $f$ = 0.26 to 0.35 of the control gradient then does not scale with flow, and $G/g_0=f+(1-f)\,q$ at a flow
-  load $q$. This is the relation measured at the highest flows, and it stops distending: resistance tends to the slope
-  as flow rises.
+- **Pressure-flow.** Intrahepatic pressure, the mean of the portal and the lobar venous pressures, is linear in total
+  hepatic flow, measured up to 240 mL/min/100 g of portal flow, about 2.2 times the control total flow; nonlinear fits
+  were worse [L8]. The intercept is 2.2 mmHg at zero flow and the slope 0.046 mmHg per mL/min/100 g, of which 0.015 is
+  the outflow cannula raising the caval pressure with flow, so 0.030 relative to the caval pressure, at a control flow of
+  139. On the portocaval gradient used here, which exceeds the intrahepatic-to-caval difference by half the 1 to 2 mmHg
+  between portal and lobar veins (taken proportional to flow), a share $f$ = 0.30 to 0.35 of the control gradient does
+  not scale with flow, and $G/g_0=f+(1-f)\,q$ at a flow load $q$. The slope with the cannula (which would give 0.26) is
+  not a gradient and is not used. This is the relation measured at the highest flows, and it stops distending:
+  resistance tends to the slope as flow rises.
 
 The first two keep distending at the flows of a graft, the third does not. Their authors note that in the normal liver
 the changes of resistance are notable below 10 mmHg and minor above [L7], and a graft is at 14 to 22 mmHg.
@@ -176,7 +179,7 @@ two inflows) to 1.00 (the network alone).
 ### The relations against measurements they were not derived from
 
 Doubling the flow of a donor liver raises its gradient by 1.9 mmHg with the cube law and 1.7 to 2.3 mmHg with the compliance; the source
-gives about 2 mmHg [L6]. The pressure-flow relation gives 3.3 to 3.7 mmHg.
+gives about 2 mmHg [L6]. The pressure-flow relation gives 3.3 to 3.5 mmHg.
 
 Ricciardi et al. [L5] measured portal pressure and resistance at two flows in pig livers in situ, isolated on a bypass
 circuit, and after 2 h of cold ischaemia. Each relation is anchored at the lower flow of each state, with the gradient
@@ -185,15 +188,15 @@ the higher flow (`published_check`). The caval pressure implied at the two flows
 
 | Pig liver | Flow raised | Resistance, measured (± SE) | Cube law | Compliance | Pressure-flow |
 |---|---:|---:|---:|---:|---:|
-| in situ (9 livers) | 2.75-fold | 0.54 ± 0.07 | 0.48 | 0.53 to 0.59 | 0.78 to 0.84 |
-| isolated, perfused (7 livers) | 2.67-fold | 0.59 ± 0.05 | 0.48 | 0.57 to 0.63 | 0.78 to 0.84 |
-| after 2 h of cold ischaemia (6 livers) | 2.67-fold | 0.59 ± 0.08 | 0.48 | 0.50 to 0.55 | 0.78 to 0.84 |
+| in situ (9 livers) | 2.75-fold | 0.54 ± 0.07 | 0.48 | 0.53 to 0.59 | 0.78 to 0.81 |
+| isolated, perfused (7 livers) | 2.67-fold | 0.59 ± 0.05 | 0.48 | 0.57 to 0.63 | 0.78 to 0.81 |
+| after 2 h of cold ischaemia (6 livers) | 2.67-fold | 0.59 ± 0.08 | 0.48 | 0.50 to 0.55 | 0.78 to 0.81 |
 
 | Pig liver | Portal pressure at the higher flow, measured (± SE) | Error, cube law | Error, compliance | Error, pressure-flow |
 |---|---:|---:|---:|---:|
-| in situ | 9.6 ± 0.2 mmHg | −0.8 | +0.2 to +1.1 | +4.5 to +5.5 |
-| isolated, perfused | 8.1 ± 0.5 mmHg | −1.6 | −0.4 to +0.4 | +2.6 to +3.3 |
-| after 2 h of cold ischaemia | 15.8 ± 1.3 mmHg | −2.8 | −2.3 to −1.0 | +5.5 to +7.0 |
+| in situ | 9.6 ± 0.2 mmHg | −0.8 | +0.2 to +1.1 | +4.5 to +5.0 |
+| isolated, perfused | 8.1 ± 0.5 mmHg | −1.6 | −0.4 to +0.4 | +2.6 to +3.0 |
+| after 2 h of cold ischaemia | 15.8 ± 1.3 mmHg | −2.8 | −2.3 to −1.0 | +5.5 to +6.3 |
 
 In a normal pig liver the compliance relation holds: it predicts the portal pressure at the higher flow within 1.2 mmHg.
 The cube law gives too little resistance and the pressure-flow relation too much. After cold ischaemia the resistance
@@ -204,18 +207,36 @@ expected more distension than occurred: the ischaemic liver distended less than 
 
 | Group | $z_F$ | CVP (mmHg) | Rigid network | Cube law | Compliance | Pressure-flow | Observed (95% sampling interval) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Chan 2011 | 3.93 | 8.0 | 0.81 to 1.00 | 0.47 to 0.52 | 0.42 to 0.52 | 0.62 to 0.81 | 0.31 (0.25 to 0.37) |
-| Wang 2014, splenectomy | 4.12 | 3 to 9, assumed | 0.81 to 1.00 | 0.39 to 0.52 | 0.40 to 0.50 | 0.61 to 0.81 | 0.54 (0.48 to 0.60) |
-| Yagi 2006 | 3.28 | 5.2 | 0.81 to 1.00 | 0.48 to 0.53 | 0.46 to 0.57 | 0.64 to 0.82 | 0.55 (0.44 to 0.69) |
-| Wu 2011 | 3.25 | 4.4 | 0.81 to 1.00 | 0.47 to 0.52 | 0.47 to 0.57 | 0.64 to 0.82 | 0.65 (0.57 to 0.75) |
-| Wang 2014, no splenectomy | 3.74 | 3 to 9, assumed | 0.81 to 1.00 | 0.41 to 0.54 | 0.43 to 0.53 | 0.62 to 0.81 | 0.72 (0.64 to 0.80) |
-| Ishizaki 2012 | 3.34 | 9.1 | 0.81 to 1.00 | 0.52 to 0.58 | 0.46 to 0.56 | 0.63 to 0.82 | 0.74 (0.60 to 0.92) |
+| Chan 2011 | 3.93 | 8.0 | 0.81 to 1.00 | 0.47 to 0.52 | 0.42 to 0.52 | 0.62 to 0.78 | 0.31 (0.25 to 0.37) |
+| Wang 2014, splenectomy | 4.12 | 3 to 9, assumed | 0.81 to 1.00 | 0.39 to 0.52 | 0.40 to 0.50 | 0.61 to 0.77 | 0.54 (0.48 to 0.60) |
+| Yagi 2006 | 3.28 | 5.2 | 0.81 to 1.00 | 0.48 to 0.53 | 0.46 to 0.57 | 0.64 to 0.79 | 0.55 (0.44 to 0.69) |
+| Wu 2011 | 3.25 | 4.4 | 0.81 to 1.00 | 0.47 to 0.52 | 0.47 to 0.57 | 0.64 to 0.79 | 0.65 (0.57 to 0.75) |
+| Wang 2014, no splenectomy | 3.74 | 3 to 9, assumed | 0.81 to 1.00 | 0.41 to 0.54 | 0.43 to 0.53 | 0.62 to 0.78 | 0.72 (0.64 to 0.80) |
+| Ishizaki 2012 | 3.34 | 9.1 | 0.81 to 1.00 | 0.52 to 0.58 | 0.46 to 0.56 | 0.63 to 0.79 | 0.74 (0.60 to 0.92) |
 
-At these flow loads the relations that keep distending give 0.39 to 0.58 and the one that stops gives 0.61 to 0.82.
-Placed with their sampling interval, a description and not a probability, five groups lie within that span and below
-the rigid network; Yagi 2006 and the splenectomy arm of Wang 2014 sit with the relations that keep distending, Wu 2011,
-Ishizaki 2012 and the other arm of Wang 2014 with the one that stops. Chan 2011 lies below all three: its gradient was
-1 mmHg above the donor's at four times the flow.
+At these flow loads the relations that keep distending give 0.39 to 0.58 and the one that stops gives 0.61 to 0.79.
+Each group is placed against four regions with one rule, the point estimate and the 95% sampling interval reported
+apart (`bracket`, `_place`):
+
+| Region | Points inside | Points below | Intervals reaching it | Intervals below |
+|---|---:|---:|---:|---:|
+| rigid network | 0 | 6 | 1 | 5 |
+| keeps distending | 1 | 1 | 3 | 1 |
+| stops distending | 3 | 3 | 4 | 2 |
+| all relations | 5 | 1 | 5 | 1 |
+
+All six points lie below the rigid network, and five intervals (that of Ishizaki 2012 reaches it). One point lies inside
+the relations that keep distending (Yagi 2006), three inside the one that stops (Wu 2011, Ishizaki 2012, Wang 2014
+without splenectomy), and Chan 2011 lies below every region: its gradient was 1 mmHg above the donor's at four times the
+flow. This is a description: a sampling interval that reaches a region is not a probability that its mechanism acts.
+
+### The three relations are one composition (`distension.consistency`)
+
+The three relations use one definition of pressure (the portocaval gradient over the donor's) and of flow (the portal
+flow load), and each acts on the gradient ratio the rigid network gives, $q=z_F z_R^{\text{rigid}}$. Checked in code:
+with the whole donor network at $z_F=1$ every relation returns $z_P=z_F=z_R=1$ at every CVP and parameter; two networks
+with the same $q$ give the same gradient, so architecture and arterial inflow enter once; over $z_F$ from 0.25 to 20,
+$z_P$ rises and $z_R$ falls with no jump. At the highest flow the local exponent of $z_P$ on $z_F$ is 0.32 to 0.38 (cube law) and 0.37 to 0.41 (compliance), still falling, and 0.97 to 0.98 (pressure-flow), whose resistance tends to $(1-f)$ times the rigid one.
 
 ### Which vessels distend (`src/model/compartments.py`)
 
@@ -247,19 +268,39 @@ vessels distend, not on the choice of distending pressure.
 
 Measurement (the two group means), references (donor flow, normal gradient, assumed CVP), network (eight networks,
 arterial flow per lobule from none to the donor's) and relations (doubling pressure, flow-independent share) drawn
-together, 20,000 draws per group, the observed ratio and each model from the same draw:
+together, 20,000 draws per group, the observed ratio and each model from the same draw. The ranges are published or
+plausible ranges drawn uniformly, not measured distributions, so the shares of draws below are a sensitivity analysis
+over the joint range, one group at a time, and not probabilities that a mechanism acts; the deterministic ranges above
+remain the primary statement.
 
-| Group | Observed $z_R$, median (95% range) | P(below the rigid network) | P(below every relation) | P(within) | P(above every relation) |
+| Group | Observed $z_R$, median (95% range) | Draws below the rigid network | Below every relation | Within | Above every relation |
 |---|---:|---:|---:|---:|---:|
-| Chan 2011 | 0.31 (0.23 to 0.42) | >0.99 | >0.99 | <0.01 | <0.01 |
-| Wang 2014, splenectomy | 0.49 (0.31 to 0.74) | >0.99 | 0.32 | 0.60 | 0.08 |
-| Yagi 2006 | 0.55 (0.39 to 0.77) | >0.99 | 0.23 | 0.68 | 0.09 |
-| Wu 2011 | 0.65 (0.49 to 0.87) | 0.97 | <0.01 | 0.65 | 0.35 |
-| Wang 2014, no splenectomy | 0.66 (0.45 to 0.97) | 0.90 | 0.02 | 0.54 | 0.44 |
-| Ishizaki 2012 | 0.74 (0.53 to 1.03) | 0.80 | <0.01 | 0.35 | 0.65 |
+| Chan 2011 | 0.31 (0.23 to 0.42) | >99% | >99% | <1% | <1% |
+| Wang 2014, splenectomy | 0.49 (0.31 to 0.74) | >99% | 32% | 58% | 9% |
+| Yagi 2006 | 0.55 (0.39 to 0.77) | >99% | 23% | 66% | 11% |
+| Wu 2011 | 0.65 (0.49 to 0.87) | 97% | <1% | 61% | 39% |
+| Wang 2014, no splenectomy | 0.66 (0.45 to 0.97) | 90% | 2% | 50% | 47% |
+| Ishizaki 2012 | 0.74 (0.53 to 1.03) | 80% | <1% | 31% | 69% |
 
-The relations are each a model, so no probability is given that one is the mechanism; the uniform ranges are a choice,
-and the probabilities are for one group at a time.
+### Level and order (`distension.heterogeneity`, `distension.wang_contrast`)
+
+The relations depend on the flow load and CVP of each group and on parameters common to all, so they set the level of
+$z_R$, not its order. At central parameters the standard deviation of $\log z_R$ over the six groups is
+0.016 to 0.075 against 0.325 observed, and the rank correlation with the observations 0.49 (P = 0.33).
+The one contrast inside a cohort, the two arms of Wang 2014, solved from the flow loads only (4.12 and 3.74) with
+CVP, network and parameters common to both arms in each draw:
+
+| Model | Ratio of $z_R$, splenectomy to none (95% range) | Share of the log contrast |
+|---|---:|---:|
+| observed | 0.74 (0.61 to 0.88) | 100% |
+| rigid network | 1.00 (0.99 to 1.00) | 0% |
+| cube law | 0.95 (0.88 to 1.02) | 18% |
+| compliance | 0.95 (0.88 to 1.02) | 18% |
+| pressure-flow | 0.99 (0.97 to 1.00) | 4% |
+
+From the flow loads alone the relations give the direction and at most a fifth of the contrast. The rest is what the flow
+load of the arms does not carry; the arms were not randomised, so these data cannot say whether it is the splenectomy or
+the recipients chosen for it.
 
 What this supports and what it does not. The passive relations of the normal liver, extrapolated to the flow of a graft,
 span the resistance loads the cohorts report, and the rigid network does not; the lower ones only if the portal tree

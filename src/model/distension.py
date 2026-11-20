@@ -29,11 +29,12 @@ distension    The venous resistance of the normal liver is passively distensible
                              to distend as the capacitance vessels do, an assumption and an upper bound;
                 pressure-flow intrahepatic pressure linear in total hepatic flow up to 240 mL/min/100 g of portal flow,
                              about 2.2 times the control total flow, with an intercept of 2.2 mmHg at zero flow and a
-                             slope of 0.046 mmHg per mL/min/100 g (0.030 once the outflow cannula is subtracted) at a
-                             control flow of 139 (Greenway, Seaman and Innes 1985; nonlinear fits were worse). The
-                             share of the control gradient that does not scale with flow is then f = 0.26 to 0.35, and
-                             G / g0 = f + (1 - f) q at a flow load q. It is the relation measured at the highest flows,
-                             and it stops distending: resistance tends to the slope as flow rises.
+                             slope of 0.030 mmHg per mL/min/100 g relative to the caval pressure at a control flow of
+                             139 (Greenway, Seaman and Innes 1985; nonlinear fits were worse). Expressed on the
+                             portocaval gradient (see GREENWAY), the share of the control gradient that does not scale
+                             with flow is f = 0.30 to 0.35, and G / g0 = f + (1 - f) q at a flow load q. It is the
+                             relation measured at the highest flows, and it stops distending: resistance tends to the
+                             slope as flow rises.
               The first two keep distending at the flows of a graft, the third does not. Their authors note that in the
               normal liver the changes of resistance are notable below 10 mmHg and minor above (Ingles, Legare and
               Lautt, Can J Physiol Pharmacol 1994;72:687), and a graft is at 14 to 22 mmHg. The three together are a
@@ -73,8 +74,16 @@ from model import liver, human
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 DOUBLING_MMHG = (8.0, 13.0)              # intrahepatic pressure that doubles hepatic blood volume (Lautt and Legare 1992; Greenway et al. 1985)
 CUBE = 3.0                               # exponent of the index of contractility, IC = R Pd^3 (Lautt, Greenway and Legare 1991)
-GREENWAY = dict(intercept=2.2, slope=(0.046, 0.030), control_flow=139.0)   # intrahepatic pressure against total hepatic flow (Greenway et al. 1985)
-FLOW_FIXED_SHARE = tuple(sorted(round(GREENWAY['intercept'] / (GREENWAY['intercept'] + s * GREENWAY['control_flow']), 3) for s in GREENWAY['slope']))
+# Greenway et al. 1985 regressed the intrahepatic pressure, the mean of the portal and the lobar venous pressures, on
+# total hepatic flow: intercept 2.2 mmHg at zero flow, slope 0.046 mmHg per mL/min/100 g, of which 0.015 is the outflow
+# cannula raising the caval pressure with flow, so 0.030 relative to the caval pressure; control flow 139. The loads of
+# this repository use the portocaval gradient, portal minus caval pressure, which exceeds the intrahepatic-to-caval
+# difference by half the portal-to-lobar difference, 1 to 2 mmHg in that paper. With that half taken proportional to
+# flow, as in a rigid bed, the share of the control portocaval gradient that does not scale with flow is
+#     f = 2.2 / (2.2 + 0.030 x 139 + d / 2),   d from 0 to 2 mmHg          -> 0.30 to 0.35
+# The slope of 0.046 is not used: it includes the rise of the caval pressure, which is not part of the gradient.
+GREENWAY = dict(intercept=2.2, slope=0.030, slope_with_the_cannula=0.046, control_flow=139.0, portal_to_lobar=(0.0, 2.0))
+FLOW_FIXED_SHARE = tuple(sorted(round(GREENWAY['intercept'] / (GREENWAY['intercept'] + GREENWAY['slope'] * GREENWAY['control_flow'] + dd / 2), 3) for dd in GREENWAY['portal_to_lobar']))
 CVPS = (3.0, 5.0, 7.0, 9.0)              # central venous pressure where a series reports none, as in predictions.REF_CVPS
 OUTLET_SHARE = 0.05                      # share of the resistance held by the outlet anastomosis (whole_graft.py, r_out)
 
@@ -182,34 +191,133 @@ def groups(d):
     return rows
 
 
+def _place(value, ci, region):
+    """Where an observation stands against a region [lo, hi] of the model: the point estimate and the 95% sampling
+    interval are reported apart, with one rule for every region (the interval reaches the region if they intersect)."""
+    lo, hi = region
+    return dict(point='below' if value < lo else ('above' if value > hi else 'inside'),
+                interval='below' if ci[1] < lo else ('above' if ci[0] > hi else 'reaches'))
+
+
 def bracket(d):
+    """Each group against four regions of the model: the rigid network, the relations that keep distending, the one
+    that stops, and the span of all three. For each region the point estimate and the sampling interval are placed
+    with the same rule (`_place`). This is a description: a sampling interval reaching a region is not a probability
+    that the mechanism of that region acts. `joint` gives the draws of every uncertainty together."""
     import audit
     CI = {(x['study'], x['group']): x['zR_ci_sampling'] for x in audit.paired(d, correlations=())['groups']}; rows = []
     for g in groups(d):
         lo, hi = rigid_range(g['zF']); cvps = (g['cvp'],) if g['cvp'] is not None else CVPS; sol = {}
         for law in LAWS:
             z = [distensible(g['zF'], zr, c, law, p)['zR'] for zr in (lo, hi) for c in cvps for p in PARAMS[law]]; sol[law] = [round(min(z), 3), round(max(z), 3)]
-        low = min(v[0] for v in sol.values()); top = max(v[1] for v in sol.values())
-        ci = CI[(g['study'], g['group'])]
-        pos = 'below the relations' if ci[1] < low else ('above the relations' if ci[0] > top else 'within the relations')
-        near = [law for law, v in sol.items() if v[0] <= g['zR'] <= v[1]]
+        fam = lambda which: [min(sol[l][0] for l in LAWS if FAMILY[l] == which), max(sol[l][1] for l in LAWS if FAMILY[l] == which)]
+        regions = {'rigid network': [round(lo, 3), round(hi, 3)], 'keeps distending': fam('keeps distending'), 'stops distending': fam('stops distending'),
+                   'all relations': [min(v[0] for v in sol.values()), max(v[1] for v in sol.values())]}
+        ci = [round(float(CI[(g['study'], g['group'])][0]), 3), round(float(CI[(g['study'], g['group'])][1]), 3)]
+        place = {k: _place(g['zR'], ci, v) for k, v in regions.items()}
         rows.append(dict(study=g['study'], group=g['group'], zF=round(g['zF'], 3), zR_observed=round(g['zR'], 3), cvp_mmHg=g['cvp'], cvp_basis=g['cvp_basis'],
-                         zR_rigid=[round(lo, 3), round(hi, 3)], zR_distensible=sol, zR_distensible_all=[round(low, 3), round(top, 3)],
-                         zR_observed_ci=[round(float(ci[0]), 3), round(float(ci[1]), 3)], position=pos, relations_containing_the_value=near,
-                         below_the_rigid_network=bool(ci[1] < lo)))
-    obs = np.array([r['zR_observed'] for r in rows])
-    fam = lambda r, which: [min(r['zR_distensible'][l][0] for l in LAWS if FAMILY[l] == which), max(r['zR_distensible'][l][1] for l in LAWS if FAMILY[l] == which)]
-    for r in rows: r['zR_keeps_distending'] = fam(r, 'keeps distending'); r['zR_stops_distending'] = fam(r, 'stops distending')
-    return dict(groups=rows, mean_observed=round(float(obs.mean()), 3),
+                         zR_rigid=regions['rigid network'], zR_distensible=sol, zR_distensible_all=regions['all relations'],
+                         zR_keeps_distending=regions['keeps distending'], zR_stops_distending=regions['stops distending'], zR_observed_ci=ci, placement=place,
+                         position={'below': 'below the relations', 'above': 'above the relations', 'reaches': 'within the relations'}[place['all relations']['interval']],
+                         relations_containing_the_value=[law for law, v in sol.items() if v[0] <= g['zR'] <= v[1]],
+                         below_the_rigid_network=bool(place['rigid network']['interval'] == 'below')))
+    obs = np.array([r['zR_observed'] for r in rows]); cnt = lambda reg, kind, val: int(sum(r['placement'][reg][kind] == val for r in rows))
+    counts = {reg: dict(point_inside=cnt(reg, 'point', 'inside'), point_below=cnt(reg, 'point', 'below'), point_above=cnt(reg, 'point', 'above'),
+                        interval_reaches=cnt(reg, 'interval', 'reaches'), interval_below=cnt(reg, 'interval', 'below'), interval_above=cnt(reg, 'interval', 'above'))
+              for reg in ('rigid network', 'keeps distending', 'stops distending', 'all relations')}
+    return dict(groups=rows, counts=counts, mean_observed=round(float(obs.mean()), 3),
                 mean_rigid=[round(float(np.mean([r['zR_rigid'][k] for r in rows])), 3) for k in (0, 1)],
                 mean_distensible={law: [round(float(np.mean([r['zR_distensible'][law][k] for r in rows])), 3) for k in (0, 1)] for law in LAWS},
                 mean_distensible_all=[round(float(np.mean([r['zR_distensible_all'][k] for r in rows])), 3) for k in (0, 1)],
-                within_the_relations=int(sum(r['position'] == 'within the relations' for r in rows)),
+                within_the_relations=counts['all relations']['interval_reaches'],
                 below_the_relations=[f"{r['study']} / {r['group']}" for r in rows if r['position'] == 'below the relations'],
                 above_the_relations=[f"{r['study']} / {r['group']}" for r in rows if r['position'] == 'above the relations'],
-                below_the_rigid_network=int(sum(r['below_the_rigid_network'] for r in rows)),
-                value_in_a_relation_that_keeps_distending=int(sum(r['zR_keeps_distending'][0] <= r['zR_observed'] <= r['zR_keeps_distending'][1] for r in rows)),
-                value_in_the_relation_that_stops_distending=int(sum(r['zR_stops_distending'][0] <= r['zR_observed'] <= r['zR_stops_distending'][1] for r in rows)))
+                below_the_rigid_network=counts['rigid network']['interval_below'],
+                value_in_a_relation_that_keeps_distending=counts['keeps distending']['point_inside'],
+                value_in_the_relation_that_stops_distending=counts['stops distending']['point_inside'],
+                note='placement is descriptive: point estimate and sampling interval against ranges of the model, one rule for every region')
+
+
+def consistency(zFs=np.round(np.geomspace(0.25, 20, 121), 4), cvps=CVPS):
+    """The three relations share one definition of pressure (the portocaval gradient, in units of the donor's) and of
+    flow (the portal flow load, through the effective load q = zF zR_rigid of the rigid network), and are composed with
+    the network in the same way: the relation acts on the load the rigid network would carry. Checked here:
+    reference     with the whole donor network (zR_rigid = 1) at zF = 1 every relation gives zP = zF = zR = 1 at every CVP
+                  and parameter, so the network and the relation do not both count the donor state
+    no double count  the relation sees the rigid network only through q: two networks with the same q give the same
+                  gradient, so architecture and arterial share enter once
+    monotone      zP rises and zR falls with flow, with no jump on a fine grid of zF from 0.25 to 20
+    asymptote     the local exponent d log zP / d log zF at zF = 20: 1/4 for the cube law and 1/3 for compliance
+                  (resistance keeps falling), 1 for the pressure-flow relation (resistance tends to (1 - f) zR_rigid)"""
+    out = {}
+    for law in LAWS:
+        ref = [distensible(1.0, 1.0, c, law, p) for c in cvps for p in PARAMS[law]]
+        same_q = max(abs(distensible(2.0, 0.9, c, law, p)['gradient_mmHg'] - distensible(1.8, 1.0, c, law, p)['gradient_mmHg']) for c in cvps for p in PARAMS[law])
+        mono, jump, expo = True, 0.0, []
+        for c in cvps:
+            for p in PARAMS[law]:
+                zp = np.array([distensible(float(z), 1.0, c, law, p)['zP'] for z in zFs]); zr = zp / zFs
+                mono = mono and bool(np.all(np.diff(zp) > 0) and np.all(np.diff(zr) < 0))
+                jump = max(jump, float(np.max(np.abs(np.diff(np.log(zp))) / np.diff(np.log(zFs)))))
+                expo.append(float(np.log(zp[-1] / zp[-2]) / np.log(zFs[-1] / zFs[-2])))
+        out[law] = dict(reference_error=float(max(max(abs(r['zP'] - 1), abs(r['zR'] - 1)) for r in ref)), same_load_same_gradient_mmHg=round(same_q, 12),
+                        monotone=mono, largest_local_exponent=round(jump, 3), exponent_at_the_highest_flow=[round(min(expo), 3), round(max(expo), 3)])
+    return dict(relations=out, pressure='portocaval gradient, PVP - CVP, divided by the donor gradient', flow='portal flow per 100 g divided by the donor value',
+                composition='each relation acts on q = zF zR_rigid, the gradient ratio of the rigid network; at q = 1 every relation returns the donor')
+
+
+def heterogeneity(d, B=None):
+    """Do the relations order the groups? They depend on the flow load and the CVP of each group and on parameters common
+    to all, so they can set the level of zR but need not reproduce its spread or its order. Reported: the spread of the
+    observed zR and of each relation at its central parameters (log scale), and the rank correlation between them."""
+    from scipy.stats import spearmanr
+    B = B or bracket(d); gs = {(g['study'], g['group']): g for g in groups(d)}; obs = np.array([r['zR_observed'] for r in B['groups']]); out = {}
+    mid = {'cube law': None, 'compliance': float(np.mean(DOUBLING_MMHG)), 'pressure-flow': float(np.mean(FLOW_FIXED_SHARE))}
+    for law in LAWS:
+        z = []
+        for r in B['groups']:
+            g = gs[(r['study'], r['group'])]; lo, hi = rigid_range(g['zF'], alone=False); c = g['cvp'] if g['cvp'] is not None else 5.0
+            z.append(distensible(g['zF'], 0.5 * (lo + hi), c, law, mid[law])['zR'])
+        z = np.array(z); rho = spearmanr(obs, z)
+        out[law] = dict(zR=[round(float(x), 3) for x in z], range=[round(float(z.min()), 3), round(float(z.max()), 3)], sd_log=round(float(np.std(np.log(z), ddof=1)), 3),
+                        spearman_rho=round(float(rho.statistic), 3), spearman_p=round(float(rho.pvalue), 3))
+    return dict(groups=[f"{r['study']} / {r['group']}" for r in B['groups']], observed=dict(zR=[round(float(x), 3) for x in obs], range=[round(float(obs.min()), 3), round(float(obs.max()), 3)], sd_log=round(float(np.std(np.log(obs), ddof=1)), 3)),
+                relations=out, note='central parameters, the rigid network at the middle of its two-inflow range, CVP 5 mmHg where none is reported')
+
+
+def wang_contrast(d, draws=20000, seed=11):
+    """The one contrast inside a cohort: the two arms of Wang 2014, splenectomy against none. Both arms are given the same
+    CVP, the same network and the same parameters in each draw (one cohort, one centre), and each relation is solved from
+    the flow load of each arm only; their pressures are not used. Compared: the ratio of zR between the arms, observed
+    (sampling error of the four means and the CVP common to both) and from each relation."""
+    import audit
+    rng = np.random.default_rng(seed); arms = {r.group: r for _, r in d.dropna(subset=['zF', 'zP']).iterrows() if r.study == 'Wang 2014'}
+    A = {(g['study'], g['group']): g for g in audit.paired(d, correlations=())['groups']}; rep = {k: audit.REPORTED[('Wang 2014', k)] for k in arms}
+    from model import compartments as cm
+    G8 = cm.geometries(); s_in = np.array([x[1][:x[2]].sum() for x in G8]); rem = np.array([x[3] for x in G8]); a = cm.A_RATIO
+    cvp = rng.uniform(CVPS[0], CVPS[-1], draws); g0 = rng.uniform(*NORMAL_GRADIENTS, draws); ref = rng.uniform(*DONOR_FLOW, draws)
+    i = rng.integers(0, len(G8), draws); phi = rng.uniform(0, 1, draws); p = rng.uniform(*DOUBLING_MMHG, draws); f = rng.uniform(*FLOW_FIXED_SHARE, draws)
+    zr_obs, zr_mod = {}, {}
+    for k, r in arms.items():
+        g = A[('Wang 2014', k)]
+        zF = r.PVF_per_100g * np.exp(g['flow_cv_used'] / np.sqrt(rep[k]['n_flow']) * rng.standard_normal(draws)) / ref
+        grad = r.PVP + g['gradient_sd_used'] / np.sqrt(rep[k]['n_grad']) * rng.standard_normal(draws) - cvp
+        zr_obs[k] = grad / g0 / zF
+        rig = (1 - rem[i]) * (s_in[i] * zF + (1 - s_in[i]) * (zF + phi * a) / (1 + a)) / zF; Q = g0 * zF * rig
+        zr_mod[k] = {'rigid network': rig,
+                     'cube law': _bisect(lambda G: Q * ((cvp + g0 / 2) / (cvp + G / 2)) ** CUBE - G, np.zeros(draws), 2 * Q + 1) / g0 / zF,
+                     'compliance': _bisect(lambda G: Q * np.maximum(1 + (G - g0) / p, 1e-9) ** -2.0 - G, np.zeros(draws), 2 * Q + 1) / g0 / zF,
+                     'pressure-flow': (f + (1 - f) * zF * rig) / zF}
+    s_, n_ = 'splenectomy', 'no splenectomy'; q = lambda x: [round(float(v), 3) for v in np.percentile(x, [2.5, 50, 97.5])]
+    obs = zr_obs[s_] / zr_obs[n_]; out = dict(flow_load=[round(float(arms[s_].zF), 3), round(float(arms[n_].zF), 3)], zR_observed=[round(float(arms[s_].zR), 3), round(float(arms[n_].zR), 3)],
+                                               observed_ratio=q(obs), models={})
+    for m in zr_mod[s_]:
+        pr = zr_mod[s_][m] / zr_mod[n_][m]
+        out['models'][m] = dict(ratio=q(pr), share_of_the_log_contrast=round(float(np.median(np.log(pr)) / np.median(np.log(obs))), 2),
+                                prob_observed_ratio_below_the_model=round(float((obs < pr).mean()), 3))
+    out['note'] = ('the arms were not randomised and splenectomy was indicated by the haemodynamics it changes; the relations see only the flow loads, '
+                   'so what they do not reproduce is what the flow load of the arms does not carry')
+    return out
 
 
 def band(zFs=np.round(np.arange(1.0, 5.01, 0.1), 2)):
@@ -351,7 +459,7 @@ def summary():
                       whole_bed_radius_factor=[req[0]['by_share'][-1]['radius_factor'], req[1]['by_share'][-1]['radius_factor']],
                       from_the_lowest_network=req[0], from_the_highest_network=req[1],
                       note='the observed mean against the lowest and the highest configuration of the network, not against the midpoint of its range'),
-        robustness=robustness(d, B), joint=joint(d),
+        robustness=robustness(d, B), joint=joint(d), consistency=consistency(), heterogeneity=heterogeneity(d, B), wang_contrast=wang_contrast(d),
         distension=dict(relations={'cube law': f'R proportional to Pd^-{CUBE:g}, Pd the mean of the pressures on either side of the resistance',
                                    'compliance': f'blood volume linear in intrahepatic pressure, doubling over {DOUBLING_MMHG[0]:g} to {DOUBLING_MMHG[1]:g} mmHg; R proportional to volume^-2',
                                    'pressure-flow': f'gradient linear in flow, a share {FLOW_FIXED_SHARE[0]:g} to {FLOW_FIXED_SHARE[1]:g} of the control gradient independent of flow'},
