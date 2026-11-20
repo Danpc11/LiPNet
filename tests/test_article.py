@@ -22,7 +22,22 @@ import indices
 SLOPE, LIMIT, WIDE = 0.05, 0.10, 0.30
 EXACT = bool(os.environ.get('LIPNET_EXACT'))
 
-R = lambda name: json.load(open(os.path.join(ROOT, 'results', name + '.json')))
+# Results that are not kept in the repository and that this test needs. On a clone where run_all.sh has not been run
+# (the continuous integration, a first look) each is written by the script that owns it, so that the test checks the
+# article against the code and never fails for a missing file.
+BUILDERS = {'model_human': ['src/model/human.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet']}
+
+
+def R(name):
+    f = os.path.join(ROOT, 'results', name + '.json')
+    if not os.path.exists(f) and name in BUILDERS:
+        import subprocess
+        os.makedirs(os.path.dirname(f), exist_ok=True)
+        r = subprocess.run([sys.executable] + BUILDERS[name], cwd=ROOT, env=dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg'), capture_output=True, text=True)
+        assert r.returncode == 0 and os.path.exists(f), f"{' '.join(BUILDERS[name])} did not write results/{name}.json:\n{r.stderr[-1500:]}"
+    return json.load(open(f))
+
+
 r2 = lambda x: round(float(x), 2)
 
 

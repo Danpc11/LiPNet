@@ -332,7 +332,9 @@ $$z_R=0.31,\;0.54,\;0.55,\;0.65,\;0.72,\;0.74.$$
 
 **Description.** All are below 1, at flow loads of 3.3 to 4.1. The unit of the test is the cohort: five of five are below 1, and the exact sign test in the direction the network gives is
 
-$$p=0.031\ \text{one-sided},\qquad p=0.06\ \text{two-sided}.$$
+$$p=0.031\ \text{one-sided},\qquad p=0.063\ \text{two-sided}.$$
+
+The direction is the one the model gives, since a graft sheds trunks of the donor tree and cannot gain resistance from that. The test was not registered before the extraction, so both values are reported and the two-sided one is the one to read without that premise.
 
 The six values are six descriptions and five independent units. Dropping either arm of Wang 2014 leaves five of five, and counting by centre gives the same five. With five units the exact one-sided sign test cannot give less than 0.031, and leaving any one cohort out gives 0.0625. The test says that five of five agree in sign and nothing about the size of the departure.
 

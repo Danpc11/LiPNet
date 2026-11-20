@@ -2,6 +2,22 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.6.2] – 2026-11-19
+
+The tests failed on a clone where the pipeline had not been run, which is how the continuous integration runs them. Fixed, with what the third reading of the review left open.
+
+### Fixed
+- `tests/test_article.py` read `results/model_human.json` and `results/ipd_ecological.json`, which are not kept in the repository, so it failed on a new clone and in GitHub Actions since v0.6.0. It now has each written by the script that owns it when it is missing.
+
+### Added
+- `tests/test_cache.py` recomputes everything in the stored `results/predictions.json` that is not sampled and compares it with the file, and requires the sampled part to be the cached fits. A stored result that was not regenerated after a change of the code now fails a test. A second test reads `THEORY.md` and `README.md`: the sign test over five cohorts, P4 under its exploratory title, one primary estimate.
+- Continuous integration in three jobs: the locked environment with the whole pipeline on every push, the loosest environment with the tests only, and a clean rebuild from nothing on a version tag or on request, whose manifest is kept as an artifact.
+- `docs/REPRODUCTION.md` and `docs/MANIFEST-release.json`: the record of the clean rebuild of the release. `python src/manifest.py compare docs/MANIFEST-release.json` says whether a tree is that of the release and how many of its results are identical.
+- The sign test is reported one-sided and two-sided (0.031 and 0.063) in Figure 2B, in the article and in `THEORY.md`, with the statement that the direction comes from the model and the test was not registered beforehand.
+
+### Notes
+- No number of the analysis changes with respect to v0.6.1.
+
 ## [0.6.1] – 2026-11-19
 
 Answer to the second round of the external review: the inference of P2, the wording of P4, one primary estimate, and what was still open in reproducibility. No simulation of the network was added.

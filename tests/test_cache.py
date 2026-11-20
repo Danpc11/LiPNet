@@ -32,3 +32,53 @@ def test_manifest_records_inputs_results_and_versions():
     m = manifest.build()
     assert 'data/series.tsv' in m['inputs'] and 'src/bayes.py' in m['inputs'] and m['packages']['numpyro'] and len(m['inputs']) > 30
     assert all(len(h) == 64 for h in m['inputs'].values())
+
+
+def _same(a, b, tol=2e-3, path=''):
+    """Recursive comparison; numbers within tol (the stored file rounds, and percentiles move in the last digit between
+    versions of numpy), everything else exactly. Returns the paths that differ."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        return [f'{path}/{k}' for k in set(a) ^ set(b)] + [x for k in set(a) & set(b) for x in _same(a[k], b[k], tol, f'{path}/{k}')]
+    if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+        return [f'{path}: length'] if len(a) != len(b) else [x for i, (u, v) in enumerate(zip(a, b)) for x in _same(u, v, tol, f'{path}[{i}]')]
+    if isinstance(a, bool) or isinstance(b, bool) or a is None or b is None or isinstance(a, str) or isinstance(b, str): return [] if a == b else [path]
+    return [] if abs(float(a) - float(b)) <= tol * max(1.0, abs(float(a))) else [path]
+
+
+def test_the_stored_predictions_are_the_ones_this_code_gives():
+    """results/predictions.json is kept in the repository. Everything in it that does not come out of a sampler is
+    recomputed here from the table and the code and compared, and the sampled part must be the cached fits themselves.
+    A stored file that was not regenerated after a change of the code fails this test."""
+    import pandas as pd, indices, predictions as P
+    stored = json.load(open(os.path.join(ROOT, 'results', 'predictions.json'))); d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
+    now = json.loads(json.dumps(dict(P1_allometry=P.p1_allometry(), P2_discordance=P.p2_discordance(d), P4_thresholds=P.p4_thresholds()), default=float))
+    m = P.p2_model_against_observed(d); now['P2_discordance']['model_against_observed'] = json.loads(json.dumps(m, default=float))
+    now['P2_discordance']['uncertainty'] = json.loads(json.dumps(P.p2_uncertainty(d, m), default=float))
+    now['P2_discordance']['reference_sweep'] = json.loads(json.dumps(P.p2_reference_sweep(d, model_lowest=m['lowest_predicted']), default=float))
+    bad = [x for k in now for x in _same(stored[k], now[k], path=k)]
+    assert not bad, 'results/predictions.json is not what the code gives; run python src/predictions.py. First differences: ' + ', '.join(bad[:8])
+    p2 = stored['P2_discordance']; assert 'sign_test_all_p' not in p2 and 'reconstructed' not in p2, 'the stored file has the structure of an older release'
+    p3 = stored['P3_within_cohort']; R = lambda n: json.load(open(os.path.join(ROOT, 'results', n + '.json')))
+    main = R('bayes_main'); assert p3['primary'] == main['primary (SFSS or early dysfunction)'] and p3['secondary'] == main['secondary (mortality or graft loss)'] and p3['exploratory'] == main['exploratory (all outcomes)']
+    assert p3['specification_curve'] == R('spec_curve') and p3['design_recovery'] == R('bayes_recovery') and p3['index_contrast'] == R('bayes_extra')['index_contrast'] and p3['measurement_monte_carlo'] == R('bayes_measurement')
+    assert json.loads(json.dumps(P.same_cohort_contrast(d), default=float)) == p3['same_cohort_contrast']
+
+
+def test_the_comparison_is_not_fooled_by_an_old_file():
+    assert _same(dict(a=1.0, b=[0.5, 'x']), dict(a=1.0005, b=[0.5, 'x'])) == []
+    assert _same(dict(cohorts=5, p=0.03125), dict(groups=6, p=0.015625)) != []
+    assert _same(dict(p=0.03125), dict(p=0.015625)) == ['/p']
+
+
+def test_the_documents_quote_the_cohort_level_test_and_an_exploratory_p4():
+    """What a reader of THEORY.md and README.md must find, and what must be gone: the sign test over six groups, the
+    comparison of thresholds stated as a prediction, and a second version of the primary slope."""
+    theory = open(os.path.join(ROOT, 'THEORY.md'), encoding='utf-8').read(); readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read(); both = theory + readme
+    assert '0.016' not in both and '0.015625' not in both, 'the sign test is over five cohorts (0.031 one-sided, 0.06 two-sided), not six groups'
+    assert '0.031' in theory and r'p=0.063\ \text{two-sided}' in theory and 'five of five' in theory
+    assert '### P4. Exploratory comparison of haemodynamic thresholds across liver diseases and surgical settings' in theory
+    p4 = theory[theory.index('### P4.'):theory.index('## What LiPNet is not')]
+    assert 'not a prediction' in p4 or 'not something the model predicts' in p4
+    assert 'does not show that the three settings share a physiological regime' in p4 and 'common haemodynamic regime' not in both and 'LiPNet predicts' not in p4
+    main = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))['primary (SFSS or early dysfunction)']
+    assert f"{main['mu_beta']:+.2f} ({main['mu_beta_ci'][0]:+.2f}, {main['mu_beta_ci'][1]:+.2f})" in theory and '+1.56 (+0.35' not in both, 'one primary estimate'

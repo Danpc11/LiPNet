@@ -1,4 +1,4 @@
-# Complete environment in which release v0.6.0 was reproduced from an empty results/ directory and its tests passed:
+# Complete environment in which each release is rebuilt from an empty results/ directory and tested (docs/REPRODUCTION.md):
 # Python 3.13.18 on Linux x86-64. Every package the pipeline imports, with its dependencies, at an exact version.
 #     python -m venv .venv && . .venv/bin/activate && pip install -r requirements-lock.txt
 # With jax, jaxlib and numpyro at these versions the NUTS draws, and so every posterior summary of the article, are

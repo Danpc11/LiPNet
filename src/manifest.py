@@ -2,6 +2,7 @@
 
     python src/manifest.py            write results/MANIFEST.json
     python src/manifest.py check      exit 1 if an input or a result is no longer the one recorded
+    python src/manifest.py compare docs/MANIFEST-release.json      this tree and its results against the clean rebuild of the release
 
 The manifest holds the SHA-256 of every input (data/, src/), of every numeric result (results/*.json, *.tsv), the
 versions of Python and of the packages, and the commit if the tree is a git checkout. run_all.sh writes it last;
@@ -76,6 +77,24 @@ def check():
                                      f"the cached tables of the model are the ones the code writes)"); return 1 if bad else 0
 
 
+def compare(path, strict=False):
+    """This tree and its results against the manifest of another run, for instance the clean rebuild recorded with the
+    release (docs/MANIFEST-release.json). If the inputs differ, the two runs are not runs of the same code and data:
+    this is said, and with --strict the exit status is 1. Results are then counted: deterministic ones are identical;
+    a sampled one (bayes_*, spec_curve, ipd_ecological and what is derived from them) can differ in its last digits on
+    another machine or another version of the numerical libraries, which tests/test_article.py bounds."""
+    other, new = json.load(open(path)), build(); bad = [n for n in sorted(set(other['inputs']) | set(new['inputs'])) if other['inputs'].get(n) != new['inputs'].get(n)]
+    if bad:
+        print(f'this tree is not the one of {path}: {len(bad)} inputs differ (' + ', '.join(bad[:12]) + (' ...' if len(bad) > 12 else '') + ')'); return 1 if strict else 0
+    names = sorted(set(other['results']) & set(new['results'])); same = [n for n in names if other['results'][n] == new['results'][n]]; diff = [n for n in names if n not in same]
+    missing = sorted(set(other['results']) - set(new['results']))
+    print(f"inputs identical ({len(new['inputs'])}); results identical: {len(same)} of {len(names)}" + (f"; different: {', '.join(diff)}" if diff else '') + (f"; not computed here: {', '.join(missing)}" if missing else ''))
+    pk = {p: (other['packages'].get(p), v) for p, v in new['packages'].items() if other['packages'].get(p) != v}
+    if pk or other.get('python') != new['python']: print('environment differs: ' + ', '.join([f"python {other.get('python')} -> {new['python']}"] * (other.get('python') != new['python']) + [f'{p} {a} -> {b}' for p, (a, b) in pk.items()]))
+    return 0
+
+
 if __name__ == '__main__':
     if sys.argv[1:] == ['check']: sys.exit(check())
+    if len(sys.argv) >= 3 and sys.argv[1] == 'compare': sys.exit(compare(sys.argv[2], strict='--strict' in sys.argv))
     os.makedirs(OUT, exist_ok=True); m = build(); json.dump(m, open(f'{OUT}/MANIFEST.json', 'w'), indent=1); print(f"wrote results/MANIFEST.json ({len(m['results'])} results, {len(m['inputs'])} inputs)")

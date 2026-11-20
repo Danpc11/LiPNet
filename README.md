@@ -260,7 +260,9 @@ Run the complete workflow:
 python src/manifest.py check    # numbers, figures and cached tables on disk are the ones their inputs give
 ```
 
-Four things make a result on disk traceable to its inputs.
+The record of the clean rebuild of this release, what the continuous integration runs and how to audit a fixed commit are in [docs/REPRODUCTION.md](docs/REPRODUCTION.md).
+
+Five things make a result on disk traceable to its inputs.
 
 | What | How | Where |
 |---|---|---|
@@ -268,6 +270,7 @@ Four things make a result on disk traceable to its inputs.
 | Cached tables of the model | The 2D and 3D campaigns and the exact certificate in `data/` are not rebuilt by `run_all.sh`. `python src/model/verify_campaigns.py` reruns the code behind them and compares every number; `run_all.sh --clean` does it. In this release the 35 rows are reproduced with a relative difference of zero. | `results/campaign_check.json` |
 | Figures | When a figure is drawn, the hash of every file it reads, of the two scripts that draw it and of the two images is recorded. The check names a figure whose input, script or image has changed since. | `results/figures_provenance.json` |
 | Everything | `run_all.sh` ends by writing the hash of every input and every numeric result, the versions of Python and the packages, and the commit. | `results/MANIFEST.json` |
+| Stored predictions | `results/predictions.json` is kept in the repository; a test recomputes what is not sampled in it and compares, so a stored file that was not regenerated fails. | `tests/test_cache.py` |
 
 `tests/test_article.py` checks the numbers quoted in the article against the results. Counts and arithmetic are compared exactly. Posterior means and interval limits are reproducible to the last digit only on the locked environment, and move in the second decimal on another version of the numerical libraries, so they are compared within a stated tolerance (0.05 for a posterior mean, 0.10 for a limit of a 95% interval); `LIPNET_EXACT=1 pytest tests/test_article.py` asks for the printed digits.
 
@@ -487,7 +490,7 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo. The article uses release v0.6.1, which receives its own DOI when the release is published; the last archived version is v0.4.2:
+The software is archived on Zenodo. The article uses release v0.6.2, which receives its own DOI when the release is published; the last archived version is v0.4.2:
 
 **DOI: 10.5281/zenodo.23656741** (v0.4.2) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 

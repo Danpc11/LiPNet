@@ -176,7 +176,7 @@ def figure_2():
     for yk, lw, lab in ((0.62, 2.2, 'Sampling'), (0.27, 0.6, 'With references')):          # key in the empty corner, away from the band of the model
         b.plot([0.03, 0.09], [yk, yk], color=BLUE, lw=lw, solid_capstyle='butt', zorder=2); b.text(0.11, yk, lab, fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
     b.text(np.mean(MODEL_ZR), top + 0.07, 'Network\nmodel', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95)
-    b.text(-0.04, top + 0.3, f"{P['cohorts_below_one']} of {P['cohorts']} cohorts below 1\nExact sign test, one-sided $P$ = {P['sign_test_cohorts_one_sided_p']:.3f}", fontsize=FS_IN, ha='right', va='center')
+    b.text(-0.04, top + 0.3, f"{P['cohorts_below_one']} of {P['cohorts']} cohorts below 1; exact sign test\n$P$ = {P['sign_test_cohorts_one_sided_p']:.3f} one-sided, {P['sign_test_cohorts_two_sided_p'] + 1e-9:.3f} two-sided", fontsize=FS_IN, ha='right', va='center')
     b.set_xlim(0, 1.2); b.set_ylim(-0.6, len(rows) + 0.45); fs.bare(b); b.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]); b.set_xlabel(f'Resistance load, {ZR} = {ZP} / {ZF}')
     fs.letter(fig, a, 'A', 10, 4); fs.letter(fig, b, 'B', 44, 4); save(fig, 'Figure_2')
 
