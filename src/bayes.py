@@ -278,6 +278,31 @@ def with_cutoff_groups(d, **kw):
     return fit(plus, **kw)
 
 
+def censored_survival(d, **kw):
+    """Event counts read off survival curves. Four groups of the secondary outcome (Ogura 2010, deaths at 2 years;
+    Yagi 2005, deaths at 1 year) have counts derived from a Kaplan-Meier percentage, which accounts for censoring and is
+    not a binomial count. The primary outcome has none. Two refits:
+      direct counts   Ogura 2010 with the deaths its Table 3 lists patient by patient (all within 2 years; recipients
+                      followed for less are not removed, so the count is a lower bound), Yagi 2005 as before
+      without them    all outcomes, Ogura 2010 with the direct counts and Yagi 2005, which lists no deaths, left out
+    If the slope holds in both, it does not rest on treating a survival percentage as a count."""
+    import os
+    root = os.path.join(os.path.dirname(__file__), '..')
+    t = pd.read_csv(f'{root}/data/patient_level/ogura2010_deaths.tsv', sep='\t', comment='#')
+    within = t[t.loss_days <= 730]; direct = {'final PVP <15': int((within.final_pvp < 15).sum()), 'final PVP >=15': int((within.final_pvp >= 15).sum())}
+    e = d.copy(); m = e.study.eq('Ogura 2010')
+    e.loc[m, 'events'] = e.loc[m, 'group'].map(direct).astype(float); e.loc[m, 'pct'] = 100 * e.loc[m, 'events'] / e.loc[m, 'n']
+    derived = d[d.events_basis.eq('derived')]
+    sec = e[e.outcome_type != 'SFSS_or_dysfunction']; no_km = e[~e.study.eq('Yagi 2005')]
+    keep = ('groups', 'strata', 'events', 'mu_beta', 'mu_beta_ci', 'prob_mu_positive', 'OR_per_zP')
+    out = dict(groups_with_counts_from_survival=[f'{a} / {b}' for a, b in zip(derived.study, derived.group)],
+               primary_outcome_has_none=bool(not (derived.outcome_type == 'SFSS_or_dysfunction').any()),
+               ogura_direct_counts=direct, ogura_counts_from_survival={g: int(v) for g, v in zip(d[m].group, d[m].events)})
+    for name, sub in (('secondary, Ogura 2010 counted directly', sec), ('all outcomes, Ogura 2010 counted directly, Yagi 2005 left out', no_km)):
+        f = fit(sub, **kw); out[name] = {k: f[k] for k in keep}
+    return out
+
+
 def spec_curve(d, quick=False):
     """One table instead of many scattered sensitivities: the same quantity, mu_beta, under every reasonable
     specification. The message should not depend on any single one of them. Every specification is fitted with the
@@ -332,7 +357,7 @@ def main():
         json.dump(res, open(f'{out}/{name}.json', 'w'), indent=1); cache.stamp(name); print('wrote', name)
     json.dump(monte_carlo_measurement(c, draws=40), open(f'{out}/bayes_measurement.json', 'w'), indent=1); cache.stamp('bayes_measurement'); print('wrote bayes_measurement')
     json.dump(recovery(c, mu_true=(0.0, 1.0, 2.0), reps=20), open(f'{out}/bayes_recovery.json', 'w'), indent=1); cache.stamp('bayes_recovery'); print('wrote bayes_recovery')
-    json.dump(dict(index_contrast=index_contrast(d, pressure_fit=main_['primary (SFSS or early dysfunction)']), with_cutoff_groups=with_cutoff_groups(d)),
+    json.dump(dict(index_contrast=index_contrast(d, pressure_fit=main_['primary (SFSS or early dysfunction)']), with_cutoff_groups=with_cutoff_groups(d), censored_survival=censored_survival(c)),
               open(f'{out}/bayes_extra.json', 'w'), indent=1); cache.stamp('bayes_extra'); print('wrote bayes_extra')
     r = main_['primary (SFSS or early dysfunction)']
     print(f"primary: mu {r['mu_beta']:+.2f} ({r['mu_beta_ci'][0]:+.2f} to {r['mu_beta_ci'][1]:+.2f}), "

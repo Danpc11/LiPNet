@@ -74,23 +74,62 @@ def _profile(drop, cvp):
     return cvp + down + drop / 2
 
 
-def solve(zF, geom, phi, cvp, law, p=None, site='every vessel', g0=indices.NORMAL_GRADIENT, external=0.0, iters=600):
+class NotConverged(RuntimeError):
+    pass
+
+
+TOL = 1e-10          # largest change of any factor d between two iterations, and largest residual of the fixed point
+
+
+def _law(law, P, P0, p):
+    if law == 'cube law': return (P0 / np.maximum(P, 1e-6)) ** 3
+    if law == 'compliance': return np.maximum(1.0 + (P - P0) / p, 1e-6) ** -2.0
+    raise ValueError(law)
+
+
+def solve(zF, geom, phi, cvp, law, p=None, site='every vessel', g0=indices.NORMAL_GRADIENT, external=0.0, iters=2000, d0=1.0, strict=True):
     """zR of a graft whose vessels in `site` follow `law` at their own mean pressure ('cube law' or 'compliance', with
-    doubling pressure p). The rigid limit reproduces liver.two_inflows. Returns zR, zP and the share s that distends."""
+    doubling pressure p). The rigid limit reproduces liver.two_inflows.
+
+    The coupled system pressure -> calibre -> resistance -> pressure is the fixed point d = m law(P(d)) + (1 - m), with
+    P(d) the profile of mean pressures the drops g0 (1 - rem) w load d give. It is iterated with damping on log d from
+    d = d0. Returned with the result: whether it converged, the iterations, the residual of the fixed point evaluated on
+    the solution itself (the original equations, not the last step), and the share s that distends. If it does not
+    reach TOL in `iters` iterations it raises NotConverged (strict) or returns converged=False."""
     name, w, k, rem = geom; n = len(w); m = mask(site, n, k)
     load = np.where(np.arange(n) < k, zF, (zF + phi * A_RATIO) / (1 + A_RATIO))
     P0 = _profile(g0 * w, cvp) - external
-    d = np.ones(n)
-    for _ in range(iters):
-        drop = g0 * (1 - rem) * w * load * d; P = _profile(drop, cvp) - external
-        if law == 'cube law': new = (P0 / np.maximum(P, 1e-6)) ** 3
-        elif law == 'compliance': new = np.maximum(1.0 + (P - P0) / p, 1e-6) ** -2.0
-        else: raise ValueError(law)
-        new = m * new + (1 - m)
-        step = np.exp(0.5 * np.log(new) + 0.5 * np.log(d))
-        if np.max(np.abs(step - d)) < 1e-10: d = step; break
-        d = step
-    zP = float((1 - rem) * (w * load * d).sum()); return dict(zR=zP / zF, zP=zP, s=float((m * w).sum()))
+    F = lambda d: m * _law(law, _profile(g0 * (1 - rem) * w * load * d, cvp) - external, P0, p) + (1 - m)
+    d = np.full(n, float(d0)); conv = False
+    for it in range(1, iters + 1):
+        step = np.exp(0.5 * np.log(F(d)) + 0.5 * np.log(d))
+        change = float(np.max(np.abs(step - d))); d = step
+        if change < TOL: conv = True; break
+    res = float(np.max(np.abs(F(d) - d)))
+    conv = conv and res < 1e-8
+    if strict and not conv: raise NotConverged(f'{name}, {law}, {site}, zF {zF}: residual {res:.2e} after {it} iterations')
+    zP = float((1 - rem) * (w * load * d).sum())
+    return dict(zR=zP / zF, zP=zP, s=float((m * w).sum()), converged=conv, iterations=it, residual=res)
+
+
+def solver_check(groups, cvps_default, doubling, starts=(1.0, 0.25, 4.0)):
+    """Every solve of `site_ranges`, repeated from three starting points (every factor d at 1, at 0.25 and at 4): all
+    must converge, the residual of the fixed point must be small, and the solutions from the three starts must agree,
+    which they would not if the coupled system had several solutions in that range."""
+    G = geometries(); worst_res, worst_it, spread, n = 0.0, 0, 0.0, 0
+    for g in groups:
+        cvps = (g['cvp'],) if g['cvp'] is not None else cvps_default
+        for site in SITES:
+            for law, ps in (('cube law', (None,)), ('compliance', doubling)):
+                for geom in G:
+                    for phi in (0.0, 1.0, g['zF']):
+                        for c in cvps:
+                            for p in ps:
+                                r = [solve(g['zF'], geom, phi, c, law, p, site, d0=x) for x in starts]; n += 1
+                                worst_res = max(worst_res, max(x['residual'] for x in r)); worst_it = max(worst_it, max(x['iterations'] for x in r))
+                                spread = max(spread, max(x['zR'] for x in r) - min(x['zR'] for x in r))
+    return dict(solves=n, starts=list(starts), all_converged=True, largest_residual=worst_res, most_iterations=worst_it, largest_difference_between_starts=spread,
+                note='a solve that does not converge raises NotConverged, so reaching this line means all converged')
 
 
 def rigid(zF, geom, phi):
@@ -103,10 +142,13 @@ def global_variant(zF, zR_rigid, cvp, law, p, lam, external=0.0, g0=indices.NORM
     out = cvp - external
     if law == 'cube law': d = lambda G: ((out + lam * g0) / (out + lam * G)) ** 3
     else: d = lambda G: np.maximum(1.0 + lam * (G - g0) / p, 1e-9) ** -2.0
-    lo, hi = 0.0, g0 * zF * zR_rigid * 2 + 1; f = lambda G: g0 * zF * zR_rigid * d(G) - G
-    for _ in range(80):
+    lo, hi = 0.0, g0 * zF * zR_rigid * 2 + 1; f = lambda G: g0 * zF * zR_rigid * d(G) - G     # strictly decreasing: one root
+    while f(hi) > 0: hi *= 2
+    for _ in range(200):
         mid = 0.5 * (lo + hi); lo, hi = (mid, hi) if f(mid) > 0 else (lo, mid)
-    return 0.5 * (lo + hi) / g0 / zF
+    G = 0.5 * (lo + hi)
+    if abs(f(G)) / G > 1e-9: raise NotConverged(f'{law}, lambda {lam}: relative residual {abs(f(G)) / G:.1e}')
+    return G / g0 / zF
 
 
 def site_ranges(groups, cvps_default, doubling):

@@ -2,6 +2,21 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.7.5] – 2026-11-20
+
+A third review: solvers, the contrast inside Wang 2014, and the counts read off survival curves.
+
+### Fixed
+- **The site-by-site solver says when it has not converged** (`compartments.solve`). It returns `converged`, the iterations and the residual of the fixed point evaluated on the solution, and raises `NotConverged` below the tolerance. `compartments.solver_check` repeats every solve from three starting points: all 3,456 converge within 38 iterations, the largest residual is about 1e-10 and the starts agree, so no second solution was found. The whole-liver solver brackets the root before bisection (the function is strictly decreasing, so the root is unique) and checks the residual of every root, as do the vectorised bisection and the distending-pressure variants.
+
+### Changed
+- **The contrast inside Wang 2014 is compared as distributions** (`wang_contrast`). The ratio of medians of logarithms is removed; reported instead are the observed and predicted ratios, observed over model from the same draws (0.75 to 0.78), and the share of draws in which a model is as low as observed (below 0.1%). It is panel C of Figure 2, and the Results state it: from the flow loads alone every model predicts 0.95 to 1.00, against 0.74 (0.61 to 0.88).
+- **Heterogeneity** is reported by its spread and by group in Fig. 2B; the rank correlation over six groups is a description, not a test.
+
+### Added
+- `bayes.censored_survival`: the secondary outcome rests on counts read off Kaplan-Meier percentages (Ogura 2010, Yagi 2005); the primary outcome has none. With the deaths Ogura 2010 lists patient by patient the secondary slope is +1.79 (+0.63 to +2.98); with Yagi 2005 also left out, all outcomes +1.96 (+0.94 to +2.99). In `results/bayes_extra.json`.
+- `docs/LIVER.md` and the supplement: where each relation was measured, against where the grafts are; the three are kept as alternative scenarios.
+
 ## [0.7.4] – 2026-11-20
 
 A second review of the distensibility analysis.

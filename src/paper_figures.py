@@ -173,7 +173,7 @@ def figure_2():
     U = {(g['study'], g['group']): g for g in P['uncertainty']['groups']}; med = float(np.median(p.zR)); D = load('model_distension')['distension']
     KEEP = {(g['study'], g['group']): g['zR_keeps_distending'] for g in D['bracket']['groups']}; STOP = {(g['study'], g['group']): g['zR_stops_distending'] for g in D['bracket']['groups']}
     keep = (min(v[0] for v in KEEP.values()), max(v[1] for v in KEEP.values())); stop = (min(v[0] for v in STOP.values()), max(v[1] for v in STOP.values()))
-    fig = fs.figure(76); a = fs.axes(fig, 12, 12, 56, 56); b = fs.axes(fig, 126, 12, 51, 56)
+    fig = fs.figure(116); a = fs.axes(fig, 12, 52, 56, 56); b = fs.axes(fig, 126, 52, 51, 56); c = fs.axes(fig, 52, 11, 98, 25)
     plane(a, label='', bed=D['band_in_the_plane']); key = [Patch(color=BLUE, alpha=0.16, lw=0, label='Rigid network'), Patch(facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, label='Stops distending'), Patch(color=BLUE, alpha=0.34, lw=0, label='Keeps distending')]
     a.plot(flow_only.zF, np.zeros(len(flow_only)), '|', ms=7, mew=0.9, color=MUTED, clip_on=False, zorder=4)
     order = {(r.study, r.group): k + 1 for k, r in enumerate(sorted(p.itertuples(), key=lambda r: r.zR))}; left = {'Yagi 2006', 'Wu 2011', 'Ishizaki 2012'}
@@ -198,7 +198,19 @@ def figure_2():
     pass                                                                    # the three bands are keyed in panel A
     b.text(-0.04, top + 0.3, f"{P['cohorts_below_one']} of {P['cohorts']} cohorts below 1; exact sign test\n$P$ = {P['sign_test_cohorts_one_sided_p']:.3f} one-sided, {P['sign_test_cohorts_two_sided_p'] + 1e-9:.3f} two-sided", fontsize=FS_IN, ha='right', va='center')
     b.set_xlim(0, 1.2); b.set_ylim(-0.6, len(rows) + 0.45); fs.bare(b); b.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]); b.set_xlabel(f'Resistance load, {ZR} = {ZP} / {ZF}')
-    fs.letter(fig, a, 'A', 10, 4); fs.letter(fig, b, 'B', 44, 4); save(fig, 'Figure_2')
+    # C: the one contrast inside a cohort, as distributions
+    W = load('model_distension')['wang_contrast']; edges = np.array(W['histogram_edges']); mids = 0.5 * (edges[1:] + edges[:-1])
+    rows_c = [('Observed', W['observed_histogram'], W['observed_ratio'], INK, 0.55)] + [(lab, W['models'][k]['histogram'], W['models'][k]['ratio'], BLUE, alpha)
+              for k, lab, alpha in (('rigid network', 'Rigid network', 0.18), ('cube law', 'Cube law', 0.40), ('compliance', 'Compliance', 0.40), ('pressure-flow', 'Pressure-flow', 0.40))]
+    c.plot([1, 1], [-0.3, len(rows_c) - 0.1], color=INK, lw=LW_REF, ls=DASH, zorder=1)
+    for k, (lab, h, q, col, alpha) in enumerate(rows_c):
+        y = len(rows_c) - 1 - k; h = np.asarray(h, float); h = 0.85 * h / h.max()
+        c.fill_between(mids, y, y + h, color=col, alpha=alpha, lw=0, zorder=2); c.plot(mids, y + h, color=col, lw=0.6, zorder=3)
+        c.plot(q[1], y, '|', ms=5, mew=1.0, color=col, zorder=4)
+        c.text(0.585, y + 0.3, lab, fontsize=FS_IN, ha='right', va='center'); c.text(1.105, y + 0.3, f"{q[1]:.2f} ({q[0]:.2f} to {q[2]:.2f})", fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
+    c.set_xlim(0.6, 1.1); c.set_ylim(-0.3, len(rows_c) - 0.1); fs.bare(c); c.set_xticks([0.6, 0.7, 0.8, 0.9, 1.0, 1.1])
+    c.set_xlabel(f"Ratio of {ZR}, splenectomy to none, within Wang 2014 ({ZF} {W['flow_load'][0]:.2f} and {W['flow_load'][1]:.2f})")
+    fs.letter(fig, a, 'A', 10, 4); fs.letter(fig, b, 'B', 44, 4); fs.letter(fig, c, 'C', 40, 4); save(fig, 'Figure_2')
 
 
 # ------------------------------------------------------------------ Figure 3

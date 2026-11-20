@@ -106,11 +106,17 @@ def distensible(zF, zR_rigid, cvp, law, p=None, normal_gradient=indices.NORMAL_G
     if law == 'pressure-flow':
         f = FLOW_FIXED_SHARE[0] if p is None else p; G = normal_gradient * (f + (1 - f) * zF * zR_rigid)
         return dict(gradient_mmHg=float(G), zP=float(G / normal_gradient), zR=float(G / normal_gradient / zF))
-    p = PARAMS[law][0] if p is None else p; d = lambda G: LAWS[law](G, cvp, normal_gradient, p); lo, hi = 0.0, normal_gradient * zF * zR_rigid * 2 + 1
-    f = lambda G: normal_gradient * zF * zR_rigid * d(G) - G        # decreasing in G above the reference gradient
-    for _ in range(80):
+    p = PARAMS[law][0] if p is None else p; d = lambda G: LAWS[law](G, cvp, normal_gradient, p); Q = normal_gradient * zF * zR_rigid
+    f = lambda G: Q * d(G) - G         # strictly decreasing (d does not increase with G), so the root is unique
+    lo, hi = 1e-9 * Q, 2 * Q + 1                                    # lo just above zero: the cube law is singular at Pd = 0
+    while f(hi) > 0: hi *= 2                                         # bracket the root
+    assert f(lo) > 0, 'no root above zero'
+    for _ in range(200):
         mid = 0.5 * (lo + hi); lo, hi = (mid, hi) if f(mid) > 0 else (lo, mid)
-    G = 0.5 * (lo + hi); return dict(gradient_mmHg=float(G), zP=float(G / normal_gradient), zR=float(G / normal_gradient / zF))
+        if hi - lo < 1e-13 * max(1.0, hi): break
+    G = 0.5 * (lo + hi); res = abs(f(G)) / max(G, 1e-12)
+    if res > 1e-9: raise RuntimeError(f'{law}: relative residual {res:.1e} at zF {zF}')
+    return dict(gradient_mmHg=float(G), zP=float(G / normal_gradient), zR=float(G / normal_gradient / zF), residual=float(res))
 
 
 def over(law, fn):
@@ -288,8 +294,11 @@ def heterogeneity(d, B=None):
 def wang_contrast(d, draws=20000, seed=11):
     """The one contrast inside a cohort: the two arms of Wang 2014, splenectomy against none. Both arms are given the same
     CVP, the same network and the same parameters in each draw (one cohort, one centre), and each relation is solved from
-    the flow load of each arm only; their pressures are not used. Compared: the ratio of zR between the arms, observed
-    (sampling error of the four means and the CVP common to both) and from each relation."""
+    the flow load of each arm only; their pressures are not used. Compared directly as distributions: the ratio of zR
+    between the arms, observed (sampling error of the four means and the CVP common to both) and from each model; the
+    part of the observed ratio a model leaves, observed / model, from the same draws; and the share of draws in which the
+    model ratio is as low as the observed one. No fraction of the contrast is computed: a ratio of logarithms is
+    unstable when the observed contrast is near one."""
     import audit
     rng = np.random.default_rng(seed); arms = {r.group: r for _, r in d.dropna(subset=['zF', 'zP']).iterrows() if r.study == 'Wang 2014'}
     A = {(g['study'], g['group']): g for g in audit.paired(d, correlations=())['groups']}; rep = {k: audit.REPORTED[('Wang 2014', k)] for k in arms}
@@ -309,12 +318,12 @@ def wang_contrast(d, draws=20000, seed=11):
                      'compliance': _bisect(lambda G: Q * np.maximum(1 + (G - g0) / p, 1e-9) ** -2.0 - G, np.zeros(draws), 2 * Q + 1) / g0 / zF,
                      'pressure-flow': (f + (1 - f) * zF * rig) / zF}
     s_, n_ = 'splenectomy', 'no splenectomy'; q = lambda x: [round(float(v), 3) for v in np.percentile(x, [2.5, 50, 97.5])]
+    edges = np.round(np.arange(0.40, 1.2001, 0.01), 2); hist = lambda x: [int(c) for c in np.histogram(np.clip(x, edges[0], edges[-1] - 1e-9), edges)[0]]
     obs = zr_obs[s_] / zr_obs[n_]; out = dict(flow_load=[round(float(arms[s_].zF), 3), round(float(arms[n_].zF), 3)], zR_observed=[round(float(arms[s_].zR), 3), round(float(arms[n_].zR), 3)],
-                                               observed_ratio=q(obs), models={})
+                                               observed_ratio=q(obs), histogram_edges=[float(x) for x in edges], observed_histogram=hist(obs), draws=draws, models={})
     for m in zr_mod[s_]:
         pr = zr_mod[s_][m] / zr_mod[n_][m]
-        out['models'][m] = dict(ratio=q(pr), share_of_the_log_contrast=round(float(np.median(np.log(pr)) / np.median(np.log(obs))), 2),
-                                prob_observed_ratio_below_the_model=round(float((obs < pr).mean()), 3))
+        out['models'][m] = dict(ratio=q(pr), observed_over_model=q(obs / pr), share_of_draws_model_as_low_as_observed=round(float((pr <= obs).mean()), 4), histogram=hist(pr))
     out['note'] = ('the arms were not randomised and splenectomy was indicated by the haemodynamics it changes; the relations see only the flow loads, '
                    'so what they do not reproduce is what the flow load of the arms does not carry')
     return out
@@ -386,10 +395,15 @@ DONOR_FLOW = (80.0, 100.0)            # predictions.REF_FLOWS
 NORMAL_GRADIENTS = (4.0, 6.0)         # predictions.REF_GRADIENTS
 
 
-def _bisect(fun, lo, hi, n=70):
+def _bisect(fun, lo, hi, n=100):
+    """Vectorised bisection of a strictly decreasing function; checks the bracket and the residual of the root."""
+    while np.any(fun(hi) > 0): hi = np.where(fun(hi) > 0, 2 * hi, hi)
+    assert np.all(fun(lo) > 0), 'no root above zero'
     for _ in range(n):
         mid = 0.5 * (lo + hi); pos = fun(mid) > 0; lo = np.where(pos, mid, lo); hi = np.where(pos, hi, mid)
-    return 0.5 * (lo + hi)
+    x = 0.5 * (lo + hi); res = np.abs(fun(x)) / np.maximum(x, 1e-12)
+    if np.max(res) > 1e-8: raise RuntimeError(f'bisection residual {np.max(res):.1e}')
+    return x
 
 
 def joint(d, draws=20000, seed=7):
@@ -445,6 +459,18 @@ def joint(d, draws=20000, seed=7):
                      'one group at a time. The relations are each a model: no probability is given that one of them is the mechanism')
 
 
+def solver_report(d):
+    """The two solvers. Whole liver (`distensible`): bisection of a strictly decreasing function, so one root; the bracket
+    is widened until it holds the root and the relative residual of every root is below 1e-9. Site by site
+    (compartments.solve): every solve converges, the fixed point holds on the solution, and three starting points
+    give the same solution."""
+    from model import compartments as cm
+    gs = groups(d); res = [distensible(g['zF'], zr, c, law, p)['residual'] for g in gs for zr in rigid_range(g['zF']) for c in ((g['cvp'],) if g['cvp'] is not None else CVPS)
+                           for law in ('cube law', 'compliance') for p in PARAMS[law]]
+    return dict(whole_liver=dict(solves=len(res), largest_relative_residual=float(max(res)), unique_root=True),
+                site_by_site=cm.solver_check(gs, CVPS, DOUBLING_MMHG))
+
+
 def summary():
     d = indices.compute(pd.read_csv(f'{ROOT}/data/series.tsv', sep='\t')); B = bracket(d); sh = sinusoidal_share()
     two = [rigid_range(g['zF'], alone=False) for g in groups(d)]      # the network with its two inflows, as in P2
@@ -459,7 +485,7 @@ def summary():
                       whole_bed_radius_factor=[req[0]['by_share'][-1]['radius_factor'], req[1]['by_share'][-1]['radius_factor']],
                       from_the_lowest_network=req[0], from_the_highest_network=req[1],
                       note='the observed mean against the lowest and the highest configuration of the network, not against the midpoint of its range'),
-        robustness=robustness(d, B), joint=joint(d), consistency=consistency(), heterogeneity=heterogeneity(d, B), wang_contrast=wang_contrast(d),
+        solver=solver_report(d), robustness=robustness(d, B), joint=joint(d), consistency=consistency(), heterogeneity=heterogeneity(d, B), wang_contrast=wang_contrast(d),
         distension=dict(relations={'cube law': f'R proportional to Pd^-{CUBE:g}, Pd the mean of the pressures on either side of the resistance',
                                    'compliance': f'blood volume linear in intrahepatic pressure, doubling over {DOUBLING_MMHG[0]:g} to {DOUBLING_MMHG[1]:g} mmHg; R proportional to volume^-2',
                                    'pressure-flow': f'gradient linear in flow, a share {FLOW_FIXED_SHARE[0]:g} to {FLOW_FIXED_SHARE[1]:g} of the control gradient independent of flow'},

@@ -285,22 +285,49 @@ remain the primary statement.
 ### Level and order (`distension.heterogeneity`, `distension.wang_contrast`)
 
 The relations depend on the flow load and CVP of each group and on parameters common to all, so they set the level of
-$z_R$, not its order. At central parameters the standard deviation of $\log z_R$ over the six groups is
-0.016 to 0.075 against 0.325 observed, and the rank correlation with the observations 0.49 (P = 0.33).
+$z_R$, not its order. Group by group the comparison is Fig. 2B: the range of each relation beside each observation. At
+central parameters the standard deviation of $\log z_R$ over the six groups is 0.016 to 0.075 against 0.325 observed: a
+fifth of the spread or less. A rank correlation over six groups from five cohorts, two of them one cohort, is not a test
+of prediction and is given only as a description (0.49).
+
 The one contrast inside a cohort, the two arms of Wang 2014, solved from the flow loads only (4.12 and 3.74) with
-CVP, network and parameters common to both arms in each draw:
+CVP, network and parameters common to both arms in each draw, and compared as distributions (Fig. 2C). No fraction of
+the contrast is computed: a ratio of logarithms is unstable when the observed contrast is near one.
 
-| Model | Ratio of $z_R$, splenectomy to none (95% range) | Share of the log contrast |
-|---|---:|---:|
-| observed | 0.74 (0.61 to 0.88) | 100% |
-| rigid network | 1.00 (0.99 to 1.00) | 0% |
-| cube law | 0.95 (0.88 to 1.02) | 18% |
-| compliance | 0.95 (0.88 to 1.02) | 18% |
-| pressure-flow | 0.99 (0.97 to 1.00) | 4% |
+| Model | Ratio of $z_R$, splenectomy to none (95% range) | Observed over model, same draws | Draws with the model as low as observed |
+|---|---:|---:|---:|
+| observed | 0.74 (0.61 to 0.88) | | |
+| rigid network | 1.00 (0.99 to 1.00) | 0.74 (0.61 to 0.88) | <0.1% |
+| cube law | 0.95 (0.88 to 1.02) | 0.78 (0.67 to 0.88) | <0.1% |
+| compliance | 0.95 (0.88 to 1.02) | 0.78 (0.67 to 0.88) | <0.1% |
+| pressure-flow | 0.99 (0.97 to 1.00) | 0.75 (0.63 to 0.88) | <0.1% |
 
-From the flow loads alone the relations give the direction and at most a fifth of the contrast. The rest is what the flow
+From the flow loads alone every model gives the direction and a small part of the contrast. The rest is what the flow
 load of the arms does not carry; the arms were not randomised, so these data cannot say whether it is the splenectomy or
 the recipients chosen for it.
+
+### The solvers (`distension.solver_report`, `compartments.solver_check`)
+
+The site-by-site model is a coupled system, pressure to calibre to resistance to pressure, solved as a fixed point for the
+factor of each generation with damping on its logarithm. `compartments.solve` returns whether it converged, the
+iterations and the residual of the fixed point evaluated on the solution (the original equations, not the last step),
+and raises `NotConverged` if it does not reach the tolerance. Every solve of the analysis is repeated from three starting
+points (every factor at 1, 0.25 and 4): all 3,456 converge within 38 iterations, the largest residual is 1e-10, and
+the three starts agree within 1e-10, so no second solution was found. The whole-liver form solves one equation in
+the gradient whose left side falls strictly with it, so its root is unique; it is bracketed before bisection and the
+residual of every root is checked.
+
+### Where each relation was measured
+
+| Relation | Measured in | Flow | Pressure |
+|---|---|---|---|
+| cube law [L3] | cat liver, isolated perfused and in vivo | 1/3 to 1.7 times control | outflow 3 to 15 mmHg |
+| compliance [L2, L4, L8] | cat liver, in vivo and denervated | control | hepatic venous pressure raised up to 9.4 mmHg; intrahepatic 6 to 16 mmHg |
+| pressure-flow [L8] | cat liver, denervated | 0 to 2.2 times control | intrahepatic 6 to 16 mmHg |
+| partial grafts (this study) | human, after cold ischaemia and reperfusion | 3.3 to 4.1 times the donor's per lobule | portocaval 6 to 13 mmHg; portal 14 to 22 mmHg |
+
+The three are kept as alternative scenarios with their predictions and these limits; none is chosen for being closer to
+the observations.
 
 What this supports and what it does not. The passive relations of the normal liver, extrapolated to the flow of a graft,
 span the resistance loads the cohorts report, and the rigid network does not; the lower ones only if the portal tree

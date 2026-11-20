@@ -103,8 +103,10 @@ def test_the_passive_relations_span_the_observations_without_a_fitted_number():
     assert all(v['reference_error'] < 1e-12 and v['same_load_same_gradient_mmHg'] < 1e-9 and v['monotone'] and v['largest_local_exponent'] < 1.0 for v in C.values())
     assert C['pressure-flow']['exponent_at_the_highest_flow'][0] > 0.95 and C['cube law']['exponent_at_the_highest_flow'][1] < 0.45 and C['compliance']['exponent_at_the_highest_flow'][1] < 0.45
     H = s['heterogeneity']; assert all(v['sd_log'] < H['observed']['sd_log'] / 4 and v['spearman_p'] > 0.1 for v in H['relations'].values()), 'the relations set the level of zR, not the order of the groups'
-    W = s['wang_contrast']['models']; assert W['rigid network']['share_of_the_log_contrast'] < 0.05 and all(0.1 < W[k]['share_of_the_log_contrast'] < 0.25 for k in ('cube law', 'compliance')) and W['pressure-flow']['share_of_the_log_contrast'] < 0.1
-    assert all(v['ratio'][1] > s['wang_contrast']['observed_ratio'][2] for v in W.values()), 'from the flow loads alone no model reaches the contrast between the two arms of Wang 2014'
+    W = s['wang_contrast']['models']; o = s['wang_contrast']['observed_ratio']
+    assert all(v['ratio'][1] > o[2] and v['observed_over_model'][2] < 1 and v['share_of_draws_model_as_low_as_observed'] < 0.01 for v in W.values()), 'from the flow loads alone no model reaches the contrast between the two arms of Wang 2014'
+    assert W['rigid network']['ratio'][1] > 0.99 and all(0.9 < W[k]['ratio'][1] < 0.97 for k in ('cube law', 'compliance')) and all(sum(v['histogram']) == s['wang_contrast']['draws'] for v in W.values())
+    S = s['solver']; assert S['site_by_site']['largest_residual'] < 1e-8 and S['site_by_site']['largest_difference_between_starts'] < 1e-8 and S['whole_liver']['largest_relative_residual'] < 1e-9
     band = s['distension']['band_in_the_plane']; assert all(lo <= hi for lo, hi in zip(band['zP_low'], band['zP_high']))
 
 
@@ -150,3 +152,16 @@ def test_the_published_relations_hold_in_a_species_they_were_not_derived_from():
     assert e['compliance']['normal_livers'] < 1.2 and e['compliance']['after_cold_ischaemia'] > 2 and e['pressure-flow']['normal_livers'] > 3.5
     assert all(x < 0 for x in st['after 2 h of cold ischaemia']['predicted']['compliance']['portal_pressure_error_mmHg']), 'after cold ischaemia the liver distends less than the relation gives'
     assert abs(ds.RICCIARDI['after 2 h of cold ischaemia']['hvr'][0] / ds.RICCIARDI['isolated, perfused']['hvr'][0] - 2.0) < 0.01, 'after cold ischaemia the resistance is twice as high at the same flow'
+
+
+def test_the_site_by_site_solver_says_when_it_has_not_converged():
+    from model import compartments as cm
+    geom = cm.geometries()[0]
+    r = cm.solve(3.5, geom, 1.0, 5.0, 'compliance', 10.0, 'every vessel')
+    assert r['converged'] and r['residual'] < 1e-8 and r['iterations'] < 200
+    try:
+        cm.solve(3.5, geom, 1.0, 5.0, 'compliance', 10.0, 'every vessel', iters=3); raise AssertionError('three iterations cannot converge')
+    except cm.NotConverged:
+        pass
+    r = cm.solve(3.5, geom, 1.0, 5.0, 'compliance', 10.0, 'every vessel', iters=3, strict=False); assert not r['converged'] and r['residual'] > 1e-8
+    a, b = (cm.solve(3.5, geom, 1.0, 5.0, 'cube law', None, 'presinusoidal site', d0=x)['zR'] for x in (0.25, 4.0)); assert abs(a - b) < 1e-9, 'one solution from either side'

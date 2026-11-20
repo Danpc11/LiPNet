@@ -46,7 +46,7 @@ palette), and no panel uses more than three unordered colours. Figure 3 has five
 | Figure | Function | Reads |
 |---|---|---|
 | 1 | `figure_1` | the model itself: `model/network.py` and `model/network3d.py` recompute the optimum at $b=0.75$ for panels B and C; `model/human.py` gives panel F, the portal radii of the human cast |
-| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`), `results/model_distension.json` (the bands of the published passive relations, by kind) |
+| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`), `results/model_distension.json` (the bands of the published passive relations, by kind; panel C, the distributions of the contrast inside Wang 2014) |
 | 3 | `figure_3` | `results/bayes_main.json`, `results/spec_curve.json`, `data/series.tsv` |
 | 4 | `figure_4` | `model/whole_graft.py` (panel A) and the definition of the pressure load (panel B): predictions that no data here test |
 | S1 | `figure_s1` | `data/graph_scaling_all.tsv`, `data/graph3d_all.tsv`, `model/scaling.py` |
