@@ -53,7 +53,8 @@ def test_the_stored_predictions_are_the_ones_this_code_gives():
     stored = json.load(open(os.path.join(ROOT, 'results', 'predictions.json'))); d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     now = json.loads(json.dumps(dict(P1_allometry=P.p1_allometry(), P2_discordance=P.p2_discordance(d), P4_thresholds=P.p4_thresholds()), default=float))
     m = P.p2_model_against_observed(d); now['P2_discordance']['model_against_observed'] = json.loads(json.dumps(m, default=float))
-    now['P2_discordance']['uncertainty'] = json.loads(json.dumps(P.p2_uncertainty(d, m), default=float))
+    u = P.p2_uncertainty(d, m); now['P2_discordance']['uncertainty'] = json.loads(json.dumps(u, default=float))
+    now['P2_discordance']['performance'] = json.loads(json.dumps(P.p2_performance(d, m, u), default=float))
     now['P2_discordance']['reference_sweep'] = json.loads(json.dumps(P.p2_reference_sweep(d, model_lowest=m['lowest_predicted']), default=float))
     bad = [x for k in now for x in _same(stored[k], now[k], path=k)]
     assert not bad, 'results/predictions.json is not what the code gives; run python src/predictions.py. First differences: ' + ', '.join(bad[:8])

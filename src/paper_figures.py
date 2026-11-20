@@ -48,8 +48,10 @@ def plane(ax, lim=5.0, model=True, label_at=2.9, label='Network model', bed=None
     if model:
         ax.fill_between(x, MODEL_ZR[0] * x, MODEL_ZR[1] * x, zorder=1, **fs.MODEL_TINT)
         ax.text(0.81 * lim, 0.81 * lim * np.mean(MODEL_ZR) - 0.004 * lim, label, fontsize=FS_SMALL, rotation=42.5, ha='center', va='center', zorder=3)
-    if bed:
-        ax.fill_between(bed['zF'], bed['zP_low'], bed['zP_high'], color=BLUE, alpha=0.34, lw=0, zorder=1)
+    if bed:                                   # the passive relations of the normal liver: dark, those that keep distending; hatched, the one that stops
+        k, s_ = bed['keeps distending'], bed['stops distending']
+        ax.fill_between(bed['zF'], k['zP_low'], k['zP_high'], color=BLUE, alpha=0.34, lw=0, zorder=1)
+        ax.fill_between(bed['zF'], s_['zP_low'], s_['zP_high'], facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, zorder=1)
     ax.plot(x, x, color=INK, lw=LW_REF, ls=DASH, zorder=2); ax.plot([1], [1], 'o', ms=4, mfc=INK, zorder=5, **DOT)
     ax.text(label_at, label_at + 0.06 * lim, f'{ZR} = 1', fontsize=FS_IN, rotation=45, ha='center', va='center')
     ax.set_xlim(0, lim); ax.set_ylim(0, lim); ax.set_aspect('equal'); ax.set_xticks(range(0, int(lim) + 1)); ax.set_yticks(range(0, int(lim) + 1))
@@ -169,9 +171,10 @@ CONFIGURATION = {'outflow reconstruction': ('o', True, 'Outflow reconstruction')
 def figure_2():
     d = series(); p = d.dropna(subset=['zF', 'zP']); flow_only = d[d.zF.notna() & d.zP.isna() & d.in_main_analysis]; P = load('predictions')['P2_discordance']
     U = {(g['study'], g['group']): g for g in P['uncertainty']['groups']}; med = float(np.median(p.zR)); D = load('model_distension')['distension']
-    BED = {(g['study'], g['group']): g['zR_distensible_all'] for g in D['bracket']['groups']}; bed = (min(v[0] for v in BED.values()), max(v[1] for v in BED.values()))
+    KEEP = {(g['study'], g['group']): g['zR_keeps_distending'] for g in D['bracket']['groups']}; STOP = {(g['study'], g['group']): g['zR_stops_distending'] for g in D['bracket']['groups']}
+    keep = (min(v[0] for v in KEEP.values()), max(v[1] for v in KEEP.values())); stop = (min(v[0] for v in STOP.values()), max(v[1] for v in STOP.values()))
     fig = fs.figure(76); a = fs.axes(fig, 12, 12, 56, 56); b = fs.axes(fig, 126, 12, 51, 56)
-    plane(a, label='Rigid network', bed=D['band_in_the_plane']); a.text(4.18, 1.67, 'Distensible bed', fontsize=FS_SMALL, rotation=7, ha='center', va='center', zorder=3)
+    plane(a, label='', bed=D['band_in_the_plane']); key = [Patch(color=BLUE, alpha=0.16, lw=0, label='Rigid network'), Patch(facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, label='Stops distending'), Patch(color=BLUE, alpha=0.34, lw=0, label='Keeps distending')]
     a.plot(flow_only.zF, np.zeros(len(flow_only)), '|', ms=7, mew=0.9, color=MUTED, clip_on=False, zorder=4)
     order = {(r.study, r.group): k + 1 for k, r in enumerate(sorted(p.itertuples(), key=lambda r: r.zR))}; left = {'Yagi 2006', 'Wu 2011', 'Ishizaki 2012'}
     for _, r in p.iterrows():
@@ -179,19 +182,20 @@ def figure_2():
         a.plot(r.zF, r.zP, mk, ms=ms, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, zorder=6)
         a.text(r.zF + dx, r.zP, str(order[(r.study, r.group)]), fontsize=FS_IN, ha='right' if r.study in left else 'left', va='center', zorder=7)
     a.text(0.72, 1.28, 'Donor', fontsize=FS_IN, ha='right'); a.text(2.5, 0.22, 'Flow load only', fontsize=FS_IN, color=MUTED, ha='center', va='bottom')
-    a.legend(handles=[Line2D([], [], marker=mk, ls='', ms=4.2 if mk != 'D' else 3.8, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, label=lab) for mk, filled, lab in CONFIGURATION.values()],
-             loc='upper left', handletextpad=0.2, borderaxespad=0.1)
+    a.legend(handles=[Line2D([], [], marker=mk, ls='', ms=4.2 if mk != 'D' else 3.8, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, label=lab) for mk, filled, lab in CONFIGURATION.values()] + key,
+             loc='upper left', handletextpad=0.35, handlelength=1.3, borderaxespad=0.1)
     rows = sorted(p.itertuples(), key=lambda r: r.zR); top = len(rows) - 0.35
     b.fill_between(MODEL_ZR, -0.6, top, zorder=0, **fs.MODEL_TINT); b.plot([1, 1], [-0.6, top], color=INK, lw=LW_REF, ls=DASH, zorder=1)
     for k, r in enumerate(rows):
         y = len(rows) - 1 - k; g = U[(r.study, r.group)]; mk, filled, _ = CONFIGURATION[r.configuration]
-        b.fill_between(BED[(r.study, r.group)], y - 0.5, y + 0.5, color=BLUE, alpha=0.34, lw=0, zorder=0)          # the bed of this group: its own flow load and central venous pressure
+        b.fill_between(KEEP[(r.study, r.group)], y - 0.5, y + 0.5, color=BLUE, alpha=0.34, lw=0, zorder=0)          # the relations for this group: its own flow load and central venous pressure
+        b.fill_between(STOP[(r.study, r.group)], y - 0.5, y + 0.5, facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, zorder=0)
         b.plot(g['ci_total'], [y, y], color=BLUE, lw=0.6, solid_capstyle='butt', zorder=2); b.plot(g['ci_sampling'], [y, y], color=BLUE, lw=2.2, solid_capstyle='butt', zorder=2); b.plot(r.zR, y, mk, ms=5 if mk != 'D' else 4.4, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, zorder=3)
         b.text(-0.04, y + 0.13, f'{k + 1}  ' + label_of(r), fontsize=FS_IN, ha='right', va='center'); b.text(r.zR, y + 0.2, f'{r.zR:.2f}', fontsize=FS_IN, ha='center', va='bottom')
         b.text(-0.04, y - 0.2, f'$n$ = {int(r.n)}, {ZF} = {r.zF:.2f}', fontsize=FS_SMALL, color=MUTED, ha='right', va='center')
     for x0, lw, lab in ((-0.86, 2.2, 'Sampling'), (-0.50, 0.6, 'With references')):        # key under the row labels, outside the axes and away from the two bands
         b.plot([x0, x0 + 0.06], [-0.86, -0.86], color=BLUE, lw=lw, solid_capstyle='butt', clip_on=False, zorder=2); b.text(x0 + 0.08, -0.86, lab, fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
-    b.text(np.mean(MODEL_ZR), top + 0.07, 'Rigid\nnetwork', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95); b.text(np.mean(bed), top + 0.07, 'Distensible\nbed', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95)
+    pass                                                                    # the three bands are keyed in panel A
     b.text(-0.04, top + 0.3, f"{P['cohorts_below_one']} of {P['cohorts']} cohorts below 1; exact sign test\n$P$ = {P['sign_test_cohorts_one_sided_p']:.3f} one-sided, {P['sign_test_cohorts_two_sided_p'] + 1e-9:.3f} two-sided", fontsize=FS_IN, ha='right', va='center')
     b.set_xlim(0, 1.2); b.set_ylim(-0.6, len(rows) + 0.45); fs.bare(b); b.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]); b.set_xlabel(f'Resistance load, {ZR} = {ZP} / {ZF}')
     fs.letter(fig, a, 'A', 10, 4); fs.letter(fig, b, 'B', 44, 4); save(fig, 'Figure_2')

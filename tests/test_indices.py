@@ -194,7 +194,13 @@ def test_model_predictions():
     # the prediction of the network uses no pressure of a recipient, and it is too high in every group
     m = p2['model_against_observed']
     assert 0.80 < m['lowest_predicted'] < 0.82 and m['groups_below_the_prediction'] == 6 and m['groups_whose_interval_is_below_the_prediction'] == 5
-    assert m['mean_error'] < -0.2 and 0.25 < m['rmse'] < 0.35 and m['share_of_the_departure_predicted'][1] < 0.8
+    assert m['share_of_the_departure_predicted'][1] < 0.8 and 'rmse' not in m, 'no error is computed against the midpoint of the range'
+    pf = p2['performance']                                      # four statements about the error, none against the midpoint
+    assert pf['central_configuration']['network'] == 'human b=0.75' and pf['central_configuration']['arterial_load'] == 1.0
+    assert pf['central']['mean_error'] < -0.25 and 0.30 < pf['central']['rmse'] < 0.36 and all(e < 0 for e in pf['central']['errors'])
+    assert pf['best_admissible']['rmse'] < pf['central']['rmse'] and pf['best_admissible']['mean_error'] < -0.2, 'no single configuration of the rigid network reaches the groups'
+    assert pf['coverage'] == dict(observed_inside_the_predicted_interval=0, observed_interval_overlaps_it=3, of=6)
+    assert pf['references']['combinations'] == 60 and pf['references']['mean_error'][1] < 0
     assert all(x['zR_predicted'][0] > x['zR_observed'] for x in m['groups'])
     sw = p2['reference_sweep']                                  # the normalisation does not manufacture zR < 1
     assert sw['groups'] == 6 and sw['combinations'] == 15

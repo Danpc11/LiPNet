@@ -141,14 +141,76 @@ def p2_model_against_observed(d):
                    interval_reaches_the_prediction=bool(ci[1] >= lo))
         if r.study in measured and 'zR_model' in measured[r.study]: row['zR_predicted_with_the_arterial_flow_measured_in_that_series'] = [round(x, 3) for x in measured[r.study]['zR_model']]
         rows.append(row)
-    lo_all = min(x['zR_predicted'][0] for x in rows); obs = np.array([x['zR_observed'] for x in rows]); mid = np.array([np.mean(x['zR_predicted']) for x in rows])
-    return dict(groups=rows, lowest_predicted=round(lo_all, 3), mean_observed=round(float(obs.mean()), 3), mean_predicted=round(float(mid.mean()), 3),
-                rmse=round(float(np.sqrt(np.mean((obs - mid) ** 2))), 3), mean_error=round(float((obs - mid).mean()), 3),
+    lo_all = min(x['zR_predicted'][0] for x in rows); obs = np.array([x['zR_observed'] for x in rows])
+    return dict(groups=rows, lowest_predicted=round(lo_all, 3), mean_observed=round(float(obs.mean()), 3),
+                mean_predicted_range=[round(float(np.mean([x['zR_predicted'][0] for x in rows])), 3), round(float(np.mean([x['zR_predicted'][1] for x in rows])), 3)],
                 groups_below_the_prediction=int(sum(x['zR_observed'] < x['zR_predicted'][0] for x in rows)),
                 groups_whose_interval_is_below_the_prediction=int(sum(not x['interval_reaches_the_prediction'] for x in rows)),
                 share_of_the_departure_predicted=[min(x['share_of_the_departure_from_one_predicted'][0] for x in rows), max(x['share_of_the_departure_from_one_predicted'][1] for x in rows)],
                 verdict='the network gives the direction of the departure of zR from one and under-predicts its size in every group',
                 note='inputs: geometry of the network, arterial share of the donor, flow load of the group. No pressure of a recipient enters')
+
+
+
+CENTRAL = dict(b=0.75, arterial_load=1.0)     # the network of the human cast (human.B_HUMAN) with the donor's arterial flow per lobule
+ARTERIAL_GRID = tuple(np.round(np.linspace(0.0, 1.0, 11), 2))
+
+
+def prediction_metrics(observed, central, admissible, interval, observed_ci):
+    """Four separate statements about a prediction, none of which uses the midpoint of a range of configurations.
+    observed       zR of each group
+    central        zR of one specified configuration, per group
+    admissible     zR of every admissible configuration, shape (configurations, groups): one configuration is used for
+                   all groups at once, as a model would be
+    interval       (lowest, highest) prediction per group
+    observed_ci    95% interval of each observation (sampling and references)
+    Returns the error against the specified configuration, the smallest error any single admissible configuration
+    attains (and which), and the coverage of the predicted interval by the observations."""
+    obs = np.asarray(observed, float); c = np.asarray(central, float); adm = np.asarray(admissible, float)
+    e = obs - c; rm = np.sqrt(np.mean((obs[None, :] - adm) ** 2, axis=1)); i = int(np.argmin(rm))
+    inside = [bool(lo <= o <= hi) for o, (lo, hi) in zip(obs, interval)]
+    overlap = [bool(ci[0] <= hi and ci[1] >= lo) for ci, (lo, hi) in zip(observed_ci, interval)]
+    return dict(central=dict(mean_error=round(float(e.mean()), 3), rmse=round(float(np.sqrt(np.mean(e ** 2))), 3), errors=[round(float(x), 3) for x in e]),
+                best_admissible=dict(rmse=round(float(rm[i]), 3), mean_error=round(float((obs - adm[i]).mean()), 3), index=i),
+                coverage=dict(observed_inside_the_predicted_interval=int(sum(inside)), observed_interval_overlaps_it=int(sum(overlap)), of=len(obs)))
+
+
+def p2_performance(d, model, uncertainty):
+    """How well does the rigid network predict zR? Four statements, kept apart:
+    central      the error against one specified configuration (CENTRAL: the network of the human cast at b = 0.75, each
+                 lobule keeping the donor's arterial flow), chosen before this comparison and not adjusted to it
+    best         the smallest root-mean-square error that any single admissible configuration (eight networks x eleven
+                 arterial loads from none to the donor's) attains on all six groups at once: the best the rigid
+                 network can do
+    coverage     how many observations fall inside the predicted interval, and how many observed 95% intervals
+                 (sampling and references, p2_uncertainty) reach it
+    references   the error of the central configuration when the donor flow, the normal gradient and the assumed CVP
+                 are varied together over the 60 combinations of p2_reference_sweep: the observed zR and the flow load
+                 at which the network is evaluated both change"""
+    from model import liver, human, compartments as cm
+    p = d.dropna(subset=['zF', 'zP']); G8 = [g for g in cm.geometries()]; zF = p.zF.to_numpy(float); obs = p.zR.to_numpy(float)
+    cen = [g for g in G8 if g[0] == f"human b={CENTRAL['b']:.2f}"][0]
+    rig = lambda zf, geom, phi: cm.rigid(zf, geom, phi)
+    central = np.array([rig(z, cen, CENTRAL['arterial_load']) for z in zF])
+    configs = [(g, phi) for g in G8 for phi in ARTERIAL_GRID]; adm = np.array([[rig(z, g, phi) for z in zF] for g, phi in configs])
+    U = {(x['study'], x['group']): x for x in uncertainty['groups']}; M = {(x['study'], x['group']): x for x in model['groups']}
+    keys = list(zip(p.study, p.group)); interval = [M[k]['zR_predicted'] for k in keys]; oci = [U[k]['ci_total'] for k in keys]
+    met = prediction_metrics(obs, central, adm, interval, oci); g, phi = configs[met['best_admissible'].pop('index')]
+    met['best_admissible'].update(network=g[0], arterial_load=float(phi))
+    # the references varied together
+    sweep = []
+    for f in REF_FLOWS:
+        for ng in REF_GRADIENTS:
+            for c in REF_CVPS:
+                ref = np.where(p.donor_PVF_per_100g_ref.isna() | (p.donor_PVF_per_100g_ref == indices.DEFAULT_DONOR_REF), f, p.donor_PVF_per_100g_ref)
+                grad = np.where(p.gradient_mmHg.notna(), p.gradient_mmHg, p.PVP - np.where(p.CVP_basis.eq('imputed'), c, p.CVP))
+                zf = (p.PVF_per_100g / ref).to_numpy(float); zr = (grad / ng) / zf
+                e = zr - np.array([rig(z, cen, CENTRAL['arterial_load']) for z in zf]); sweep.append((float(np.sqrt(np.mean(e ** 2))), float(e.mean())))
+    met['references'] = dict(rmse=[round(min(x[0] for x in sweep), 3), round(max(x[0] for x in sweep), 3)], mean_error=[round(min(x[1] for x in sweep), 3), round(max(x[1] for x in sweep), 3)], combinations=len(sweep))
+    met.update(central_configuration=dict(network=cen[0], arterial_load=CENTRAL['arterial_load'], zR=[round(float(x), 3) for x in central]),
+               groups=[f'{a} / {b}' for a, b in keys],
+               note='no statement uses the midpoint of the predicted range, which is not a configuration of the network')
+    return met
 
 
 REF_FLOWS = (80.0, 85.0, 90.0, 95.0, 100.0)      # donor PVF per 100 g, default 90
@@ -364,6 +426,7 @@ def main():
     res['P2_discordance']['model_against_observed'] = p2_model_against_observed(d)
     res['P2_discordance']['uncertainty'] = p2_uncertainty(d, res['P2_discordance']['model_against_observed'])
     res['P2_discordance']['reference_sweep'] = p2_reference_sweep(d, model_lowest=res['P2_discordance']['model_against_observed']['lowest_predicted'])
+    res['P2_discordance']['performance'] = p2_performance(d, res['P2_discordance']['model_against_observed'], res['P2_discordance']['uncertainty'])
     json.dump(res, open(f'{OUT}/predictions.json', 'w'), indent=1)
     a, b2, c3, d4 = res['P1_allometry'], res['P2_discordance'], res['P3_within_cohort'], res['P4_thresholds']
     print('P1  comparative anatomy')
@@ -376,9 +439,14 @@ def main():
     print(f"    {b2['groups_with_both']} groups from {b2['cohorts']} cohorts report both loads: zR {sorted(b2['ratio_all'])}")
     print(f"    cohorts below one: {b2['cohorts_below_one']} of {b2['cohorts']} (exact sign test, one-sided p = {b2['sign_test_cohorts_one_sided_p']:.3f}, two-sided {b2['sign_test_cohorts_two_sided_p']:.3f}); "
           f"groups whose interval stays below one at any correlation of the two means: {b2['groups_with_interval_below_one']} of {b2['groups_with_both']}")
-    print(f"    network, from geometry and the two inflows: lowest value {m['lowest_predicted']}; mean predicted {m['mean_predicted']} against mean observed {m['mean_observed']} "
-          f"(mean error {m['mean_error']:+.2f}, rmse {m['rmse']:.2f}); {m['groups_below_the_prediction']} of {len(m['groups'])} groups below it, "
+    print(f"    network, from geometry and the two inflows: lowest value {m['lowest_predicted']}; mean predicted range {m['mean_predicted_range']} against mean observed {m['mean_observed']}"
+          f"; {m['groups_below_the_prediction']} of {len(m['groups'])} groups below it, "
           f"{m['groups_whose_interval_is_below_the_prediction']} with the whole interval below; share of the departure predicted {m['share_of_the_departure_predicted']}")
+    pf = b2['performance']
+    print(f"    performance: central configuration ({pf['central_configuration']['network']}, arterial load {pf['central_configuration']['arterial_load']:g}) mean error {pf['central']['mean_error']:+.3f}, rmse {pf['central']['rmse']:.3f}; "
+          f"best single admissible configuration rmse {pf['best_admissible']['rmse']:.3f} ({pf['best_admissible']['network']}, {pf['best_admissible']['arterial_load']:g}); "
+          f"observations inside the predicted interval {pf['coverage']['observed_inside_the_predicted_interval']} of {pf['coverage']['of']}, observed intervals reaching it {pf['coverage']['observed_interval_overlaps_it']}; "
+          f"rmse over the references {pf['references']['rmse']}")
     print(f"    by configuration: {b2['by_configuration']}; the group with no manoeuvre is inside the range of outflow reconstruction: {b2['no_manoeuvre_inside_the_range_of_outflow_reconstruction']}")
     for w in b2['within_cohort_contrasts']: print(f"    inside {w['cohort']}: {w['contrast']}, zR {w['zR']}, ratio {w['ratio_of_zR']} ({w['ratio_ci'][0]} to {w['ratio_ci'][1]})")
     sw = b2['reference_sweep']

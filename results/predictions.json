@@ -474,9 +474,10 @@
    ],
    "lowest_predicted": 0.811,
    "mean_observed": 0.584,
-   "mean_predicted": 0.853,
-   "rmse": 0.306,
-   "mean_error": -0.269,
+   "mean_predicted_range": [
+    0.811,
+    0.895
+   ],
    "groups_below_the_prediction": 6,
    "groups_whose_interval_is_below_the_prediction": 5,
    "share_of_the_departure_predicted": [
@@ -1163,6 +1164,63 @@
     "note": "60 combinations of donor reference flow, normal gradient and assumed CVP, varied together"
    },
    "note": "flow and gradient references crossed on a grid; the assumed CVP swept separately at the default references; the worst corner crosses all three and is reported for completeness"
+  },
+  "performance": {
+   "central": {
+    "mean_error": -0.303,
+    "rmse": 0.335,
+    "errors": [
+     -0.577,
+     -0.341,
+     -0.343,
+     -0.169,
+     -0.148,
+     -0.239
+    ]
+   },
+   "best_admissible": {
+    "rmse": 0.27,
+    "mean_error": -0.227,
+    "network": "canopy b=1",
+    "arterial_load": 0.0
+   },
+   "coverage": {
+    "observed_inside_the_predicted_interval": 0,
+    "observed_interval_overlaps_it": 3,
+    "of": 6
+   },
+   "references": {
+    "rmse": [
+     0.232,
+     0.5
+    ],
+    "mean_error": [
+     -0.487,
+     -0.054
+    ],
+    "combinations": 60
+   },
+   "central_configuration": {
+    "network": "human b=0.75",
+    "arterial_load": 1.0,
+    "zR": [
+     0.883,
+     0.89,
+     0.881,
+     0.885,
+     0.889,
+     0.89
+    ]
+   },
+   "groups": [
+    "Chan 2011 / right lobe with MHV, no modulation",
+    "Yagi 2006 / PVP kept <20",
+    "Wang 2014 / splenectomy",
+    "Wang 2014 / no splenectomy",
+    "Ishizaki 2012 / left lobe, no inflow modulation (gradient measured)",
+    "Wu 2011 / right lobe, no inflow modulation"
+   ],
+   "note": "no statement uses the midpoint of the predicted range, which is not a configuration of the network"
   }
  },
  "P3_within_cohort": {

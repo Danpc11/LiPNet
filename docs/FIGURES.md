@@ -32,7 +32,7 @@ One meaning per colour in the whole article:
 | blue `#2a78d6` | hepatic veins, outlet; also the single series of a panel that has no vessels |
 | red `#e34948` | the one recipient singled out for an adverse outcome |
 | blue ramp, light to dark | an ordered parameter: $b$, $h$, baseline gradient |
-| blue tint | the range the rigid network reaches; a deeper tint of the same blue, the fully distensible bed |
+| blue tint | the range the rigid network reaches; a deeper tint of the same blue, the published relations of the normal liver that keep distending; hatching, the one that stops distending |
 | warm grey | a reference window or an observed range |
 
 The vessels follow the anatomical atlases: portal vein purple, hepatic veins blue. Green is not used for a vessel
@@ -46,7 +46,7 @@ palette), and no panel uses more than three unordered colours. Figure 3 has five
 | Figure | Function | Reads |
 |---|---|---|
 | 1 | `figure_1` | the model itself: `model/network.py` and `model/network3d.py` recompute the optimum at $b=0.75$ for panels B and C; `model/human.py` gives panel F, the portal radii of the human cast |
-| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`), `results/model_distension.json` (the band of the distensible bed) |
+| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`), `results/model_distension.json` (the bands of the published passive relations, by kind) |
 | 3 | `figure_3` | `results/bayes_main.json`, `results/spec_curve.json`, `data/series.tsv` |
 | 4 | `figure_4` | `model/whole_graft.py` (panel A) and the definition of the pressure load (panel B): predictions that no data here test |
 | S1 | `figure_s1` | `data/graph_scaling_all.tsv`, `data/graph3d_all.tsv`, `model/scaling.py` |

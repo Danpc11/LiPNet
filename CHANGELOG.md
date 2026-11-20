@@ -2,6 +2,37 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.7.3] – 2026-11-20
+
+A review of the distensibility analysis and of the error of P2 (points H1 to H6).
+
+### Added
+- **Distension site by site** (`src/model/compartments.py`, H1). The relations are applied to each generation of the network at the pressure the network gives it, as Lautt et al. (1991) validated the cube law for each resistance site; only the vessels of the chosen sites distend, $R/R_0=(1-s)+s\,d$, with the share $s$ fixed by the network (1; 0.80 to 0.97 for the pre- and postsinusoidal sites; 0.37 to 0.48 for the hepatic venous tree; 0.42 to 0.48 for the portal tree). The rigid limit is the network of P2 exactly. The relations that keep distending fall below 0.65 only if the portal tree distends; the hepatic venous tree alone gives 0.67 to 0.92.
+- **Other distending pressures** (`distension.robustness`, H3): CVP − $P_{ext}$ + $\lambda G$ for $\lambda$ from 0.25 to 1 and $P_{ext}$ of 0 or 2 mmHg. Five groups within the relations and Chan 2011 below in every variant; only distension of the hepatic venous tree alone changes the placement.
+- **Every uncertainty together** (`distension.joint`, H4): measurement, references, network and parameters drawn together, the observation and each model from the same draw. The observation lies below the rigid network with probability 0.80 to 1.00; Chan 2011 below every relation with probability above 0.99; each other group within the relations with probability 0.35 to 0.68.
+- **The pig livers as a test** (`distension.published_check`, H5): for each state the error of the predicted resistance ratio and of the predicted portal pressure, and the caval pressure implied at both flows (consistent within 0.3 mmHg). The compliance relation predicts the portal pressure of normal livers within 1.2 mmHg, the pressure-flow relation overpredicts it by 2.6 to 5.5 mmHg; after cold ischaemia the liver distends less than the relations give.
+- **Error of P2** (`predictions.p2_performance`, H6): against one specified configuration (the cast network at $b=0.75$ with the donor's arterial flow per lobule; root-mean-square error 0.34), the best single admissible configuration (0.27), the coverage of the predicted interval (no observation inside it; three observed intervals reach it) and the error over the 60 combinations of references (0.23 to 0.50).
+
+### Removed
+- The root-mean-square error against the midpoint of the predicted range (0.31) and the mean prediction of 0.85: the midpoint is not a configuration of the network. The missing reduction is now given against the lowest and the highest configuration, 28 to 35% (was 32%).
+
+### Documentation
+- `distension.py` and `docs/LIVER.md` state what the relations can say (H2): they come from normal cat livers, mostly below 10 mmHg, and are read as the largest plausible passive contribution, not as a prediction for a reperfused graft.
+
+## [0.7.2] – 2026-11-20
+
+The four physiology papers behind `distension.py` were read in full (Lautt and Greenway 1976; Greenway, Seaman and Innes 1985; Lautt, Greenway and Legare 1991; Lautt and Legare 1992).
+
+### Changed
+- **Compliance.** The pressure that doubles hepatic blood volume is taken over 8 to 13 mmHg: 9.4 mmHg added 32 to 27 mL/100 g (1976), "8 mmHg will double" (1992), a compliance of 2.6 to 3.1 mL/mmHg/100 g on 34 mL/100 g (1985). It was a single 8 mmHg.
+- **A third relation.** Greenway et al. (1985) measured intrahepatic pressure linear in total hepatic flow up to 2.2 times the control flow, with an intercept of 2.2 mmHg; nonlinear fits were worse. It is the relation measured at the highest flows and it stops distending. At the flow loads of the six groups it gives 0.61 to 0.82, where the two relations that keep distending give 0.39 to 0.58. Five groups lie within the span of the three, all below the rigid network, and Chan 2011 below all three. In normal pig livers the compliance relation holds and the linear one is too stiff.
+- Figure 2 shows the two kinds of relation separately; the bands are keyed in panel A.
+- The validated range of the cube law is stated: 10 to 50 mL/min/kg, a third to 1.7 times the control flow, outflow pressures up to 15 mmHg.
+
+### Documentation
+- Reference [37] of the article: Garcia-Tsao et al., Hepatology 1985 (an HVPG above 12 mmHg is necessary for variceal haemorrhage) replaces Groszmann et al., N Engl J Med 2005, which supports the 10 mmHg threshold and not the 12 mmHg one.
+- Greenway et al. 1985 is a reference of the main text. Seppelt et al., Sci Rep 2022 (1,469 ± 293 cm³ in a population sample without liver disease) supports the adult liver of 1,500 g in the supplement.
+
 ## [0.7.1] – 2026-11-20
 
 The sources of `distension.py` were read in full, and one of the two relations was corrected against them.
