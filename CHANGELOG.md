@@ -2,6 +2,39 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.7.1] – 2026-11-20
+
+The sources of `distension.py` were read in full, and one of the two relations was corrected against them.
+
+### Fixed
+- **Distending pressure of the cube law.** Its authors define it as the mean of the pressures above and below the resistance site (Lautt, Greenway and Legare 1991; Lautt and Ming 2005; Inglés, Legare and Lautt 1994), not as the portal venous pressure, which v0.7.0 used. With the definition of the sources the fully distensible bed is at $z_R$ 0.39 to 0.58 (it was 0.36 to 0.51), and a doubling of the flow of a donor liver raises the gradient by 1.9 mmHg, against the "approx 2 mmHg" of the source. The compliance relation is unchanged.
+- **Where the groups sit.** Each group is now placed with its 95% sampling interval: three lie between the bed and the rigid network, two at the bed (0.54 and 0.55, just above its upper end) and Chan 2011 below both. v0.7.0 counted five between the two.
+
+### Added
+- `distension.published_check`: the two relations against pig livers they were not derived from (Ricciardi et al. 2001), with the numbers printed in that paper. In situ and isolated, a 2.7-fold flow gave a resistance of 0.54 and 0.59 of the starting value; the relations give 0.48 to 0.57. After 2 h of cold ischaemia the resistance was twice as high at every flow.
+- The statement of the sources that distensibility is notable below 10 mmHg and minor above, in `docs/LIVER.md` and the article.
+- Figure 2B draws the bed of each group, from its own flow load and central venous pressure.
+
+### Documentation
+- The reference lists of the article were renumbered in order of citation and checked: three supplementary references were completed (authors and titles), and the sources of the two relations are cited from the papers themselves.
+
+## [0.7.0] – 2026-11-20
+
+The rigid network is set against a passively distensible bed, and the figures of the article are reordered around the resistance load.
+
+### Added
+- `src/model/distension.py` and `results/model_distension.json`: what the rigid network leaves out, as bounds. Sinusoids (3 to 15% of the drop) and the outlet anastomosis (5%) cannot supply the further 32% by which the resistance would have to fall. Two published relations for the passive distensibility of the normal liver (resistance as the inverse cube of the distending pressure; blood volume doubling for 8 mmHg) are solved self-consistently for each group from its flow load and central venous pressure, with nothing fitted: both give $z_R$ of 0.36 to 0.51. Five of the six groups lie between the rigid network and that bed; Chan 2011 lies below both. `docs/LIVER.md`, section 7.
+- Figure S7: the clinical thresholds on the pressure-load scale, moved out of the main figures.
+
+### Changed
+- Figure 1 has a sixth panel, the portal radii of the human cast against the model (it was Figure S5A, which stays).
+- Figure 2 shows the two brackets, rigid network and distensible bed, in the plane and beside each group; the median line is gone.
+- Figure 4 is now the predictions of the model that no data here test: a whole graft with a narrowed outlet or inlet (it was Figure S2C) and the remnant after resection. Figure S2 keeps the chain of resistances and the loads against the diameter of the anastomosis.
+- `paper_figures.py` draws eleven figures.
+
+### Notes
+- No fit and no number of v0.6.2 changes. The relations of `distension.py` are taken from the literature and are not tuned; the test suite fixes the exponent at 3 and the doubling pressure at 8 mmHg.
+
 ## [0.6.2] – 2026-11-19
 
 The tests failed on a clone where the pipeline had not been run, which is how the continuous integration runs them. Fixed, with what the third reading of the review left open.

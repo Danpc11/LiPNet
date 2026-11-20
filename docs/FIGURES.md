@@ -3,7 +3,7 @@
 Every figure of the article is drawn by one script in one style:
 
 ```bash
-python src/paper_figures.py           # the ten figures -> results/Figure_1 ... Figure_4, Figure_S1 ... Figure_S6 (.pdf and .png)
+python src/paper_figures.py           # the eleven figures -> results/Figure_1 ... Figure_4, Figure_S1 ... Figure_S7 (.pdf and .png)
 python src/paper_figures.py 2 S3      # only those
 ```
 
@@ -32,7 +32,7 @@ One meaning per colour in the whole article:
 | blue `#2a78d6` | hepatic veins, outlet; also the single series of a panel that has no vessels |
 | red `#e34948` | the one recipient singled out for an adverse outcome |
 | blue ramp, light to dark | an ordered parameter: $b$, $h$, baseline gradient |
-| blue tint | the range the network model reaches |
+| blue tint | the range the rigid network reaches; a deeper tint of the same blue, the fully distensible bed |
 | warm grey | a reference window or an observed range |
 
 The vessels follow the anatomical atlases: portal vein purple, hepatic veins blue. Green is not used for a vessel
@@ -45,17 +45,18 @@ palette), and no panel uses more than three unordered colours. Figure 3 has five
 
 | Figure | Function | Reads |
 |---|---|---|
-| 1 | `figure_1` | the model itself: `model/network.py` and `model/network3d.py` recompute the optimum at $b=0.75$ for panels B and C |
-| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`) |
+| 1 | `figure_1` | the model itself: `model/network.py` and `model/network3d.py` recompute the optimum at $b=0.75$ for panels B and C; `model/human.py` gives panel F, the portal radii of the human cast |
+| 2 | `figure_2` | `data/series.tsv`, `results/predictions.json` (the two intervals of panel B are `P2_discordance.uncertainty`), `results/model_distension.json` (the band of the distensible bed) |
 | 3 | `figure_3` | `results/bayes_main.json`, `results/spec_curve.json`, `data/series.tsv` |
-| 4 | `figure_4` | `results/predictions.json` |
+| 4 | `figure_4` | `model/whole_graft.py` (panel A) and the definition of the pressure load (panel B): predictions that no data here test |
 | S1 | `figure_s1` | `data/graph_scaling_all.tsv`, `data/graph3d_all.tsv`, `model/scaling.py` |
 | S2 | `figure_s2` | `model/whole_graft.py` |
 | S3 | `figure_s3` | `results/ipd_ecological.json` |
 | S4 | `figure_s4` | `ipd/patient_level.py` |
 | S5, S6 | `figure_s5`, `figure_s6` | `model/human.py` |
+| S7 | `figure_s7` | `results/predictions.json`: clinical thresholds on the pressure-load scale, exploratory |
 
-Figures 2, 3, 4 and S3 need the results of `run_all.sh`; the others run on a clean clone.
+Figures 2, 3, S3 and S7 need the results of `run_all.sh`; the others run on a clean clone.
 
 ## Provenance
 

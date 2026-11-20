@@ -364,6 +364,8 @@ Sampling error alone does not bring any group to 1: the upper limit stays below 
 
 The mean prediction is 0.85 against a mean observation of 0.58 (mean error $-0.27$, root-mean-square error 0.31). The prediction is too high in the six groups. The whole sampling interval of the observation lies below it in five (four with the widest dispersions of the sweep), and the interval that also carries the references in three: Chan 2011, Yagi 2006 and the splenectomy arm of Wang 2014. The model has the direction of the departure from 1 and under-predicts its size: it is falsified as a complete account of the resistance of a graft. For Wu 2011, which measured the arterial flow of donor and graft, the prediction narrows to 0.82 to 0.86 against 0.65.
 
+**What the rigid network leaves out.** The network is rigid, and the venous bed of a liver is not. Sinusoids carry 3 to 15% of the pressure drop in the optimum and the outlet anastomosis 5% of the resistance, so neither can supply the further 32% by which the resistance would have to fall. Two published relations for the passive distensibility of the normal liver, resistance as the inverse cube of the distending pressure and a blood volume that doubles for 8 mmHg, give nearly the same answer with nothing fitted: a fully distensible bed at these flow loads has $z_R$ of 0.39 to 0.58. The same relations give pig livers, which they were not derived from, a resistance of 0.48 to 0.57 at 2.7 times the flow, against 0.54 and 0.59 measured. Of the six groups, three lie between the bed and the rigid network, two at the bed and Chan 2011 below both. The missing resistance is therefore of the size passive distension of the venous trees can supply. That is a bound, not an identification: both relations come from cats over the normal range of pressure and are extrapolated, and after cold ischaemia the same pig livers had twice the resistance ([docs/LIVER.md](docs/LIVER.md), section 7).
+
 **Configuration.** The table classifies each group by mechanism (column `configuration`): outflow reconstruction, inflow modulation, portosystemic shunt, combined, none. A splenectomy is an inflow manoeuvre and is not counted as an outflow reconstruction. Among the six groups, three had an outflow reconstruction and no inflow manoeuvre (0.31, 0.65, 0.74), one an outflow venoplasty with pressure control (0.55), one a splenectomy (0.54) and one no manoeuvre (0.72). The group with no manoeuvre is inside the range of the three with outflow reconstruction, so these data do not show that reconstruction lowers $z_R$. Within the model, widening the outlet anastomosis lowers $z_R$ to 0.95 at most.
 
 The only contrast inside one cohort is Wang 2014: $z_R$ was 0.54 with splenectomy and 0.72 without, a ratio of 0.75 (0.64 to 0.88), at a higher flow load (4.12 against 3.74). The arms were not randomised and the manoeuvre was chosen for the recipients who needed it.
@@ -655,6 +657,8 @@ The scale gives the number a reading: $z_P=2$ is twice the pressure drop that on
 $$z_P=\frac{G}{5\,(1-x)},$$
 
 if the portal flow is unchanged and the lobules are in parallel (Figure 4B of the article).
+
+In the article this comparison is Supplementary Figure S7 and a sentence of the discussion; it is not a result.
 
 #### What P4 shows
 

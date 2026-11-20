@@ -55,7 +55,7 @@ some minutes after a push, so two files of one reading can belong to two commits
 the permanent address of the commit:
 
 ```bash
-git clone --branch v0.6.2 --depth 1 https://github.com/Danpc11/LiPNet && cd LiPNet
+git clone --branch v0.7.1 --depth 1 https://github.com/Danpc11/LiPNet && cd LiPNet
 python -m venv .venv && . .venv/bin/activate && pip install -r requirements-lock.txt
 python -m pytest tests -q                                  # on the clone as it is
 bash run_all.sh --clean                                    # everything from nothing, about 30 minutes

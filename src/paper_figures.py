@@ -1,23 +1,24 @@
 """Every figure of the article, in one style (src/figstyle.py, docs/FIGURES.md).
 
-    python src/paper_figures.py              all ten figures -> results/Figure_1 ... Figure_4, Figure_S1 ... Figure_S6 (.pdf and .png)
+    python src/paper_figures.py              all eleven figures -> results/Figure_1 ... Figure_4, Figure_S1 ... Figure_S7 (.pdf and .png)
     python src/paper_figures.py 2 S3         only those
 
 Figure 1    A the model: one lobule and the network; B, C the optimum in two and three dimensions; D load per lobule against
-            graft size; E the flow-pressure plane with the identity zP = zF zR
+            graft size; E the flow-pressure plane; F the portal radii of a human cast against the model
 Figure 2    A the six groups that report both loads in that plane; B their resistance load with its sampling interval (thick)
             and the interval that also carries the uncertainty of the references (thin)
 Figure 3    A slope per stratum; B outcome against pressure load with the fitted curve of each stratum; C specification curve
-Figure 4    A clinical thresholds on the pressure-load scale; B pressure load of the remnant after resection
+Figure 4    predictions no data here test: A a whole graft with a narrowed outlet or inlet; B the remnant after resection
 Figure S1   A scaling of the optimum with the number of lobules; B, C allometric closure
 Figure S2   inlet and outlet obstruction of a whole graft
 Figure S3   slope for a patient against the within-group dispersion of the gradient
 Figure S4   each recipient of a hemiportocaval shunt
 Figure S5   the model against a human vascular cast
 Figure S6   growth with the body and regrowth of a graft
+Figure S7   clinical thresholds on the pressure-load scale (exploratory)
 
 Every number comes from data/, from results/*.json or from the model itself; nothing is typed in here except labels.
-Figures 1B and 1C recompute the optimum (about a minute). Figures 2, 3, 4 and S3 need the results of run_all.sh.
+Figures 1B and 1C recompute the optimum (about a minute). Figures 2, 3, S3 and S7 need the results of run_all.sh.
 """
 import json, os, sys
 import numpy as np, pandas as pd
@@ -40,12 +41,15 @@ load = lambda name: json.load(open(f'{OUT}/{name}.json'))
 save = lambda fig, name: fs.save(fig, name, OUT)
 
 
-def plane(ax, lim=5.0, model=True, label_at=2.9):
-    """The flow-pressure plane: donor diagonal, the window between one and two, the wedge the network reaches."""
+def plane(ax, lim=5.0, model=True, label_at=2.9, label='Network model', bed=None):
+    """The flow-pressure plane: donor diagonal, the window between one and two, the wedge the rigid network reaches and,
+    if `bed` is given (results/model_distension.json), the band of a fully distensible bed."""
     x = np.array([0, lim]); ax.fill_between([1, 2], 1, 2, color=BAND, lw=0, zorder=0)
     if model:
         ax.fill_between(x, MODEL_ZR[0] * x, MODEL_ZR[1] * x, zorder=1, **fs.MODEL_TINT)
-        ax.text(0.81 * lim, 0.81 * lim * np.mean(MODEL_ZR) - 0.004 * lim, 'Network model', fontsize=FS_SMALL, rotation=42.5, ha='center', va='center', zorder=3)
+        ax.text(0.81 * lim, 0.81 * lim * np.mean(MODEL_ZR) - 0.004 * lim, label, fontsize=FS_SMALL, rotation=42.5, ha='center', va='center', zorder=3)
+    if bed:
+        ax.fill_between(bed['zF'], bed['zP_low'], bed['zP_high'], color=BLUE, alpha=0.34, lw=0, zorder=1)
     ax.plot(x, x, color=INK, lw=LW_REF, ls=DASH, zorder=2); ax.plot([1], [1], 'o', ms=4, mfc=INK, zorder=5, **DOT)
     ax.text(label_at, label_at + 0.06 * lim, f'{ZR} = 1', fontsize=FS_IN, rotation=45, ha='center', va='center')
     ax.set_xlim(0, lim); ax.set_ylim(0, lim); ax.set_aspect('equal'); ax.set_xticks(range(0, int(lim) + 1)); ax.set_yticks(range(0, int(lim) + 1))
@@ -124,9 +128,19 @@ def _network_3d(ax, R=3.4, b=0.75):
     return G3['n_lob']
 
 
+def _cast(a, legend='lower left'):
+    """Radius of the portal vein per generation: a human corrosion cast against the model with no fitted scale."""
+    from model import human
+    g, r, l, N = human.cast_arrays('portal vein'); x = np.logspace(0, np.log10(6e4), 80)
+    for bb, col in zip((0.5, 0.75, 1.0), fs.ramp(3)): a.plot(x, human.radius_at(human.liver(bb, liver_g=human.CAST_LIVER_G), x), color=col, zorder=2, label=f'Model, $b$ = {bb:g}')
+    a.plot(N, r, 'o', ms=4.4, mfc=INK, zorder=3, label='Human cast', **DOT); a.legend(loc=legend, handlelength=1.4)
+    a.set_xscale('log'); a.set_yscale('log'); a.set_xlim(0.6, 8e4); a.set_ylim(0.1, 25); a.set_xticks([1, 10, 100, 1e3, 1e4]); a.set_xticklabels(['1', '10', '10$^2$', '10$^3$', '10$^4$']); a.set_yticks([0.1, 1, 10]); a.set_yticklabels(['0.1', '1', '10'])
+    a.set_xlabel('Vessels in the generation'); a.set_ylabel('Portal vein radius (mm)')
+
+
 def figure_1():
     fig = fs.figure(124); a = fs.axes(fig, 2, 62, 54, 56); b = fs.axes(fig, 64, 66, 52, 52); c = fs.axes(fig, 119, 63, 60, 56, projection='3d')
-    d = fs.axes(fig, 13, 11, 60, 42); e = fs.axes(fig, 112, 11, 42, 42)
+    d = fs.axes(fig, 12, 11, 40, 42); e = fs.axes(fig, 75, 11, 42, 42); f = fs.axes(fig, 135, 11, 42, 42)
     _schematic(a); n2 = _network_2d(b); n3 = _network_3d(c)
     fig.text(68 / 180, 121 / 124, f'Two dimensions, {n2} lobules', fontsize=FS_IN, ha='left', va='center'); fig.text(126 / 180, 121 / 124, f'Three dimensions, {n3} lobules', fontsize=FS_IN, ha='left', va='center')
     fig.legend(handles=[Line2D([], [], color=PORTAL, lw=1.6, label='Portal tree'), Line2D([], [], color=SINUSOID, lw=1.6, label='Sinusoidal paths'), Line2D([], [], color=HEPATIC, lw=1.6, alpha=0.75, label='Hepatic venous tree'),
@@ -139,7 +153,7 @@ def figure_1():
     d.set_xlabel('Graft size, GRWR (%)'); d.set_ylabel('Load per lobule, $z$ = $h/g$')
     plane(e); e.text(1.14, 0.7, 'Donor', fontsize=FS_IN)
     e.text(0.25, 4.3, f'{ZR} > 1\nPressure above flow', fontsize=FS_IN, ha='left', va='center'); e.text(4.85, 1.2, f'{ZR} < 1\nPressure below flow', fontsize=FS_IN, ha='right', va='center')
-    fs.letter(fig, a, 'A', 1.0, 3); fs.letter(fig, b, 'B', 1.0, 3); fs.letter(fig, c, 'C', -2.0, 2); fs.letter(fig, d, 'D', 10, 4); fs.letter(fig, e, 'E', 10, 4); save(fig, 'Figure_1')
+    _cast(f); fs.letter(fig, a, 'A', 1.0, 3); fs.letter(fig, b, 'B', 1.0, 3); fs.letter(fig, c, 'C', -2.0, 2); fs.letter(fig, d, 'D', 10, 4); fs.letter(fig, e, 'E', 10, 4); fs.letter(fig, f, 'F', 11, 4); save(fig, 'Figure_1')
 
 
 # ------------------------------------------------------------------ Figure 2
@@ -154,9 +168,10 @@ CONFIGURATION = {'outflow reconstruction': ('o', True, 'Outflow reconstruction')
 
 def figure_2():
     d = series(); p = d.dropna(subset=['zF', 'zP']); flow_only = d[d.zF.notna() & d.zP.isna() & d.in_main_analysis]; P = load('predictions')['P2_discordance']
-    U = {(g['study'], g['group']): g for g in P['uncertainty']['groups']}; med = float(np.median(p.zR))
+    U = {(g['study'], g['group']): g for g in P['uncertainty']['groups']}; med = float(np.median(p.zR)); D = load('model_distension')['distension']
+    BED = {(g['study'], g['group']): g['zR_distensible_all'] for g in D['bracket']['groups']}; bed = (min(v[0] for v in BED.values()), max(v[1] for v in BED.values()))
     fig = fs.figure(76); a = fs.axes(fig, 12, 12, 56, 56); b = fs.axes(fig, 126, 12, 51, 56)
-    plane(a); a.plot([0, 5], [0, 5 * med], color=MUTED, lw=LW_REF, zorder=2); a.text(4.62, 4.62 * med + 0.2, f'Median {med:.2f}', fontsize=FS_SMALL, ha='center', va='center', color=MUTED, rotation=np.degrees(np.arctan(med)))
+    plane(a, label='Rigid network', bed=D['band_in_the_plane']); a.text(4.18, 1.67, 'Distensible bed', fontsize=FS_SMALL, rotation=7, ha='center', va='center', zorder=3)
     a.plot(flow_only.zF, np.zeros(len(flow_only)), '|', ms=7, mew=0.9, color=MUTED, clip_on=False, zorder=4)
     order = {(r.study, r.group): k + 1 for k, r in enumerate(sorted(p.itertuples(), key=lambda r: r.zR))}; left = {'Yagi 2006', 'Wu 2011', 'Ishizaki 2012'}
     for _, r in p.iterrows():
@@ -170,12 +185,13 @@ def figure_2():
     b.fill_between(MODEL_ZR, -0.6, top, zorder=0, **fs.MODEL_TINT); b.plot([1, 1], [-0.6, top], color=INK, lw=LW_REF, ls=DASH, zorder=1)
     for k, r in enumerate(rows):
         y = len(rows) - 1 - k; g = U[(r.study, r.group)]; mk, filled, _ = CONFIGURATION[r.configuration]
+        b.fill_between(BED[(r.study, r.group)], y - 0.5, y + 0.5, color=BLUE, alpha=0.34, lw=0, zorder=0)          # the bed of this group: its own flow load and central venous pressure
         b.plot(g['ci_total'], [y, y], color=BLUE, lw=0.6, solid_capstyle='butt', zorder=2); b.plot(g['ci_sampling'], [y, y], color=BLUE, lw=2.2, solid_capstyle='butt', zorder=2); b.plot(r.zR, y, mk, ms=5 if mk != 'D' else 4.4, mfc=BLUE if filled else 'white', mec=BLUE, mew=1.0, zorder=3)
         b.text(-0.04, y + 0.13, f'{k + 1}  ' + label_of(r), fontsize=FS_IN, ha='right', va='center'); b.text(r.zR, y + 0.2, f'{r.zR:.2f}', fontsize=FS_IN, ha='center', va='bottom')
         b.text(-0.04, y - 0.2, f'$n$ = {int(r.n)}, {ZF} = {r.zF:.2f}', fontsize=FS_SMALL, color=MUTED, ha='right', va='center')
-    for yk, lw, lab in ((0.62, 2.2, 'Sampling'), (0.27, 0.6, 'With references')):          # key in the empty corner, away from the band of the model
-        b.plot([0.03, 0.09], [yk, yk], color=BLUE, lw=lw, solid_capstyle='butt', zorder=2); b.text(0.11, yk, lab, fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
-    b.text(np.mean(MODEL_ZR), top + 0.07, 'Network\nmodel', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95)
+    for x0, lw, lab in ((-0.86, 2.2, 'Sampling'), (-0.50, 0.6, 'With references')):        # key under the row labels, outside the axes and away from the two bands
+        b.plot([x0, x0 + 0.06], [-0.86, -0.86], color=BLUE, lw=lw, solid_capstyle='butt', clip_on=False, zorder=2); b.text(x0 + 0.08, -0.86, lab, fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
+    b.text(np.mean(MODEL_ZR), top + 0.07, 'Rigid\nnetwork', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95); b.text(np.mean(bed), top + 0.07, 'Distensible\nbed', fontsize=FS_IN, ha='center', va='bottom', linespacing=0.95)
     b.text(-0.04, top + 0.3, f"{P['cohorts_below_one']} of {P['cohorts']} cohorts below 1; exact sign test\n$P$ = {P['sign_test_cohorts_one_sided_p']:.3f} one-sided, {P['sign_test_cohorts_two_sided_p'] + 1e-9:.3f} two-sided", fontsize=FS_IN, ha='right', va='center')
     b.set_xlim(0, 1.2); b.set_ylim(-0.6, len(rows) + 0.45); fs.bare(b); b.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2]); b.set_xlabel(f'Resistance load, {ZR} = {ZP} / {ZF}')
     fs.letter(fig, a, 'A', 10, 4); fs.letter(fig, b, 'B', 44, 4); save(fig, 'Figure_2')
@@ -218,25 +234,46 @@ def figure_3():
 
 
 # ------------------------------------------------------------------ Figure 4
-def figure_4():
+def _trajectories(c, out, inn, h, small=FS_SMALL):
+    """Narrowing of the outlet and of the inlet of a whole graft in the flow-pressure plane."""
+    plane(c, lim=3.0, model=False, label_at=2.45)
+    for rows, col in ((out, HEPATIC), (inn, PORTAL)):
+        xf, yp = [r['zF'] for r in rows], [r['zP'] for r in rows]; c.plot(xf, yp, color=col, lw=1.5, zorder=4); c.plot(xf[-1], yp[-1], 'o', ms=4.5, mfc=col, zorder=5, **DOT)
+    lead = dict(arrowstyle='-', color=MUTED, lw=0.4, shrinkA=1, shrinkB=2); c.plot(h, h, 'o', ms=4.5, mfc=INK, zorder=6, **DOT)
+    c.annotate(f'Normal anastomoses,\ninflow {h:g} × donor', (h, h), (1.5, 0.55), fontsize=small, ha='left', va='center', arrowprops=lead)
+    c.annotate('Outlet at half\nits diameter', (out[-1]['zF'], out[-1]['zP']), (0.12, 2.6), fontsize=small, ha='left', va='center', arrowprops=lead)
+    c.annotate('Inlet at half\nits diameter', (inn[-1]['zF'], inn[-1]['zP']), (0.12, 1.85), fontsize=small, ha='left', va='center', arrowprops=lead)
+    c.text(0.92, 1.12, 'Donor', fontsize=small, ha='right', va='bottom')
+
+
+def figure_4(h=1.5):
+    """Predictions of the model that no data here test: A a whole graft with a narrowed outlet or inlet; B the remnant after resection."""
+    from model import whole_graft as wg
+    dd = np.linspace(1.0, 0.5, 26); out, inn = wg.sweep('out', d=dd, h=h), wg.sweep('in', d=dd, h=h)
+    fig = fs.figure(64); a = fs.axes(fig, 24, 12, 47, 47); b = fs.axes(fig, 103, 12, 73, 47)
+    _trajectories(a, out, inn, h, small=FS_IN)
+    removed = np.linspace(0, 75, 200); g = 1 - removed / 100; b.axhspan(1, 2, color=BAND, lw=0, zorder=0); b.axvline(60, color=MUTED, lw=0.5, ls=DASH)
+    for hv, colr in zip((5, 8, 10, 12), fs.ramp(4)):
+        z = hv / indices.NORMAL_GRADIENT / g; b.plot(removed, z, color=colr, zorder=3); o = z.max() > 4.75; k = np.argmin(abs(z - 4.75)) if o else len(z) - 1
+        b.text(removed[k] - 1.0 if o else 75.8, 4.75 if o else z[k], f'{hv}', fontsize=FS_IN, ha='right' if o else 'left', va='bottom' if o else 'center')
+    b.text(3, 4.7, 'Baseline HVPG (mmHg)', fontsize=FS_IN, ha='left', va='center'); b.text(59, 0.35, 'Right hepatectomy', fontsize=FS_IN, color=MUTED, ha='right', va='center')
+    b.set_xlim(0, 80); b.set_ylim(0, 5); b.set_xticks([0, 20, 40, 60, 80]); b.set_xlabel('Parenchyma removed (%)'); b.set_ylabel(f'Pressure load of the remnant, {ZP}')
+    fs.letter(fig, a, 'A', 11, 4); fs.letter(fig, b, 'B', 10, 4); save(fig, 'Figure_4')
+
+
+def figure_s7():
+    """Clinical thresholds on the pressure-load scale, with the reference gradient at 4, 5 and 6 mmHg. Exploratory."""
     P = load('predictions')['P4_thresholds']; ref = P['reference_sensitivity']
     rows = [('Clinically significant portal hypertension', 'HVPG 10 mmHg', 'cirrhosis_HVPG_10'), ('Partial graft', 'PVP 15 mmHg at CVP 5 mmHg', 'graft_PVP15_CVP5'),
             ('Resection limit in cirrhosis', 'HVPG 10 mmHg', 'resection_HVPG_10'), ('Variceal bleeding', 'HVPG 12 mmHg', 'variceal_HVPG_12')]
-    fig = fs.figure(64); a = fs.axes(fig, 51, 12, 34, 45); b = fs.axes(fig, 108, 12, 69, 45)
+    fig = fs.figure(58, fs.SINGLE); a = fs.axes(fig, 51, 12, 34, 40)
     a.axvspan(1, 2, color=BAND, lw=0, zorder=0)
-    for k, (lab, sub, key) in enumerate(rows):
+    for k, (lab, sub_, key) in enumerate(rows):
         y = len(rows) - 1 - k; lo, mid, hi = ref['6 mmHg reference'][key], ref['5 mmHg reference'][key], ref['4 mmHg reference'][key]
         a.plot([lo, hi], [y, y], color=BLUE, zorder=2); a.plot(mid, y, 'o', ms=5, mfc=BLUE, zorder=3, **DOT)
         a.text(mid, y + 0.2, f'{mid:.1f}', fontsize=FS_IN, ha='center', va='bottom')
-        a.text(-0.12, y + 0.12, lab, fontsize=FS_IN, ha='right', va='center'); a.text(-0.12, y - 0.2, sub, fontsize=FS_SMALL, color=MUTED, ha='right', va='center')
-    a.set_xlim(0, 3.5); a.set_ylim(-0.6, len(rows) - 0.3); fs.bare(a); a.set_xticks([0, 1, 2, 3]); a.set_xlabel(f'Pressure load, {ZP}')
-    removed = np.linspace(0, 75, 200); g = 1 - removed / 100; b.axhspan(1, 2, color=BAND, lw=0, zorder=0); b.axvline(60, color=MUTED, lw=0.5, ls=DASH)
-    for hv, colr in zip((5, 8, 10, 12), fs.ramp(4)):
-        z = hv / indices.NORMAL_GRADIENT / g; b.plot(removed, z, color=colr, zorder=3); out = z.max() > 4.75; k = np.argmin(abs(z - 4.75)) if out else len(z) - 1
-        b.text(removed[k] - 1.0 if out else 75.8, 4.75 if out else z[k], f'{hv}', fontsize=FS_IN, ha='right' if out else 'left', va='bottom' if out else 'center')
-    b.text(3, 4.7, 'Baseline HVPG (mmHg)', fontsize=FS_IN, ha='left', va='center'); b.text(59, 0.35, 'Right hepatectomy', fontsize=FS_IN, color=MUTED, ha='right', va='center')
-    b.set_xlim(0, 80); b.set_ylim(0, 5); b.set_xticks([0, 20, 40, 60, 80]); b.set_xlabel('Parenchyma removed (%)'); b.set_ylabel(f'Pressure load of the remnant, {ZP}')
-    fs.letter(fig, a, 'A', 49, 4); fs.letter(fig, b, 'B', 10, 4); save(fig, 'Figure_4')
+        a.text(-0.12, y + 0.12, lab, fontsize=FS_IN, ha='right', va='center'); a.text(-0.12, y - 0.2, sub_, fontsize=FS_SMALL, color=MUTED, ha='right', va='center')
+    a.set_xlim(0, 3.5); a.set_ylim(-0.6, len(rows) - 0.3); fs.bare(a); a.set_xticks([0, 1, 2, 3]); a.set_xlabel(f'Pressure load, {ZP}'); save(fig, 'Figure_S7')
 
 
 # ------------------------------------------------------------------ Figure S1
@@ -292,7 +329,7 @@ def figure_s1():
 def figure_s2(h=1.5):
     from model import whole_graft as wg
     dd = np.linspace(1.0, 0.5, 26); out, inn = wg.sweep('out', d=dd, h=h), wg.sweep('in', d=dd, h=h)
-    fig = fs.figure(62); a = fs.axes(fig, 2, 6, 66, 52); b = fs.axes(fig, 82, 12, 44, 44); c = fs.axes(fig, 134, 12, 44, 44)
+    fig = fs.figure(62); a = fs.axes(fig, 2, 6, 78, 52); b = fs.axes(fig, 106, 12, 70, 44)
     a.set_xlim(0, 12); a.set_ylim(0, 9.4); a.axis('off'); tint = lambda col: tuple(0.82 + 0.18 * v for v in plt.matplotlib.colors.to_rgb(col))
     boxes = [(0.25, 'Recipient\nportal trunk', BAND, MUTED), (2.85, 'Inlet\n$R_{in}$ ~ $d_{in}^{\\,-4}$', tint(PORTAL), PORTAL), (5.45, 'Lobules\n$R_{lob}$', tint(SINUSOID), SINUSOID), (8.05, 'Outlet\n$R_{out}$ ~ $d_{out}^{\\,-4}$', tint(HEPATIC), HEPATIC)]
     for x, lab, fc, ec in boxes:
@@ -307,15 +344,7 @@ def figure_s2(h=1.5):
     b.plot(x, [r['zP'] for r in out], color=HEPATIC, label=f'Outlet narrowed, {ZP}'); b.plot(x, [r['zF'] for r in out], color=HEPATIC, ls=DASH, zorder=4, label=f'Outlet narrowed, {ZF}')
     b.plot(x, [r['zP'] for r in inn], color=PORTAL, label=f'Inlet narrowed, {ZP} = {ZF}'); b.plot(x, [r['portal_trunk_pressure'] for r in inn], color=PORTAL, lw=1.0, ls=(0, (1, 1.6)), label='Inlet narrowed, trunk pressure')
     b.invert_xaxis(); b.set_xticks([1.0, 0.9, 0.8, 0.7, 0.6, 0.5]); b.set_xlabel('Anastomosis diameter (fraction of normal)'); b.set_ylabel('Load (donor = 1)'); b.set_ylim(0, 4); b.set_yticks([0, 1, 2, 3, 4]); b.legend(loc='upper left', handlelength=2.3)
-    plane(c, lim=3.0, model=False, label_at=2.45)
-    for rows, col in ((out, HEPATIC), (inn, PORTAL)):
-        xf, yp = [r['zF'] for r in rows], [r['zP'] for r in rows]; c.plot(xf, yp, color=col, lw=1.5, zorder=4); c.plot(xf[-1], yp[-1], 'o', ms=4.5, mfc=col, zorder=5, **DOT)
-    lead = dict(arrowstyle='-', color=MUTED, lw=0.4, shrinkA=1, shrinkB=2); c.plot(h, h, 'o', ms=4.5, mfc=INK, zorder=6, **DOT)
-    c.annotate(f'Normal anastomoses,\ninflow {h:g} × donor', (h, h), (1.5, 0.55), fontsize=FS_SMALL, ha='left', va='center', arrowprops=lead)
-    c.annotate('Outlet at half\nits diameter', (out[-1]['zF'], out[-1]['zP']), (0.12, 2.6), fontsize=FS_SMALL, ha='left', va='center', arrowprops=lead)
-    c.annotate('Inlet at half\nits diameter', (inn[-1]['zF'], inn[-1]['zP']), (0.12, 1.85), fontsize=FS_SMALL, ha='left', va='center', arrowprops=lead)
-    c.text(0.92, 1.12, 'Donor', fontsize=FS_SMALL, ha='right', va='bottom')
-    fs.letter(fig, a, 'A', 0, 0.5); fs.letter(fig, b, 'B', 10, 4); fs.letter(fig, c, 'C', 10, 4); save(fig, 'Figure_S2')
+    fs.letter(fig, a, 'A', 0, 0.5); fs.letter(fig, b, 'B', 10, 4); save(fig, 'Figure_S2')
 
 
 # ------------------------------------------------------------------ Figures S3 and S4
@@ -350,11 +379,7 @@ def figure_s4():
 def figure_s5():
     from model import human
     fig = fs.figure(62); a = fs.axes(fig, 11, 11, 41, 44); b = fs.axes(fig, 66, 11, 32, 44); c = fs.axes(fig, 134, 11, 43, 44)
-    g, r, l, N = human.cast_arrays('portal vein'); x = np.logspace(0, np.log10(6e4), 80)
-    for bb, col in zip((0.5, 0.75, 1.0), fs.ramp(3)): a.plot(x, human.radius_at(human.liver(bb, liver_g=human.CAST_LIVER_G), x), color=col, zorder=2, label=f'Model, $b$ = {bb:g}')
-    a.plot(N, r, 'o', ms=4.4, mfc=INK, zorder=3, label='Human cast', **DOT); a.legend(loc='lower left', handlelength=1.4)
-    a.set_xscale('log'); a.set_yscale('log'); a.set_xlim(0.6, 8e4); a.set_ylim(0.1, 25); a.set_xticks([1, 10, 100, 1e3, 1e4]); a.set_xticklabels(['1', '10', '10$^2$', '10$^3$', '10$^4$']); a.set_yticks([0.1, 1, 10]); a.set_yticklabels(['0.1', '1', '10'])
-    a.set_xlabel('Vessels in the generation'); a.set_ylabel('Portal vein radius (mm)')
+    _cast(a)
     for name, col, mk, lab, xy, ha in (('portal vein', PORTAL, 'o', 'Portal vein', (9.6, 0.26), 'center'), ('hepatic vein', HEPATIC, 's', 'Hepatic veins', (5.9, 1.10), 'right')):
         p = human.cast_poiseuille(name); b.plot(p['generations'], p['drop_mmHg'], color=col, zorder=2); b.plot(p['generations'], p['drop_mmHg'], mk, ms=4.4, mfc=col, ls='', zorder=3, **DOT); b.text(xy[0], xy[1], lab, fontsize=FS_IN, ha=ha, va='bottom')
     b.set_xlim(0.4, 11.6); b.set_ylim(0, 1.5); b.set_xticks([1, 3, 5, 7, 9, 11]); b.set_yticks([0, 0.5, 1.0, 1.5]); b.set_xlabel('Generation'); b.set_ylabel('Pressure drop per generation (mmHg)')
@@ -407,17 +432,18 @@ def figure_s6():
 
 
 READS = {                                    # what each figure is drawn from; hashed when the figure is drawn (results/figures_provenance.json)
-    '1': ('src/model/network.py', 'src/model/network3d.py', 'src/model/scaling.py'),
-    '2': ('data/series.tsv', 'results/predictions.json', 'src/indices.py'),
+    '1': ('src/model/network.py', 'src/model/network3d.py', 'src/model/scaling.py', 'src/model/human.py', 'src/model/liver.py'),
+    '2': ('data/series.tsv', 'results/predictions.json', 'results/model_distension.json', 'src/indices.py'),
     '3': ('data/series.tsv', 'results/bayes_main.json', 'results/spec_curve.json', 'src/indices.py'),
-    '4': ('results/predictions.json', 'src/indices.py'),
+    '4': ('src/model/whole_graft.py', 'src/indices.py'),
     'S1': ('data/graph_scaling_all.tsv', 'data/graph3d_all.tsv', 'src/model/scaling.py'),
     'S2': ('src/model/whole_graft.py',),
     'S3': ('results/ipd_ecological.json',),
     'S4': ('src/ipd/patient_level.py', 'data/patient_level'),
     'S5': ('src/model/human.py', 'src/model/liver.py'),
-    'S6': ('src/model/human.py', 'src/model/liver.py')}
-FIGURES = {'1': figure_1, '2': figure_2, '3': figure_3, '4': figure_4, 'S1': figure_s1, 'S2': figure_s2, 'S3': figure_s3, 'S4': figure_s4, 'S5': figure_s5, 'S6': figure_s6}
+    'S6': ('src/model/human.py', 'src/model/liver.py'),
+    'S7': ('results/predictions.json', 'src/indices.py')}
+FIGURES = {'1': figure_1, '2': figure_2, '3': figure_3, '4': figure_4, 'S1': figure_s1, 'S2': figure_s2, 'S3': figure_s3, 'S4': figure_s4, 'S5': figure_s5, 'S6': figure_s6, 'S7': figure_s7}
 
 def provenance(k):
     """Record what figure k was drawn from: the hash of every file it reads, of the two scripts that draw it, and of the

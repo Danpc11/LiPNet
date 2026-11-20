@@ -76,3 +76,39 @@ def test_audit_of_the_table_and_the_paired_groups():
 if __name__ == '__main__':
     for k, v in list(globals().items()):
         if k.startswith('test_'): v(); print('ok', k)
+
+
+def test_the_distensible_bed_brackets_the_observations_without_a_fitted_number():
+    """src/model/distension.py: what the rigid network leaves out, as bounds. Published relations only."""
+    from model import distension as ds
+    assert ds.CUBE == 3.0 and ds.DOUBLING_MMHG == 8.0, 'the two published relations, not tuned'
+    # a rigid bed is recovered when the relation is switched off, and the donor state is a fixed point of both relations
+    for law in ds.LAWS:
+        r = ds.distensible(1.0, 1.0, 5.0, law); assert abs(r['zR'] - 1) < 1e-9 and abs(r['gradient_mmHg'] - 5) < 1e-9
+        hi = ds.distensible(4.0, 1.0, 5.0, law); assert 0.3 < hi['zR'] < 0.6 and hi['zP'] < 2.5, 'pressure rises far less than flow'
+        assert ds.distensible(2.0, 1.0, 5.0, law)['zR'] > hi['zR'], 'and the resistance load falls as the flow load rises'
+        assert 1.0 < ds.distensible(2.0, 1.0, 5.0, law)['gradient_mmHg'] - 5 < 3.0, 'doubling the flow of a donor liver moves the gradient by a few mmHg, as the source states'
+    s = ds.summary(); B = s['distension']['bracket']
+    assert s['sinusoids']['zR_floor_relative_to_rigid'][0] > 0.8 and s['outflow']['zR_floor_relative_to_rigid'] == 0.95, 'sinusoids and outlet cannot close the distance alone'
+    assert 0.28 < s['required']['reduction_missing'] < 0.36 and s['required']['by_share'][0]['radius_factor'] is None and 1.05 < s['required']['by_share'][-1]['radius_factor'] < 1.15
+    assert len(B['groups']) == 6 and (B['between_the_two'], B['at_the_distensible_bed']) == (3, 2) and B['below_the_distensible_bed'] == ['Chan 2011 / right lobe with MHV, no modulation'] and B['above_the_bed_as_point_values'] == 5
+    for g in B['groups']:
+        assert g['zR_distensible_all'][1] < g['zR_rigid'][0] < g['zR_rigid'][1] <= 1.0, 'the distensible bed lies below the rigid network in every group'
+        a, b = g['zR_distensible']['cube law'], g['zR_distensible']['compliance']; assert abs(a[0] - b[0]) < 0.10 and abs(a[1] - b[1]) < 0.10, 'two independent published relations give nearly the same bed'
+        assert g['position'] != 'between the two' or g['zR_observed_ci'][0] > g['zR_distensible_all'][1], 'a group counted as between the two has its whole sampling interval above the bed under both relations'
+    assert B['mean_distensible_all'][1] < B['mean_observed'] < B['mean_rigid'][0], 'the mean observation lies between the two'
+    band = s['distension']['band_in_the_plane']; assert all(lo <= hi for lo, hi in zip(band['zP_low'], band['zP_high'])) and band['zP_high'][-1] < 2.5, 'at five times the flow the pressure load of a distensible bed stays under 2.5'
+
+
+def test_the_published_relations_hold_in_a_species_they_were_not_derived_from():
+    """Pig livers of Ricciardi et al. 2001, numbers as printed. The cube law takes the mean of the pressures above and
+    below the resistance site as the distending pressure, as its authors define it."""
+    from model import distension as ds
+    assert abs(ds.LAWS['cube law'](10.0, 5.0, 5.0) - (7.5 / 10.0) ** 3) < 1e-12, 'Pd = CVP + G / 2, not the portal pressure'
+    assert abs(ds.LAWS['compliance'](13.0, 5.0, 5.0) - 0.25) < 1e-12, 'volume doubled for 8 mmHg, resistance as volume^-2'
+    c = ds.published_check()
+    for state in ('in situ', 'isolated, perfused'):
+        m = c[state]['measured_resistance_ratio']; p = [v['resistance_ratio'] for v in c[state]['predicted'].values()]
+        assert 0.5 < m < 0.6 and all(0 <= m - x < 0.12 for x in p), 'a normal liver lies at the distensible bed or just above it'
+    cold = c['after 2 h of cold ischaemia']; assert cold['resistance_relative_to_the_isolated_liver_at_low_flow'] > 1.1 and abs(ds.RICCIARDI['after 2 h of cold ischaemia']['hvr'][0] / ds.RICCIARDI['isolated, perfused']['hvr'][0] - 2.0) < 0.01, 'after cold ischaemia the resistance is twice as high at the same flow'
+    fd = ds.summary()['distension']['flow_doubled_from_the_donor']; assert all(1.5 < v['rise_mmHg'] < 2.2 for v in fd.values()), 'about 2 mmHg for a doubling of portal flow, as published'

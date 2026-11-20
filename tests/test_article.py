@@ -25,7 +25,7 @@ EXACT = bool(os.environ.get('LIPNET_EXACT'))
 # Results that are not kept in the repository and that this test needs. On a clone where run_all.sh has not been run
 # (the continuous integration, a first look) each is written by the script that owns it, so that the test checks the
 # article against the code and never fails for a missing file.
-BUILDERS = {'model_human': ['src/model/human.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet']}
+BUILDERS = {'model_human': ['src/model/human.py'], 'model_distension': ['src/model/distension.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet']}
 
 
 def R(name):
@@ -47,7 +47,7 @@ def claims():
     B = R('bayes_main'); pri, sec, exp = (B[k] for k in ('primary (SFSS or early dysfunction)', 'secondary (mortality or graft loss)', 'exploratory (all outcomes)'))
     prior = {x['tau_prior']: x for x in R('bayes_priors')}; H = R('model_human'); E = R('ipd_ecological'); S = R('spec_curve'); iecv = R('bayes_iecv'); w = p3['same_cohort_contrast'][0]
     wu = H['two_inflows_measured']['Wu 2011']; cast = H['cast_exponent']['portal vein']['all']; q = [x for x in H['portal_radii'] if abs(x['b'] - 0.75) < 1e-9][0]['model_over_cast']
-    sweep = {s['sigma_mmHg']: s['mu_beta'] for s in E['sweep']}
+    sweep = {s['sigma_mmHg']: s['mu_beta'] for s in E['sweep']}; X = R('model_distension'); bk = X['distension']['bracket']; pc = X['distension']['published_check']
     return [
         ('Methods: groups, series', (32, 18), (len(d), d.study.nunique())),
         ('Results: resistance loads of the six groups', [0.31, 0.54, 0.55, 0.65, 0.72, 0.74], sorted(r2(x) for x in p.zR)),
@@ -61,6 +61,12 @@ def claims():
         ('Results: below the network in 34 of 60, none at 4 mmHg, all at 6 mmHg', (34, 0, 20), (sw['joint']['all_below_model'], sw['joint']['by_normal_gradient']['4 mmHg']['all_below_model'], sw['joint']['by_normal_gradient']['6 mmHg']['all_below_model'])),
         ('Results: no manoeuvre 0.72 inside outflow reconstruction 0.31 to 0.74', ([0.72], 0.31, 0.74), ([r2(x) for x in p2['by_configuration']['none']], r2(min(p2['by_configuration']['outflow reconstruction'])), r2(max(p2['by_configuration']['outflow reconstruction'])))),
         ('Results: splenectomy 0.54 against 0.72 in its cohort', [0.54, 0.72], [r2(x) for x in p2['within_cohort_contrasts'][0]['zR']]),
+        ('Results: sinusoids carry 3 to 15% of the drop', (0.03, 0.15), (r2(min(X['sinusoids']['share_of_the_drop'].values())), r2(max(X['sinusoids']['share_of_the_drop'].values())))),
+        ('Results: a fully distensible bed gives 0.39 to 0.58', (0.39, 0.58), (r2(min(g['zR_distensible_all'][0] for g in bk['groups'])), r2(max(g['zR_distensible_all'][1] for g in bk['groups'])))),
+        ('Results: three groups between the rigid network and the distensible bed, two at the bed, Chan 2011 below both', (3, 2, ['Chan 2011 / right lobe with MHV, no modulation']), (bk['between_the_two'], bk['at_the_distensible_bed'], bk['below_the_distensible_bed'])),
+        ('Results: doubling the flow of a donor liver raises the gradient by 1.7 to 1.9 mmHg', (1.7, 1.9), tuple(sorted(round(v['rise_mmHg'], 1) for v in X['distension']['flow_doubled_from_the_donor'].values()))),
+        ('Results: pig livers at 2.7 times the flow, resistance 0.54 and 0.59 of the starting value against 0.48 to 0.57 from the relations; twice as high after cold ischaemia', (0.54, 0.59, 0.48, 0.57, 2.0), (r2(pc['in situ']['measured_resistance_ratio']), r2(pc['isolated, perfused']['measured_resistance_ratio']), r2(min(v['resistance_ratio'] for k in ('in situ', 'isolated, perfused') for v in pc[k]['predicted'].values())), r2(max(v['resistance_ratio'] for k in ('in situ', 'isolated, perfused') for v in pc[k]['predicted'].values())), r2(pc['after 2 h of cold ischaemia']['resistance_relative_to_the_isolated_liver_at_low_flow'] / pc['isolated, perfused']['measured_resistance_ratio']))),
+        ('Supplement: the missing reduction is 32%; if the whole bed widens, 10% in radius', (0.32, 1.10), (r2(X['required']['reduction_missing']), r2(X['required']['by_share'][-1]['radius_factor']))),
         ('Results: Wu 2011, arterial flow 0.66, portal 3.25-fold, model 0.82 to 0.86, observed 0.65', (0.66, 3.25, [0.82, 0.86], 0.65), (r2(wu['arterial_load']), r2(wu['flow_load']), [r2(x) for x in wu['zR_model']], r2(wu['zR_observed']))),
         ('Results: exponent of tau0 between -0.077 and +0.071', (-0.077, 0.071), tuple(round(x, 3) for x in p1['tau0_exponent_range'])),
         ('Results: blood volume scaling met in 5 of 28', 5, round(p1['fraction_compatible'] * 28)),

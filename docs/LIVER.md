@@ -122,7 +122,99 @@ In physical units, with the lobular drop shared with the lobule layer, a lobar g
 not its size. Widening the outlet anastomosis in `whole_graft.py` lowers $z_R$ to 0.95 at most, because that
 anastomosis holds 5% of the resistance.
 
-## 7. What the table supports
+## 7. What the rigid network leaves out: a passively distensible bed
+
+The network is rigid: its calibres are those of the optimum and do not change with pressure. `src/model/distension.py`
+asks how much of the distance to the observations each mechanism it leaves out can carry. Nothing is fitted to the six
+groups; every number is the model's own or a published one.
+
+The rigid network with its two inflows gives 0.85 on average and the groups report 0.58: the resistance would have to
+fall by a further 32%.
+
+| Mechanism | Acts on | Lowest $z_R$ it can give, relative to the rigid value |
+|---|---|---|
+| Dilation or recruitment of sinusoids, unlimited | the 3 to 15% of the drop the sinusoids carry ($b$ from 1 to 0.5) | 0.85 to 0.97 |
+| Outlet anastomosis, unlimited widening | the 5% of the resistance it holds | 0.95 |
+| Uniform widening of a share $s$ of the bed | $s$ | closes the distance only if $s\geq0.32$; with the whole bed, a radius 10% larger |
+
+So neither the sinusoids nor the outlet can account for the distance: it has to come from vessels that hold at least a
+third of the resistance, which in this network are the two trees.
+
+### Two published relations
+
+The venous resistance of the normal liver is passively distensible. Two relations measured on the livers of cats say by
+how much.
+
+- **Cube law.** Resistance is proportional to $1/P_d^3$ (index of contractility, $IC=R\,P_d^3$). The distending pressure
+  $P_d$ is the mean of the pressures above and below the resistance site [L2, L3, L6, L7], here CVP + $G/2$ for a
+  gradient $G$.
+- **Compliance.** Hepatic blood volume doubles for about 8 mmHg of intrahepatic pressure, which the portal venous
+  pressure estimates, linearly over the physiological range [L1, L4, L8]. With the length of the vessels fixed and
+  Poiseuille flow, resistance goes as volume$^{-2}$. This takes the resistance vessels to distend as the capacitance
+  vessels do, which is an assumption and an upper bound.
+
+For a group with flow load $z_F$ and central venous pressure CVP the gradient $G$ of a bed that follows the relation $d$
+solves
+
+$$G = 5\,z_F\,z_R^{\text{rigid}}\,d(G),$$
+
+with the donor at a gradient of 5 mmHg. The inputs are the flow load, the rigid network and the central venous
+pressure; the portal pressure of the recipient is the output and is not used. The rigid value runs from 0.81 (with the
+two inflows) to 1.00 (the network alone), because the published relations were measured with the hepatic artery in
+place and may already contain its part.
+
+### The relations against measurements they were not derived from
+
+Doubling the flow of a donor liver raises the gradient by 1.9 mmHg with the cube law and 1.7 mmHg with the
+compliance; the source gives about 2 mmHg for a doubling of portal flow [L6].
+
+Ricciardi et al. [L5] measured portal pressure and resistance at two flows in pig livers in situ, isolated on a
+bypass circuit, and after 2 h of cold ischaemia. With the published starting gradient and caval pressure:
+
+| Pig liver | Flow raised | Resistance, measured | Cube law | Compliance |
+|---|---:|---:|---:|---:|
+| in situ (9 livers) | 2.75-fold | 0.54 | 0.48 | 0.53 |
+| isolated, perfused (7 livers) | 2.67-fold | 0.59 | 0.48 | 0.57 |
+| after 2 h of cold ischaemia (6 livers) | 2.67-fold | 0.59 | 0.48 | 0.50 |
+
+A normal pig liver lies at the distensible bed or just above it (0.54 and 0.59 against 0.48 to 0.57). After cold
+ischaemia the resistance still falls by the same factor when flow is raised, but it is twice as high at every flow:
+relative to the isolated liver at low flow, the cold liver at 2.7 times the flow is at 1.18.
+
+### The six groups
+
+| Group | $z_F$ | CVP (mmHg) | Rigid network | Distensible bed, cube law | Distensible bed, compliance | Observed (95% sampling interval) | Position |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Chan 2011 | 3.93 | 8.0 | 0.81 to 1.00 | 0.47 to 0.52 | 0.42 to 0.45 | 0.31 (0.25 to 0.37) | below both |
+| Wang 2014, splenectomy | 4.12 | 3 to 9, assumed | 0.81 to 1.00 | 0.39 to 0.52 | 0.40 to 0.44 | 0.54 (0.48 to 0.60) | at the bed |
+| Yagi 2006 | 3.28 | 5.2 | 0.81 to 1.00 | 0.48 to 0.53 | 0.46 to 0.50 | 0.55 (0.44 to 0.69) | at the bed |
+| Wu 2011 | 3.25 | 4.4 | 0.81 to 1.00 | 0.47 to 0.52 | 0.47 to 0.51 | 0.65 (0.57 to 0.75) | between the two |
+| Wang 2014, no splenectomy | 3.74 | 3 to 9, assumed | 0.81 to 1.00 | 0.41 to 0.54 | 0.43 to 0.47 | 0.72 (0.64 to 0.80) | between the two |
+| Ishizaki 2012 | 3.34 | 9.1 | 0.81 to 1.00 | 0.52 to 0.58 | 0.46 to 0.50 | 0.74 (0.60 to 0.92) | between the two |
+
+The two relations give nearly the same bed: 0.46 to 0.53 and 0.44 to 0.48 on average, and 0.39 to 0.58 over the groups.
+Three groups lie between the bed and the rigid network with their whole sampling interval. Two lie at the bed: their
+values, 0.54 and 0.55, are just above its upper end and their intervals reach it. Chan 2011 lies below both: its gradient
+was 1 mmHg above the donor's at four times the flow, which no passive relation gives.
+
+What this supports and what it does not. The observed resistance loads run from what a fully distensible bed gives to
+short of the rigid network, so the missing resistance is of the size passive distension of the venous trees can supply.
+It does not show that distension is the mechanism. The relations come from cats, in the normal range of pressure, where
+their authors note that the changes of resistance are notable below 10 mmHg and minor above [L7]; a graft is at 14 to
+22 mmHg. And a liver after cold ischaemia has twice the resistance of the same liver before it [L5], which moves a graft
+up from the bed. The share of the bed that would have to follow the relation to give each observed value is
+0.12 to 0.91 in the five groups at or above the bed; it is a description, not an estimate.
+
+[L1] Lautt WW. Regulatory processes interacting to maintain hepatic blood flow constancy: vascular compliance, hepatic arterial buffer response, hepatorenal reflex, liver regeneration, escape from vasoconstriction. *Hepatol Res* 2007;37:891–903.
+[L2] Lautt WW, Legare DJ. Passive autoregulation of portal venous pressure: distensible hepatic resistance. *Am J Physiol* 1992;263:G702–G708.
+[L3] Lautt WW, Greenway CV, Legare DJ. Index of contractility: quantitative analysis of hepatic venous distensibility. *Am J Physiol* 1991;260:G325–G332.
+[L4] Lautt WW, Greenway CV. Hepatic venous compliance and role of liver as a blood reservoir. *Am J Physiol* 1976;231:292–295.
+[L5] Ricciardi R, Foley DP, Quarfordt SH, et al. Alterations in intrahepatic hemodynamics of the harvested porcine liver. *J Gastrointest Surg* 2001;5:490–498.
+[L6] Lautt WW, Ming Z. Hepatic hemodynamics in portal hypertension. In: Sanyal AJ, Shah VH, eds. *Portal Hypertension: Pathobiology, Evaluation, and Treatment*. Totowa: Humana Press; 2005. p. 85–97.
+[L7] Inglés AC, Legare DJ, Lautt WW. Distensibility of portacaval shunts in portal hypertensive cats: index of contractility model. *Can J Physiol Pharmacol* 1994;72:687–692.
+[L8] Greenway CV, Seaman KL, Innes IR. Norepinephrine on venous compliance and unstressed volume in cat liver. *Am J Physiol* 1985;248:H468–H476.
+
+## 8. What the table supports
 
 - Arithmetic of `data/series.tsv`: no disagreement between percentages and counts, or between stored gradients and
   the pressures they come from.
@@ -139,7 +231,7 @@ anastomosis holds 5% of the resistance.
   their rank correlation is +0.09; 12% of the variance of $\log z_P$ is in $\log z_F$. In Wang 2014 the arm with
   10% more flow has 12% less portal pressure.
 
-## 8. What the outcome model supports
+## 9. What the outcome model supports
 
 | stratum | groups defined by | span of the predictor | slope on its own (SE) | events |
 |---|---|---|---|---|
