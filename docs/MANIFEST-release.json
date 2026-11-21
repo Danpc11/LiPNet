@@ -1,7 +1,7 @@
 {
  "python": "3.13.18",
  "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
- "commit": "df6c34e3df3adc34ed42034804b55b7810298075",
+ "commit": "ae7c87cee3fa19d54686ec75ae35e0c62aaa7792",
  "inputs_fingerprint": "7600b513d56716861cb6325a987d0354e33f46c4908b6b1ac8ac237f25081e6f",
  "rebuilt_from_scratch": true,
  "packages": {
@@ -111,5 +111,6 @@
   "results/series_with_indices.tsv": "c2626425fe16df44dc74dfdf063620ba540eae4c8f0b2d3014b919583ff1ca73",
   "results/spec_curve.json": "9479550ec84e769a2272430037cafdb404e8736e8e59234762f970bac6b4e687",
   "results/within_study_fit.json": "1dcd54d0e09dc5764a7c4fbcc3d49c088d7c54e631558a0bbc8a07b2252f200c"
- }
+ },
+ "commit_note": "the commit holding the code and data that were rebuilt; the manifest itself is committed after it"
 }
