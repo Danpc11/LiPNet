@@ -94,25 +94,63 @@ def published_check():
     return out
 
 
+def _regions(g, v):
+    """The regions of `distension.bracket` for one group, unrounded: the rigid network times the range v of the factor,
+    and the relations solved on it."""
+    from model import distension as ds
+    lo, hi = ds.rigid_range(g['zF']); lo, hi = lo * v[0], hi * v[1]; cvps = (g['cvp'],) if g['cvp'] is not None else ds.CVPS; sol = {}
+    for law in ds.LAWS:
+        z = [ds.distensible(g['zF'], zr, c, law, p)['zR'] for zr in (lo, hi) for c in cvps for p in ds.PARAMS[law]]; sol[law] = [min(z), max(z)]
+    fam = lambda which: [round(min(sol[l][0] for l in ds.LAWS if ds.FAMILY[l] == which), 4), round(max(sol[l][1] for l in ds.LAWS if ds.FAMILY[l] == which), 4)]
+    return dict(rigid=[round(lo, 4), round(hi, 4)], keeps_distending=fam('keeps distending'), stops_distending=fam('stops distending'))
+
+
 def clinical(d, draws=20000):
     """The six groups that report both loads against the model perfused with the blood of the recipient: the regions
     of `distension.bracket` with the resistance of the rigid network multiplied by the factor, and the joint draws of
     `distension.joint` with both haematocrits drawn in their ranges."""
     from model import distension as ds
     v = factor_range(); plain = ds.bracket(d); visc = ds.bracket(d, viscosity=v); j0 = ds.joint(d, draws=draws); j1 = ds.joint(d, draws=draws, haematocrit=(HCT_RECIPIENT, HCT_REFERENCE))
-    rows = []
-    for a, b, x, y in zip(plain['groups'], visc['groups'], j0['groups'], j1['groups']):
+    rows = []; gs = ds.groups(d)
+    for a, b, x, y, g in zip(plain['groups'], visc['groups'], j0['groups'], j1['groups'], gs):
+        assert (a['study'], a['group']) == (g['study'], g['group']); e0, e1 = _regions(g, (1.0, 1.0)), _regions(g, v)
         rows.append(dict(study=a['study'], group=a['group'], zF=a['zF'], zR_observed=a['zR_observed'], zR_observed_ci=a['zR_observed_ci'],
-                         normal_blood=dict(rigid=a['zR_rigid'], keeps_distending=a['zR_keeps_distending'], stops_distending=a['zR_stops_distending'], placement=a['placement']),
-                         blood_of_the_recipient=dict(rigid=b['zR_rigid'], keeps_distending=b['zR_keeps_distending'], stops_distending=b['zR_stops_distending'], placement=b['placement']),
+                         normal_blood=dict(**e0, placement=a['placement']),
+                         blood_of_the_recipient=dict(**e1, placement=b['placement']),
                          joint=dict(normal_blood={m: z['observed_over_model'] for m, z in x['models'].items()}, blood_of_the_recipient={m: z['observed_over_model'] for m, z in y['models'].items()},
                                     prob_below_rigid=dict(normal_blood=x['models']['rigid network']['prob_observed_below'], blood_of_the_recipient=y['models']['rigid network']['prob_observed_below']),
                                     prob_below_every_relation=dict(normal_blood=x['prob_observed_below_every_relation'], blood_of_the_recipient=y['prob_observed_below_every_relation']))))
     obs = np.array([r['zR_observed'] for r in rows]); rig = np.array([np.mean(r['blood_of_the_recipient']['rigid']) for r in rows]); rig0 = np.array([np.mean(r['normal_blood']['rigid']) for r in rows])
     return dict(factor=[round(v[0], 3), round(v[1], 3)], haematocrit_recipient=list(HCT_RECIPIENT), haematocrit_reference=list(HCT_REFERENCE), groups=rows,
                 counts=dict(normal_blood=plain['counts'], blood_of_the_recipient=visc['counts']),
+                span=dict(normal_blood={k: [min(r['normal_blood'][k][0] for r in rows), max(r['normal_blood'][k][1] for r in rows)] for k in ('rigid', 'keeps_distending', 'stops_distending')},
+                          blood_of_the_recipient={k: [min(r['blood_of_the_recipient'][k][0] for r in rows), max(r['blood_of_the_recipient'][k][1] for r in rows)] for k in ('rigid', 'keeps_distending', 'stops_distending')}),
                 rmse_rigid_midrange=dict(normal_blood=round(float(np.sqrt(np.mean((rig0 - obs) ** 2))), 3), blood_of_the_recipient=round(float(np.sqrt(np.mean((rig - obs) ** 2))), 3)),
                 note='the haematocrit of the recipients is a range taken from other recipients, not a measurement of these groups')
+
+
+FLOW_THRESHOLD = 250.0          # mL/min/100 g: the flow above which inflow is modulated (Troisi et al. 2005)
+GRADIENT_THRESHOLD = 10.0       # mmHg: a portal pressure of 15 mmHg at a central venous pressure of 5 (Ogura et al. 2010); PVP - CVP > 10 (Wehrle et al. 2025)
+
+
+def thresholds(hcts=np.round(np.arange(0.20, 0.4501, 0.01), 2)):
+    """The two thresholds in clinical use on the scale of the loads. They are one point of the flow-pressure plane, so
+    they agree for one resistance load only. And what the rigid network gives at the flow threshold as the haematocrit
+    of the recipient changes: the gradient, the haematocrit at which it reaches the pressure threshold, and the rise
+    of the gradient from 25 to 35% at the same flow."""
+    import indices
+    from model import distension as ds
+    zF = FLOW_THRESHOLD / indices.DEFAULT_DONOR_REF; zP = GRADIENT_THRESHOLD / indices.NORMAL_GRADIENT; lo, hi = ds.rigid_range(zF); g0 = indices.NORMAL_GRADIENT
+    f = {float(H): [factor(float(H), Hr, b) for Hr in HCT_REFERENCE for b in B_HUMAN] for H in hcts}
+    grad = {H: [g0 * zF * lo * min(v), g0 * zF * hi * max(v)] for H, v in f.items()}
+    rise = [factor(0.35, Hr, b) / factor(0.25, Hr, b) for Hr in HCT_REFERENCE for b in B_HUMAN]
+    cross = [H for H in sorted(grad) if grad[H][0] <= GRADIENT_THRESHOLD <= grad[H][1]]
+    r = lambda x: [round(float(y), 3) for y in x]
+    return dict(flow_mL_min_100g=FLOW_THRESHOLD, gradient_mmHg=GRADIENT_THRESHOLD, zF=round(zF, 3), zP=round(zP, 3), zR_where_they_agree=round(zP / zF, 3),
+                flow_at_which_donor_resistance_reaches_the_gradient=round(zP * indices.DEFAULT_DONOR_REF, 1), rigid_at_the_flow_threshold=r([lo, hi]),
+                gradient_at_the_flow_threshold_mmHg=dict(normal_blood=r([g0 * zF * lo, g0 * zF * hi]), **{f'haematocrit {H:g}': r(grad[H]) for H in (0.25, 0.30, 0.35)}),
+                rise_of_the_gradient_from_0p25_to_0p35=[round(float(min(rise)), 4), round(float(max(rise)), 4)], haematocrit_at_which_the_rigid_network_reaches_the_gradient=[min(cross), max(cross)] if cross else None,
+                curve=dict(haematocrit=[float(H) for H in sorted(grad)], gradient_low=[round(grad[H][0], 3) for H in sorted(grad)], gradient_high=[round(grad[H][1], 3) for H in sorted(grad)]))
 
 
 def summary():
@@ -120,7 +158,7 @@ def summary():
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     table = {f'{Hr:g}': {f'{H:g}': [round(min(factor(H, Hr, b) for b in B_HUMAN), 3), round(max(factor(H, Hr, b) for b in B_HUMAN), 3)] for H in (0.20, 0.25, 0.30, 0.35)} for Hr in (0.40, 0.45)}
     return dict(law='Pries et al. 1994, in vivo', sinusoid_um=SINUSOID_UM, large_vessel_relative_viscosity={f'{H:g}': round(float(relative_viscosity(1e4, H)), 3) for H in (0.0, 0.25, 0.30, 0.35, 0.40, 0.45)},
-                factor_by_haematocrit=table, segments_at_0p30_over_0p42={n: round(x, 3) for n, x in factor(0.30, 0.42, segments=True).items()}, published_check=published_check(), clinical=clinical(d))
+                factor_by_haematocrit=table, segments_at_0p30_over_0p42={n: round(x, 3) for n, x in factor(0.30, 0.42, segments=True).items()}, published_check=published_check(), clinical=clinical(d), thresholds=thresholds())
 
 
 if __name__ == '__main__':

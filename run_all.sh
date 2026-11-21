@@ -22,7 +22,7 @@ python src/model/viscosity.py > /dev/null    # the network perfused with the blo
 python src/model/hepatectomy.py > /dev/null  # published hepatectomies against the model -> results/model_hepatectomy.json
 python src/audit.py                     # what the table and the fits support -> results/audit.json
 if [ -n "$LIPNET_REBUILT" ] || [ ! -f results/campaign_check.json ]; then python src/model/verify_campaigns.py; fi   # the cached tables of the model against the code that writes them -> results/campaign_check.json
-python src/paper_figures.py             # the twelve figures of the article in one style -> results/Figure_*.pdf/.png 
+python src/paper_figures.py             # the eleven figures of the article in one style -> results/Figure_*.pdf/.png 
 python src/manifest.py                  # hashes of inputs and results, versions -> results/MANIFEST.json (python src/manifest.py check: numbers, figures, tables of the model)
 # The tables of the model in data/ (graph_scaling_all, graph3d_all, certificate_small) are cached, not rebuilt above.
 # verify_campaigns.py reruns the code behind them and compares every number (3 to 4 minutes); to write them again:

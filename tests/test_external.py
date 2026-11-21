@@ -50,6 +50,15 @@ def test_viscosity_enters_the_comparison_without_changing_the_one_without_it():
         assert z['models']['rigid network']['prob_observed_below'] <= x['models']['rigid network']['prob_observed_below']
 
 
+def test_the_two_clinical_thresholds_are_one_point_of_the_plane():
+    t = vs.thresholds(); assert abs(t['zF'] - 250 / 90) < 1e-3 and t['zP'] == 2.0 and abs(t['zR_where_they_agree'] - 0.72) < 1e-9 and t['flow_at_which_donor_resistance_reaches_the_gradient'] == 180.0
+    g = t['gradient_at_the_flow_threshold_mmHg']; assert g['normal_blood'][0] > t['gradient_mmHg'] > g['haematocrit 0.25'][1]          # above the pressure threshold with normal blood, below it at 25%
+    assert g['haematocrit 0.25'][0] < g['haematocrit 0.3'][0] < g['haematocrit 0.35'][0] < g['normal_blood'][0]
+    r = t['rise_of_the_gradient_from_0p25_to_0p35']; assert 1.2 < r[0] <= r[1] < 1.35
+    k = t['curve']; assert all(a <= b for a, b in zip(k['gradient_low'], k['gradient_high'])) and all(x < y for x, y in zip(k['gradient_low'], k['gradient_low'][1:]))
+    d = _d(); s = vs.clinical(d, draws=2000)['span']; assert s['blood_of_the_recipient']['rigid'][0] < s['normal_blood']['rigid'][0] and s['blood_of_the_recipient']['keeps_distending'][0] < s['blood_of_the_recipient']['stops_distending'][0]
+
+
 def test_the_hepatectomy_table_has_a_source_for_every_state():
     d = hp.load(); assert len(d) == 10 and d.notes.notna().all() and set(d.dispersion) <= {'SD', 'SEM'} and set(d.flow_basis) <= {'per 100 g', 'absolute'}
     assert set(d.out_basis) <= {'hepatic vein pressure', 'central venous pressure', 'not reported'} and set(d.shunt) <= {'none', 'side-to-side'}

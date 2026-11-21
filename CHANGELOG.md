@@ -2,6 +2,13 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.0] – 2026-11-21
+- `viscosity.thresholds`: the clinical thresholds of flow and gradient on the scale of the loads, and the gradient at the flow threshold by haematocrit; unrounded regions for the six groups (`viscosity._regions`).
+- `hepatectomy.band`, `animals_resected`.
+- Figures: 2 (terms of the resistance load, thresholds, haematocrit), 3 (perfused livers and hepatectomies), 4 (outcome, risk inside a cohort, whole graft); Figure S8 of 0.9.0 is now Figure 3.
+- Calculator: optional haematocrit (the ranges with the blood of the recipient) and the resistance load at which the two clinical thresholds agree; tested against `model/viscosity.py` with node.
+- `test_article.py`: the numbers of the reframed article.
+
 ## [0.9.0] – 2026-11-21
 - `model/viscosity.py`: resistance of the network at the haematocrit of the recipient (in vivo viscosity law, vessel by vessel); `published_check` against perfused livers (`data/kamikado2004.tsv`); `clinical`.
 - `model/hepatectomy.py`, `data/hepatectomy.tsv`: published hepatectomies against the rigid network and the three relations.

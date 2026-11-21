@@ -126,6 +126,18 @@ def test_the_calculator_gives_the_resistance_load_of_the_model():
         assert abs(o['alone'][0] - lo) < 1e-9 and abs(o['alone'][1] - hi) < 1e-9
         assert all(abs(a - b) < 6e-4 for a, b in zip(o['p']['keep'], r['zR_keeps_distending'])) and all(abs(a - b) < 6e-4 for a, b in zip(o['p']['stop'], r['zR_stops_distending'])), (r['study'], o['p'])
         lo2, hi2 = ds.rigid_range(G[(r['study'], r['group'])]['zF'], alone=False); assert abs(o['rigid'][0] - lo2) < 1e-9 and abs(o['rigid'][1] - hi2) < 1e-9
+    # with a haematocrit: the factor of model/viscosity.py and the relations solved on the network with that blood
+    from model import viscosity as vs
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False) as f:
+        f.write(model + '\nconst C=' + json.dumps([dict(zF=G[(r['study'], r['group'])]['zF'], cvps=c['cvps']) for r, c in zip(B['groups'], cases)]) +
+                ';\nconsole.log(JSON.stringify({v:[0.25,0.30,0.35].map(viscFactor), p:C.map(c=>passiveRanges(c.zF,c.cvps,viscFactor(0.30))), thr:NET.thr}));')
+    out = json.loads(subprocess.run([node, f.name], capture_output=True, text=True, check=True).stdout)
+    for H, v in zip((0.25, 0.30, 0.35), out['v']):
+        ref = [vs.factor(H, Hr, b) for Hr in vs.HCT_REFERENCE for b in vs.B_HUMAN]; assert abs(v[0] - min(ref)) < 1e-9 and abs(v[1] - max(ref)) < 1e-9
+    v30 = out['v'][1]
+    for r, o in zip(B['groups'], out['p']):
+        e = vs._regions(G[(r['study'], r['group'])], v30); assert all(abs(a - b) < 1e-3 for a, b in zip(o['keep'], e['keeps_distending'])) and all(abs(a - b) < 1e-3 for a, b in zip(o['stop'], e['stops_distending'])), (r['study'], o, e)
+    assert abs(out['thr']['zR'] - vs.thresholds()['zR_where_they_agree']) < 1e-3 and out['thr']['flow'] == 250 and out['thr']['gradient'] == 10
 
 
 def test_plots_and_calculator():

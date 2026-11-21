@@ -38,4 +38,4 @@ def test_every_figure_of_the_article_declares_what_it_reads():
     if os.path.exists(f):                                           # written when the figures are drawn
         rec = json.load(open(f)); assert set(rec) == {f'Figure_{k}' for k in pf.FIGURES}
         import manifest
-        n, bad = manifest.figures(); assert n == len(pf.FIGURES) == 12 and not bad, bad
+        n, bad = manifest.figures(); assert n == len(pf.FIGURES) == 11 and not bad, bad

@@ -36,6 +36,7 @@ small{color:var(--muted)}
  <div class="card"><h2 style="margin-top:0">Pressure (after reperfusion)</h2>
   <label>Portal venous pressure PVP, mmHg<input id="pvp" type="number" step="0.5" value="17"></label>
   <label>Central venous pressure CVP, mmHg <small>(blank = 5 mmHg assumed)</small><input id="cvp" type="number" step="0.5" value="5"></label>
+  <label>Haematocrit at the measurement, % <small>(optional)</small><input id="hct" type="number" step="1" placeholder="e.g. 28"></label>
   <label>Portal venous pressure after the planned change, mmHg<input id="pvp2" type="number" step="0.5" placeholder="e.g. 12"></label>
   <p style="font-size:.8rem;color:var(--muted);margin:8px 0 0">Normal gradient fixed at __GN__ mmHg (the coefficients were fitted on it).</p>
  </div>
@@ -104,7 +105,9 @@ function zrRelation(law,zF,zr,cvp,p){const g0=NET.g0,Q=g0*zF*zr;
  if(law==='pressure-flow')return (p+(1-p)*zF*zr)/zF;
  const d=law==='cube law'?(G=>Math.pow((cvp+g0/2)/(cvp+G/2),NET.cube)):(G=>Math.pow(Math.max(1+(G-g0)/p,1e-9),-2));
  return solveG(Q,d)/g0/zF;}
-function passiveRanges(zF,cvps){const r=rigidRange(zF,true),keep=[],stop=[];
+function eta(D,H){const e45=6*Math.exp(-0.085*D)+3.2-2.44*Math.exp(-0.06*Math.pow(D,0.645)),k=1/(1+1e-11*Math.pow(D,12)),C=(0.8+Math.exp(-0.075*D))*(-1+k)+k,g=Math.pow(D/(D-1.1),2);return (1+(e45-1)*(Math.pow(1-H,C)-1)/(Math.pow(0.55,C)-1)*g)*g;}
+function viscFactor(H){const v=[];NET.visc.forEach(n=>NET.href.forEach(hr=>{let s=0;n.D.forEach((D,i)=>{s+=n.w[i]*eta(D,H)/eta(D,hr);});v.push(s);}));return [Math.min(...v),Math.max(...v)];}
+function passiveRanges(zF,cvps,v){const r0=rigidRange(zF,true),r=v?[r0[0]*v[0],r0[1]*v[1]]:r0,keep=[],stop=[];
  r.forEach(zr=>cvps.forEach(c=>{keep.push(zrRelation('cube law',zF,zr,c,null));NET.doubling.forEach(p=>keep.push(zrRelation('compliance',zF,zr,c,p)));NET.f.forEach(f=>stop.push(zrRelation('pressure-flow',zF,zr,c,f)));}));
  return {keep:[Math.min(...keep),Math.max(...keep)],stop:[Math.min(...stop),Math.max(...stop)]};}
 // MODEL END
@@ -161,10 +164,14 @@ function calc(){
  $('zr').textContent='–'; $('zrsub').textContent='';
  if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF; $('zr').textContent=r.toFixed(2);
    const rg=rigidRange(zF,false), pr=passiveRanges(zF,cvpAssumed?NET.cvps:[cvp]), f2=v=>v.toFixed(2), rng=v=>f2(v[0])+'–'+f2(v[1]);
-   const lowest=Math.min(pr.keep[0],pr.stop[0]), where=r>1?'above the donor value':(r>=rg[0]?'within the range of a rigid network':(r>=lowest?'below a rigid network and within the passive relations':'below a rigid network and below every passive relation'));
+   const hRaw=$('hct').value, hct=(hRaw===''||!isFinite(+hRaw)||+hRaw<10||+hRaw>60)?NaN:+hRaw/100, vf=isNaN(hct)?null:viscFactor(hct), ra=rigidRange(zF,true), rb=vf?[ra[0]*vf[0],ra[1]*vf[1]]:null, pb=vf?passiveRanges(zF,cvpAssumed?NET.cvps:[cvp],vf):null;
+   const lowest=Math.min(pr.keep[0],pr.stop[0],pb?pb.keep[0]:9,pb?pb.stop[0]:9), where=r>1?'above the donor value':(r>=rg[0]?'within the range of a rigid network':(rb&&r>=rb[0]?'within a rigid network with this blood':(r>=lowest?'below a rigid network and within the passive relations':'below a rigid network and below every passive relation')));
    $('zrsub').textContent=where;
    msg.push('Resistance load z<sub>R</sub> = '+f2(r)+', the effective resistance of the graft relative to the donor. At this flow load a rigid network gives a partial graft '+rng(rg)+' (its geometry and the arterial inflow). Three published relations of the normal liver give '+rng(pr.keep)+' (the two that keep distending) and '+rng(pr.stop)+' (the one that stops)'+(cvpAssumed?', over a CVP of 3 to 9 mmHg':'')+(zF>NET.measured?'; they were measured up to '+NET.measured+' times the control flow, so at this flow load they are extrapolations':'')+'. '+
-     (r>1?'Pressure is high relative to flow, the pattern of an outlet narrowing or a raised CVP.':(r<lowest?'What lowers resistance this far is not in the model.':'')));}
+     (r>1?'Pressure is high relative to flow, the pattern of an outlet narrowing or a raised CVP.':(r<lowest?'What lowers resistance this far is not in the model.':'')));
+   if(vf)msg.push('Those ranges are for normal blood. At a haematocrit of '+(100*hct).toFixed(0)+'%, against '+(100*NET.href[0]).toFixed(0)+' to '+(100*NET.href[1]).toFixed(0)+'%, the resistance of the same network is '+rng(vf)+' times as high: a rigid network gives '+rng(rb)+', and the relations '+rng(pb.keep)+' and '+rng(pb.stop)+'.');
+   else msg.push('Enter the haematocrit at the measurement to see the same ranges with the blood of the recipient: resistance is proportional to blood viscosity.');
+   msg.push('The clinical thresholds of '+NET.thr.flow+' mL/min/100 g and a gradient of '+NET.thr.gradient+' mmHg agree only at z<sub>R</sub> = '+NET.thr.zR.toFixed(2)+'; '+(r<NET.thr.zR?'below it a graft reaches the pressure threshold at a higher flow.':'above it a graft reaches the pressure threshold at a lower flow.'));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available; the resistance load needs PVP and CVP as well.');
  LAST = {pvp: pvp, cvp: cvp, cvpAssumed: cvpAssumed, pvf: pvf, gw: gw,
          grwr: (R.state === 'ok' ? R.v : NaN), rw: (W.state === 'ok' ? W.v : NaN), dref: dref,

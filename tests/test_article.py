@@ -25,7 +25,7 @@ EXACT = bool(os.environ.get('LIPNET_EXACT'))
 # Results that are not kept in the repository and that this test needs. On a clone where run_all.sh has not been run
 # (the continuous integration, a first look) each is written by the script that owns it, so that the test checks the
 # article against the code and never fails for a missing file.
-BUILDERS = {'model_human': ['src/model/human.py'], 'model_distension': ['src/model/distension.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet']}
+BUILDERS = {'model_human': ['src/model/human.py'], 'model_distension': ['src/model/distension.py'], 'model_viscosity': ['src/model/viscosity.py'], 'model_hepatectomy': ['src/model/hepatectomy.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet']}
 
 
 def R(name):
@@ -48,7 +48,26 @@ def claims():
     prior = {x['tau_prior']: x for x in R('bayes_priors')}; H = R('model_human'); E = R('ipd_ecological'); S = R('spec_curve'); iecv = R('bayes_iecv'); w = p3['same_cohort_contrast'][0]
     wu = H['two_inflows_measured']['Wu 2011']; cast = H['cast_exponent']['portal vein']['all']; q = [x for x in H['portal_radii'] if abs(x['b'] - 0.75) < 1e-9][0]['model_over_cast']
     sweep = {s['sigma_mmHg']: s['mu_beta'] for s in E['sweep']}; X = R('model_distension'); bk = X['distension']['bracket']; pc = X['distension']['published_check']['states']; pf = p2['performance']; rb = X['robustness']['scenarios']; J = X['joint']
+    V = R('model_viscosity'); CL, T, KS = V['clinical'], V['thresholds'], V['published_check']['states']; SB = CL['span']['blood_of_the_recipient']; K0 = KS['haematocrit 0 over 0.30']; GT = T['gradient_at_the_flow_threshold_mmHg']
+    HP = R('model_hepatectomy'); res = sorted([x for x in HP['states'] if x['shunt'] == 'none'], key=lambda x: x['zF']); low = sorted([x for x in HP['states'] if x['shunt'] != 'none' and x['zF'] < 1], key=lambda x: x['zF']); HE = HP['rms_log_error_of_the_midrange']
+    r1 = lambda x: round(float(x), 1); seg = ('portal', 'sinusoidal', 'hepatic_venous'); over = V['published_check']['observed_over_predicted_total_at_rat_size']
     return [
+        ('Abstract, Results: the factor of the blood of the recipient 0.61 to 0.89, a further 11 to 39%', (0.61, 0.89, 11, 39), (r2(CL['factor'][0]), r2(CL['factor'][1]), round(100 * (1 - CL['factor'][1])), round(100 * (1 - CL['factor'][0])))),
+        ('Abstract, Results: the rigid network with that blood 0.50 to 0.89, five of the six groups inside, none with normal blood', (0.50, 0.89, 5, 0), (r2(SB['rigid'][0]), r2(SB['rigid'][1]), CL['counts']['blood_of_the_recipient']['rigid network']['point_inside'], CL['counts']['normal_blood']['rigid network']['point_inside'])),
+        ('Results: both terms together 0.32 to 0.72; supplement, the relations that keep distending 0.32 to 0.55, the one that stops 0.41 to 0.72, error 0.35 to 0.18', (0.32, 0.72, 0.55, 0.41, 0.35, 0.18),
+         (r2(SB['keeps_distending'][0]), r2(SB['stops_distending'][1]), r2(SB['keeps_distending'][1]), r2(SB['stops_distending'][0]), r2(CL['rmse_rigid_midrange']['normal_blood']), r2(CL['rmse_rigid_midrange']['blood_of_the_recipient']))),
+        ('Abstract, Results: perfused livers without red cells 0.47 of that at 30%, the law 0.46; segments 0.54, 0.32, 0.58 against 0.50, 0.27, 0.51', (0.47, 0.46, [0.54, 0.32, 0.58], [0.50, 0.27, 0.51]),
+         (r2(K0['observed_mean']['total']), r2(K0['predicted']['network at rat size']['total']), [r2(K0['observed_mean'][s]) for s in seg], [r2(K0['predicted']['network at rat size'][s]) for s in seg])),
+        ('Results: at 10 and 20% the law understated the fall by 12 to 14%', (12, 14), (round(100 * (1 - over[1])), round(100 * (1 - over[0])))),
+        ('Abstract, Results: thresholds, flow load 2.78, pressure load 2.0, agree at 0.72; donor resistance reaches 10 mmHg at 180 mL/min/100 g', (2.78, 2.0, 0.72, 180), (r2(T['zF']), T['zP'], r2(T['zR_where_they_agree']), round(T['flow_at_which_donor_resistance_reaches_the_gradient']))),
+        ('Results: at 250 mL/min/100 g, 11.3 to 13.9 mmHg with normal blood and 6.9 to 9.9 at 25%; 26 to 28% from 25 to 35%', ([11.3, 13.9], [6.9, 9.9], 26, 28),
+         ([r1(x) for x in GT['normal_blood']], [r1(x) for x in GT['haematocrit 0.25']], round(100 * (T['rise_of_the_gradient_from_0p25_to_0p35'][0] - 1)), round(100 * (T['rise_of_the_gradient_from_0p25_to_0p35'][1] - 1)))),
+        ('Abstract, Methods, Results: seven resections in 48 animals at flow loads of 1.3 to 10; rho -0.93, P 0.0025', (7, 48, 1.3, 10, -0.93, 0.0025), (len(res), HP['animals_resected'], r1(res[0]['zF']), round(res[-1]['zF']), r2(HP['trend']['spearman_rho']), HP['trend']['p_value'])),
+        ('Results: resistance load 0.97 and 1.00 at 1.3 and 1.6, 0.62 and 0.90 at 2.7, 0.38, 0.35 and 0.21 at 3.5, 5.4 and 10; rigid network 0.80 to 0.97', ([0.97, 1.00, 0.62, 0.90, 0.38, 0.35, 0.21], [1.3, 1.6, 2.7, 2.7, 3.5, 5.4, 10.0], 0.80, 0.97),
+         ([r2(x['zR_observed']) for x in res], [r1(x['zF']) for x in res], r2(min(x['model']['rigid network'][0] for x in res)), r2(max(x['model']['rigid network'][1] for x in res)))),
+        ('Abstract: 0.99 below twice the flow, 0.21 to 0.38 above 3.5 times', (0.99, 0.21, 0.38), (r2(HP['trend']['mean_zR_below_twice_the_flow']), r2(min(x['zR_observed'] for x in res if x['zF'] > 3.5)), r2(max(x['zR_observed'] for x in res if x['zF'] > 3.5)))),
+        ('Results: errors 0.23 and 0.28 against 0.55 and 0.74; the relations that keep distending reach every state but one', (0.23, 0.28, 0.55, 0.74, 6), (r2(HE['cube law']), r2(HE['compliance']), r2(HE['pressure-flow']), r2(HE['rigid network']), HP['counts']['keeps distending']['interval_reaches'])),
+        ('Results: with a shunt at 0.3 and 0.6 times the flow, resistance 2.3 and 1.9', ([0.3, 0.6], [2.3, 1.9]), ([r1(x['zF']) for x in low], [r1(x['zR_observed']) for x in low])),
         ('Methods: groups, series', (32, 18), (len(d), d.study.nunique())),
         ('Results: resistance loads of the six groups', [0.31, 0.54, 0.55, 0.65, 0.72, 0.74], sorted(r2(x) for x in p.zR)),
         ('Results: flow loads 3.3 to 4.1', (3.3, 4.1), (round(p.zF.min(), 1), round(p.zF.max(), 1))),

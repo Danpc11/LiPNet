@@ -10,13 +10,15 @@ pred_band_pooled_slope). The descriptive view without a reference shows the grou
 
 Resistance load. The page computes, for the flow load and CVP entered, the zR a rigid network gives a partial graft
 (model/liver.two_inflows over the networks of model/compartments.geometries) and the range of the three passive
-relations of model/distension.py, with the same constants as the Python code.
+relations of model/distension.py, with the same constants as the Python code; with a haematocrit, the same ranges with
+the factor of model/viscosity.py, and the resistance load at which the two clinical thresholds agree.
 """
 import json, os, sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, os.path.join(ROOT, 'src'))
-from model import distension as ds, compartments as cm
+from model import distension as ds, compartments as cm, viscosity as vs
 
+import indices; indices_gradient, indices_flow = indices.NORMAL_GRADIENT, indices.DEFAULT_DONOR_REF
 B = json.load(open(f'{ROOT}/results/bayes_main.json'))['primary (SFSS or early dysfunction)']
 L = json.load(open(f'{ROOT}/results/within_study_fit.json'))
 C = json.load(open(f'{ROOT}/results/meta_slope.json'))['centred']
@@ -26,7 +28,9 @@ refs = {lab(g): dict(alpha=round(B['alphas_pooled_slope'][g], 4), band=B['pred_b
                      events=B['group_counts'][g]['events'], zmin=B['group_counts'][g]['zmin'], zmax=B['group_counts'][g]['zmax']) for g in B['strata']}
 centred = [dict(s=lab(p['stratum']), zc=round(p['zP_c'], 4), lc=round(p['log_odds_c'], 4), n=p['n']) for p in C['points']]
 net = dict(geoms=[[float(w[:k].sum()), float(rem)] for _, w, k, rem in cm.geometries()], a=cm.A_RATIO, g0=5.0, cube=ds.CUBE,
-           doubling=list(ds.DOUBLING_MMHG), f=list(ds.FLOW_FIXED_SHARE), cvps=list(ds.CVPS), measured=max(ds.MEASURED_UP_TO.values()))
+           doubling=list(ds.DOUBLING_MMHG), f=list(ds.FLOW_FIXED_SHARE), cvps=list(ds.CVPS), measured=max(ds.MEASURED_UP_TO.values()),
+           visc=[dict(D=[float(x) for x in D], w=[float(x) for x in w]) for D, w, _ in (vs._network(b) for b in vs.B_HUMAN)], href=list(vs.HCT_REFERENCE),
+           thr=dict(flow=vs.FLOW_THRESHOLD, gradient=vs.GRADIENT_THRESHOLD, zR=vs.GRADIENT_THRESHOLD / indices_gradient / (vs.FLOW_THRESHOLD / indices_flow)))
 
 rep = {'__STUDIES__': json.dumps([lab(s) for s in B['strata']]), '__REFS__': json.dumps(refs), '__ZGRID__': json.dumps(B['zgrid']),
        '__CENTRED__': json.dumps(centred), '__NET__': json.dumps(net),

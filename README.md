@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.9.0-1f6feb)
+![Version](https://img.shields.io/badge/version-0.10.0-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 Code and data for the article *Vascular resistance decouples portal flow from pressure in small-for-size liver grafts*.
@@ -177,7 +177,7 @@ Making a release: rebuild with `bash run_all.sh --clean`, copy `results/MANIFEST
 
 [danpc11.github.io/LiPNet](https://danpc11.github.io/LiPNet/) (`sfss_calculator.html`, built by `src/build_app.py` from
 `src/app_template.html`) computes $z_F$, $z_P$ and $z_R$; places $z_R$ against the rigid network and the passive
-relations at the flow load entered; and gives the odds ratio for a change of gradient from the primary fit of
+relations at the flow load entered, with normal blood and at the haematocrit entered; and gives the odds ratio for a change of gradient from the primary fit of
 `bayes.py`, converted to a risk only with a baseline rate the user supplies or the level of a published series.
 Everything runs in the browser. Research tool, not a medical device.
 

@@ -103,7 +103,8 @@ def summary(draws=20000):
     cnt = {m: dict(point_inside=sum(x['placement'][m]['point'] == 'inside' for x in res), interval_reaches=sum(x['placement'][m]['interval'] == 'reaches' for x in res),
                    interval_below=sum(x['placement'][m]['interval'] == 'below' for x in res), interval_above=sum(x['placement'][m]['interval'] == 'above' for x in res)) for m in MODELS + ('keeps distending',)}
     low = [x for x in res if x['zF'] < 2]; high = [x for x in res if x['zF'] >= 2]
-    return dict(states=rows, resections_without_shunt=len(res), flow_load_range=[float(zF.min()), float(zF.max())],
+    animals = int(d[d.shunt == 'none'].drop_duplicates(['study', 'flow_before', 'n']).n.sum())          # the states of a stepwise resection are the same animals
+    return dict(states=rows, resections_without_shunt=len(res), animals_resected=animals, flow_load_range=[float(zF.min()), float(zF.max())],
                 trend=dict(spearman_rho=round(float(rho.statistic), 3), p_value=round(float(rho.pvalue), 4), n=len(res),
                            mean_zR_below_twice_the_flow=round(float(np.mean([x['zR_observed'] for x in low])), 3) if low else None,
                            mean_zR_at_twice_the_flow_or_more=round(float(np.mean([x['zR_observed'] for x in high])), 3)),
