@@ -13,7 +13,7 @@ the repository describe one liver.
                          trunk is 54 mm long (49 mm in adults, pooled; Chau et al. 2023), without it 122 mm.
    LOBULE_DROP_MMHG      the drop from portal triad to central vein at donor flow, imposed on the sinusoidal edge
                          instead of optimised, and shared with src/fem/params.py. Left to the optimum the lobule
-                         would hold 0.25 to 0.4 mmHg; the lobule layer used to hold 4 mmHg. See `liver`.
+                         would hold 0.25 to 0.4 mmHg. See `liver`.
 
    With these and nothing fitted, `portal_radii` compares the absolute radii of the portal tree with the eleven
    measured generations of the cast, and `cast_exponent` reads b from the cast's own radii, lengths and counts.
@@ -66,7 +66,7 @@ CAST_MESO = {
 CAST = {t: {**{g: v for g, v in CAST_MACRO[t].items() if not (t == 'hepatic vein' and g == 1)}, **CAST_MESO[t]} for t in CAST_MESO}
 CAST_GENERATIONS = {'portal vein': (17, 18), 'hepatic vein': (13, 14)}       # estimated totals (J Anat 2014); the 2011 model used 16 and 14
 
-# What has been measured in people, for `growth` and `regeneration` (sources in docs/HUMAN.md)
+# What has been measured in people, for `growth` and `regeneration` (sources in the comments below)
 PORTAL_DIAMETER_MM = dict(children=(6.60, 5.38, 7.82), adults=(10.72, 10.25, 11.19))             # pooled mean and 95% CI, Chau et al. 2023
 PORTAL_BY_WEIGHT = [((1.56, 5.0), (3.0, 4.0), (4.0, 12.0)), ((5.0, 15.0), (4.0, 7.0), (6.0, 12.0)),   # weight kg, calibre mm, mean velocity cm/s
                     ((15.0, 24.0), (4.0, 8.0), (9.0, 17.0)), ((24.0, 40.0), (6.0, 9.0), (10.0, 19.0))]   # ranges, Lopez Barrio et al. 1996

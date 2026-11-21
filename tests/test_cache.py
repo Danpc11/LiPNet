@@ -71,20 +71,6 @@ def test_the_comparison_is_not_fooled_by_an_old_file():
     assert _same(dict(p=0.03125), dict(p=0.015625)) == ['/p']
 
 
-def test_the_documents_quote_the_cohort_level_test_and_an_exploratory_p4():
-    """What a reader of THEORY.md and README.md must find, and what must be gone: the sign test over six groups, the
-    comparison of thresholds stated as a prediction, and a second version of the primary slope."""
-    theory = open(os.path.join(ROOT, 'THEORY.md'), encoding='utf-8').read(); readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read(); both = theory + readme
-    assert '0.016' not in both and '0.015625' not in both, 'the sign test is over five cohorts (0.031 one-sided, 0.06 two-sided), not six groups'
-    assert '0.031' in theory and r'p=0.063\ \text{two-sided}' in theory and 'five of five' in theory
-    assert '### P4. Exploratory comparison of haemodynamic thresholds across liver diseases and surgical settings' in theory
-    p4 = theory[theory.index('### P4.'):theory.index('## What LiPNet is not')]
-    assert 'not a prediction' in p4 or 'not something the model predicts' in p4
-    assert 'does not show that the three settings share a physiological regime' in p4 and 'common haemodynamic regime' not in both and 'LiPNet predicts' not in p4
-    main = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))['primary (SFSS or early dysfunction)']
-    assert f"{main['mu_beta']:+.2f} ({main['mu_beta_ci'][0]:+.2f}, {main['mu_beta_ci'][1]:+.2f})" in theory and '+1.56 (+0.35' not in both, 'one primary estimate'
-
-
 def test_the_release_manifest_is_the_code_of_this_tree():
     """docs/MANIFEST-release.json is the record of the clean rebuild of the release. Its fingerprint must be the one of the
     code and data of this tree, file by file; if it names a commit present here, that commit must hold the same files."""

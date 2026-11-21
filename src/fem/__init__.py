@@ -18,5 +18,5 @@ z_R(z_F).
     figures    one function per figure, results/fem_*.pdf and .png
     run_fem    command line
 
-See docs/FEM.md.
+Theory: THEORY.md, section 7.
 """

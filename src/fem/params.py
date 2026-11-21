@@ -12,7 +12,7 @@ tests/test_fem.py):
     pO2 periportal       60-65 mmHg  ->  pericentral 30-35 mmHg
     hepatic O2 extraction 20-40 %
 
-References for the ranges (not reproduced here, see docs/FEM.md):
+References for the ranges:
   Debbaut et al. 2012, 2014 (sinusoidal permeability, lobule geometry)
   Rani et al. 2006; Bonfiglio et al. 2010 (porous-medium models of the lobule)
   Kietzmann 2017 (metabolic zonation); Jungermann & Kietzmann 2000 (O2 gradient)
@@ -123,7 +123,7 @@ class Drug:
 class NitricOxide:
     """Wall sub-model. NO is NOT transported on the lobule mesh: with haemoglobin
     scavenging at ~1e5 1/s its diffusion length is well under a micron, so a lobule-scale
-    advection-diffusion field for NO is meaningless. See docs/FEM.md."""
+    advection-diffusion field for NO is meaningless."""
     D: float = 3.3e-9           # diffusivity [m^2/s]
     q0: float = 1.0e-8          # basal eNOS flux at the endothelium [mol m^-2 s^-1];
     # only ratios matter, the feedback uses NO / NO_reference

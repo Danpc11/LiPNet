@@ -1,4 +1,4 @@
-"""One style for every figure of the article. The rules are written out in docs/FIGURES.md.
+"""One style for every figure of the article.
 
     import figstyle as fs; fs.use()
 

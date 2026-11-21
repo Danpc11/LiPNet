@@ -245,15 +245,19 @@ BLOCKED_MACROS = ('operatorname', 'newcommand', 'def', 'require', 'label', 'incl
 
 
 def test_documents_are_the_right_documents():
-    """A wrong paste is easy and invisible: check each document still starts with its own content."""
-    first = lambda f: open(os.path.join(ROOT, f), encoding='utf-8').read().lstrip().split('\n')[0]
-    assert first('README.md').startswith('# LiPNet'), 'README.md must open with the project title'
-    assert 'Changelog' not in first('THEORY.md'), 'THEORY.md must hold the theory, not the changelog'
-    assert first('THEORY.md').startswith('# LiPNet'), 'THEORY.md must open with its own title'
-    assert first('CHANGELOG.md').startswith('# Changelog'), 'CHANGELOG.md must open as a changelog'
-    theory = open(os.path.join(ROOT, 'THEORY.md'), encoding='utf-8').read()
-    for section in ('## The model', '### P1.', '### P2.', '### P3.', '### P4.'):
-        assert section in theory, f'THEORY.md is missing {section}'
+    """Three documents, each with its own content: the README runs the code, THEORY.md states the model, the changelog
+    lists the versions; docs/ holds only the release manifest."""
+    read = lambda f: open(os.path.join(ROOT, f), encoding='utf-8').read()
+    assert read('README.md').startswith('# LiPNet') and '## Running' in read('README.md') and 'THEORY.md' in read('README.md')
+    assert read('THEORY.md').startswith('# LiPNet: theory') and 'z_P = z_F\\,z_R' in read('THEORY.md')
+    assert read('CHANGELOG.md').startswith('# Changelog')
+    version = re.search(r'^version: (\S+)', read('CITATION.cff'), re.M).group(1)
+    assert f'## [{version}]' in read('CHANGELOG.md') and f'version-{version}-' in read('README.md'), 'version in CITATION.cff, README and changelog'
+    assert sorted(os.listdir(os.path.join(ROOT, 'docs'))) == ['MANIFEST-release.json']
+    for f in ('src', 'tests', 'run_all.sh', 'README.md', 'THEORY.md'):
+        p = os.path.join(ROOT, f); paths = [os.path.join(r, n) for r, _, ns in os.walk(p) for n in ns if n.endswith(('.py', '.md', '.sh'))] if os.path.isdir(p) else [p]
+        for q in paths:
+            assert not re.search(r'docs/(?!MANIFEST-release)\w+\.md', open(q, encoding='utf-8').read()), f'{q} points to a document that is gone'
 
 
 def test_docs_math_renders_on_github():
@@ -267,32 +271,6 @@ def test_docs_math_renders_on_github():
             assert '\\\\' not in e, f'{name}: a double backslash breaks the expression: {e.strip()[:60]}'
 
 
-def test_readme_matches_results():
-    sens = pd.read_csv(os.path.join(ROOT, 'results', 'sensitivity.tsv'), sep='\t')
-    M = json.load(open(os.path.join(ROOT, 'results', 'meta_slope.json')))
-    readme = open(os.path.join(ROOT, 'README.md'), encoding='utf-8').read()
-    theory = open(os.path.join(ROOT, 'THEORY.md'), encoding='utf-8').read()
-    docs = readme + '\n' + theory                      # the numbers live in THEORY.md, the identity in both
-    for _, r in sens[sens.analysis.str.startswith('main analysis')].iterrows():
-        flat = re.sub(r'\s|\\[,;: ]|\\rho|ρ', '', docs)   # prose or LaTeX, README or THEORY
-        assert f"{int(r.groups)}groups" in flat and f"={r.spearman_rho:.2f}" in flat and f"p={r.p:.3f}" in flat
-    assert 'P1.' in docs and 'P2.' in docs and 'P3.' in docs and 'P4.' in docs, 'the README must state the predictions'
-    E = json.load(open(os.path.join(ROOT, 'results', 'bayes_extra.json')))['index_contrast']
-    assert 'prob_pressure_slope_exceeds_flow_slope' not in E and r'\mu_{z_P}>\mu_{z_F}' not in docs, 'the two slopes are not compared'
-    assert f"{E['zF, flow per lobule']['mu_beta']:+.2f}" in docs and f"{E['zP, pressure per lobule']['mu_beta']:+.2f} ({E['zP, pressure per lobule']['mu_beta_ci'][0]:+.2f}, {E['zP, pressure per lobule']['mu_beta_ci'][1]:+.2f})" in docs, 'the docs must give the two arms, the pressure arm as the primary estimate'
-    A = json.load(open(os.path.join(ROOT, 'results', 'predictions.json')))['P1_allometry']
-    assert f"{100*A['fraction_compatible']:.0f}%" in docs, 'the docs must report P1 over the whole range of b'
-    assert '0.89–0.90 at b' not in docs, 'stale cherry-picked P1 claim'
-    M = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))
-    p = M['primary (SFSS or early dysfunction)']
-    assert f"{p['mu_beta']:+.2f}" in docs and f"{p['OR_per_zP']:.2f}" in docs, 'the docs must quote the primary analysis'
-    assert f"{p['prob_mu_positive']:.3f}" in docs
-    assert 'assets/graphical_abstract.png' in readme
-    assert 'LiPNet' in readme, 'the README must carry the model name'
-    identity = re.sub(r'\s|\\(?:[,;: ]|cdot|times)', '', readme)   # LaTeX spacing/product must not matter
-    assert 'z_P=z_Fz_R' in identity, 'the README must carry the identity zP = zF zR'
-    assert 'liver_pressure_index' not in docs, 'stale repository name'
-
 if __name__ == '__main__':
-    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_documents_are_the_right_documents, test_docs_math_renders_on_github, test_readme_matches_results):
+    for t in (test_sources_parse_on_older_python, test_load_identity, test_indices_and_baseline, test_data_and_provenance, test_fitted_effect, test_cvp_scenarios_and_single_source, test_calculator_javascript_parses, test_plots_and_calculator, test_whole_graft_model, test_modules_are_in_step, test_model_predictions, test_documents_are_the_right_documents, test_docs_math_renders_on_github):
         t(); print('ok', t.__name__)

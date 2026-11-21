@@ -7,5 +7,5 @@
 
 Neither module creates information. The first inverts a function the original authors
 published; the second uses a dispersion that six of the groups already report. See
-docs/IPD.md.
+THEORY.md, section 8.
 """

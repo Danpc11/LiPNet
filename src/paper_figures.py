@@ -1,4 +1,4 @@
-"""Every figure of the article, in one style (src/figstyle.py, docs/FIGURES.md).
+"""Every figure of the article, in one style (src/figstyle.py).
 
     python src/paper_figures.py              all eleven figures -> results/Figure_1 ... Figure_4, Figure_S1 ... Figure_S7 (.pdf and .png)
     python src/paper_figures.py 2 S3         only those
@@ -33,7 +33,7 @@ import indices
 
 fs.use()
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); OUT = f'{ROOT}/results'; DATA = f'{ROOT}/data'
-MODEL_ZR = (0.81, 1.0)                       # resistance load the network reaches for a partial graft (docs/LIVER.md, section 6)
+MODEL_ZR = (0.81, 1.0)                       # resistance load the network reaches for a partial graft (model/liver.py, two_inflows)
 ZF, ZP, ZR = '$z_F$', '$z_P$', '$z_R$'
 
 series = lambda: indices.compute(pd.read_csv(f'{DATA}/series.tsv', sep='\t'))

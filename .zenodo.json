@@ -1,6 +1,6 @@
 {
  "title": "LiPNet: a liver perfusion network model of haemodynamic load in partial liver grafts",
- "description": "<p>LiPNet treats the liver as a dissipation-optimal perfusion network and derives three donor-normalised loads on a partial graft: the flow load zF (portal flow per 100 g relative to the donor), the pressure load zP (portocaval gradient over 5 mmHg) and the resistance load zR, related by zP = zF &times; zR. The archive holds the network model (2D and 3D graphs, closed-form scaling, allometric closure, exhaustive certificate on seven lobules), a lobule-scale finite-element layer, the provenance-labelled extraction of 31 groups from 17 published living donor liver transplantation series, the patient-level tables recovered from three of them, the hierarchical binomial model of outcome on pressure load with its sensitivity, validation and ecological-bias analyses, the sweep of the normalisation references behind zR, the code that reproduces every figure, and a browser calculator. The effect of changing the gradient is estimated within study; the absolute level of risk is centre-specific. Research tool, not a medical device.</p>",
+ "description": "<p>LiPNet treats the liver as a dissipation-optimal perfusion network and derives three donor-normalised loads on a partial graft: the flow load zF (portal flow per 100 g relative to the donor), the pressure load zP (portocaval gradient over 5 mmHg) and the resistance load zR, related by zP = zF &times; zR. The archive holds the network model (2D and 3D graphs, closed-form scaling, allometric closure, exhaustive certificate on seven lobules), a lobule-scale finite-element layer, the provenance-labelled extraction of 32 groups from 18 published living donor liver transplantation series, the patient-level tables recovered from three of them, the hierarchical binomial model of outcome on pressure load with its sensitivity, validation and ecological-bias analyses, the sweep of the normalisation references behind zR, the code that reproduces every figure, and a browser calculator. The effect of changing the gradient is estimated within study; the absolute level of risk is centre-specific. Research tool, not a medical device.</p>",
  "upload_type": "software",
  "access_right": "open",
  "license": "PolyForm-Noncommercial-1.0.0",
@@ -60,5 +60,5 @@
  ],
  "grants": [],
  "notes": "Funding: DGAPA-PAPIIT IN234029; SECIHTI CBF-2025-G-789. Values in data/ are transcribed from the cited publications and remain the property of their authors. Associated article (submitted): Vascular resistance decouples portal flow from pressure in small-for-size liver grafts.",
- "version": "0.7.6"
+ "version": "0.8.0"
 }
