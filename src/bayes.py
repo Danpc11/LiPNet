@@ -76,13 +76,18 @@ def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcom
     zbar = d.groupby('stratum').zP.mean()
     zgrid = np.round(np.arange(0.6, 4.001, 0.05), 3)
     A, Bd = flat['alpha'], flat['beta']
-    alphas_abs, pred_band = {}, {}
+    alphas_abs, pred_band, alphas_pooled, pred_band_pooled = {}, {}, {}, {}
     for i, st in enumerate(strata):
         a_abs = A[:, i] - Bd[:, i] * float(zbar[st])
         alphas_abs[st] = float(np.mean(a_abs))
         p_draw = 1 / (1 + np.exp(-(a_abs[:, None] + Bd[:, i][:, None] * zgrid[None, :])))
         pred_band[st] = dict(lo=np.percentile(p_draw, 2.5, axis=0).round(5).tolist(),
                              hi=np.percentile(p_draw, 97.5, axis=0).round(5).tolist())
+        # for the calculator: the level of the stratum at its own mean load with the pooled slope, which is what
+        # transfers between centres; curve and band from the same draws
+        a_mu = A[:, i] - mu * float(zbar[st]); alphas_pooled[st] = float(np.mean(a_mu))
+        p_mu = 1 / (1 + np.exp(-(a_mu[:, None] + mu[:, None] * zgrid[None, :])))
+        pred_band_pooled[st] = dict(lo=np.percentile(p_mu, 2.5, axis=0).round(5).tolist(), hi=np.percentile(p_mu, 97.5, axis=0).round(5).tolist())
     rng = np.random.default_rng(seed)
     pred_new = mu + tau * rng.standard_normal(len(mu))              # a new study's slope
     return dict(tau_prior=tau_scale, strata=strata, groups=int(len(d)), events=int(ev.sum()), patients=int(n.sum()),
@@ -92,7 +97,7 @@ def fit(d, tau_scale=0.5, chains=4, warmup=1500, samples=2000, seed=0, by_outcom
                 OR_per_mmHg=float(np.exp(mu.mean() / 5.0)),
                 prediction_interval=q(pred_new), prob_new_study_positive=float((pred_new > 0).mean()),
                 beta_by_stratum={s: dict(mean=float(flat['beta'][:, i].mean()), ci=q(flat['beta'][:, i])) for i, s in enumerate(strata)},
-                alphas=alphas_abs, zgrid=zgrid.tolist(), pred_band=pred_band,
+                alphas=alphas_abs, zgrid=zgrid.tolist(), pred_band=pred_band, alphas_pooled_slope=alphas_pooled, pred_band_pooled_slope=pred_band_pooled,
                 group_counts={s: dict(n=int(d[d.stratum == s].n.sum()), events=int(d[d.stratum == s].events.sum()),
                                       zmin=float(d[d.stratum == s].zP.min()), zmax=float(d[d.stratum == s].zP.max()))
                               for s in strata},

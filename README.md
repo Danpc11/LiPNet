@@ -161,9 +161,11 @@ Making a release: rebuild with `bash run_all.sh --clean`, copy `results/MANIFEST
 
 ## Calculator
 
-[danpc11.github.io/LiPNet](https://danpc11.github.io/LiPNet/) (`sfss_calculator.html`) computes $z_F$, $z_P$, $z_R$
-and the change in risk with a change of gradient, anchored to a baseline rate the user supplies. It uses the primary
-fit of `bayes.py`. Research tool, not a medical device.
+[danpc11.github.io/LiPNet](https://danpc11.github.io/LiPNet/) (`sfss_calculator.html`, built by `src/build_app.py` from
+`src/app_template.html`) computes $z_F$, $z_P$ and $z_R$; places $z_R$ against the rigid network and the passive
+relations at the flow load entered; and gives the odds ratio for a change of gradient from the primary fit of
+`bayes.py`, converted to a risk only with a baseline rate the user supplies or the level of a published series.
+Everything runs in the browser. Research tool, not a medical device.
 
 ## Citation
 

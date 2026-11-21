@@ -45,7 +45,7 @@ small{color:var(--muted)}
   <label>GRWR, %<input id="grwr" type="number" step="0.01" placeholder="e.g. 0.85"></label>
   <label>Recipient weight, kg<input id="rw" type="number" step="1" placeholder="e.g. 70"></label>
   <label>Donor PVF per 100 g reference, mL/min/100 g <small>(90 = healthy live donor)</small><input id="dref" type="number" step="5" value="90"></label>
-' </div>
+ </div>
  <div class="card"><h2 style="margin-top:0">Reference level</h2>
   <label>Anchor for the absolute risk
    <select id="ref"><option value="own">My rate at the current gradient (exact)</option><option value="cohort">My cohort's average (approximate)</option>__REFOPTS__</select></label>
@@ -54,17 +54,18 @@ small{color:var(--muted)}
  </div>
 </div>
 
-<div class="grid" style="margin-top:12px">
+<div class="grid" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
  <div class="card"><small>Pressure load z<sub>P</sub></small><div class="big" id="zp">–</div><div id="zptag"></div><small id="zpsub"></small></div>
  <div class="card"><small>Flow load z<sub>F</sub></small><div class="big" id="zf">–</div><div id="zftag"></div><small id="zfsub"></small></div>
- <div class="card"><small>Effect of the change in gradient</small><div class="big" id="risk">–</div><small id="risksub"></small></div>
+ <div class="card"><small>Resistance load z<sub>R</sub> = z<sub>P</sub>/z<sub>F</sub></small><div class="big" id="zr">–</div><small id="zrsub"></small></div>
+ <div class="card"><small>Odds ratio for the change in gradient</small><div class="big" id="risk">–</div><small id="risksub"></small></div>
 </div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Reading</h2><div id="read"></div></div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Risk curve</h2><svg id="plot" viewBox="0 0 640 300" role="img" aria-label="risk curve"></svg>
 <small>The curve is anchored on the reference you chose; the markers are the current gradient and the gradient after the change. Without an anchor it shows the published groups, each centred on its own cohort.</small>
-<div class="note" style="margin-top:12px"><b>What this does and does not give you.</b> The effect of changing the gradient, as estimated by the hierarchical model reported in the paper, is transferable: OR __OR_ZP__ per unit of z<sub>P</sub> (95% CI __OR_LO__–__OR_HI__), __OR_MM__ per mmHg, from __NGROUPS__ groups in __NSTUDIES__ series. The level of risk is not: at the same gradient, published rates run from 0% to 17%. So the percentages shown are only as good as the baseline you supply. Research tool, not a medical device.</div></div>
+<div class="note" style="margin-top:12px"><b>What this does and does not give you.</b> The odds ratio is the within-cohort association of the primary analysis of the paper: OR __OR_ZP__ per unit of z<sub>P</sub> (95% credible interval __OR_LO__–__OR_HI__), __OR_MM__ per mmHg, from __NGROUPS__ groups in __NSTUDIES__ series. It compares groups of one cohort; it is not the measured effect of lowering one recipient's pressure, and the groups were often defined by the pressure or by a manoeuvre chosen because of it. The level of risk does not transfer: at the same gradient, published rates run from 0% to 17%, so the percentages shown are only as good as the baseline you supply. Research tool, not a medical device.</div></div>
 
 <div class="card" style="margin-top:12px"><h2 style="margin-top:0">Send us this case</h2>
  <p style="font-size:.9rem;margin:0 0 8px">LiPNet needs individual measurements to be validated. If you keep PVP, CVP, flow and outcome for your recipients, five columns are enough. Nothing here leaves your browser: the button copies one tab-separated line you can paste into a spreadsheet.</p>
@@ -84,18 +85,31 @@ small{color:var(--muted)}
 <tr><td>Splenectomy</td><td>PVP 23.9 → 19.1 mmHg (−4.8); 21–33 → 14–19 mmHg in five patients</td><td>Wang 2014 Fig 1; Osman 2017</td></tr>
 <tr><td>Hemiportocaval shunt</td><td>PVF/100 g 537 → 190 (−65%, then banded to ≈2× donor); PVP kept &lt;20 with gradients 3–13 mmHg</td><td>Troisi 2005 Tab 4; Yamada 2008 Tab 4</td></tr>
 <tr><td>Middle hepatic vein / outflow</td><td>PVF 3.9× donor with gradient 6 mmHg and no injury: pressure falls below flow</td><td>Chan 2011</td></tr></table>
-<small>Below z<sub>P</sub> ≈ 1 (gradient under normal) the model predicts vessel regression: portal steal. Troisi calibrated shunts to about twice the donor flow; Kyoto reported steal with a 23.7% GV/SLV graft.</small></div>
+<small>A gradient under normal with low flow is the pattern of portal steal. Troisi calibrated shunts to about twice the donor flow; Kyoto reported steal with a 23.7% GV/SLV graft.</small></div>
 
-<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Ou 2010, Vasavada 2014, Alim 2016, Chan 2011, Yagi 2005, Yagi 2006, Wang 2014, Osman 2017, Ogura 2010, Yamada 2008, Uemura 2016, Yao 2018, Kanetkar 2017, Ishizaki 2012 and Botha 2010. LiPNet, a dissipation-optimal perfusion network with fixed vascular maintenance cost (Vázquez-Victorio, Pérez-Calixto, Escutia-Guadarrama, Tovar, Pérez-Calixto, 2026). Source: https://github.com/Danpc11/LiPNet</small></p>
+<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Yagi 2005, Yagi 2006, Yamada 2008, Botha 2010, Ogura 2010, Ou 2010, Chan 2011, Wu 2011, Ishizaki 2012, Vasavada 2014, Wang 2014, Alim 2016, Uemura 2016, Kanetkar 2017, Osman 2017 and Yao 2018. Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Hernández-Lemus E, Cervera A, Tovar H, Pérez-Calixto D. Vascular resistance decouples portal flow from pressure in small-for-size liver grafts. 2026. Source: https://github.com/Danpc11/LiPNet</small></p>
 </main>
 <script>
-const GROUPS=__GROUPS__,STUDIES=__STUDIES__,ALPHAS=__ALPHAS__;
+const STUDIES=__STUDIES__;
 const REFS=__REFS__;
 const ZGRID=__ZGRID__;
 const CENTRED=__CENTRED__;
-const BETA=__BETA__,BLO=__BLO__,BHI=__BHI__,GN=__GN__,DEFAULT_CVP=__CVP__,ZMIN=__ZMIN__,ZMAX=__ZMAX__;
+const BETA=__BETA__,BLO=__BLO__,BHI=__BHI__,GN=__GN__,DEFAULT_CVP=__CVP__;
+// MODEL BEGIN: the resistance load of a partial graft, as in src/model/liver.py and src/model/distension.py
+const NET=__NET__;
+function zrRigid(zF,phi,s,rem){const a=NET.a;return (1-rem)*(s*zF+(1-s)*(zF+phi*a)/(1+a))/zF;}
+function rigidRange(zF,alone){const v=[];NET.geoms.forEach(([s,rem])=>[0,1].concat(alone?[zF]:[]).forEach(phi=>v.push(zrRigid(zF,phi,s,rem))));return [Math.min(...v),Math.max(...v)];}
+function solveG(Q,d){let lo=1e-9*Q,hi=2*Q+1,k=0;while(Q*d(hi)-hi>0&&k++<60)hi*=2;for(let i=0;i<200;i++){const m=0.5*(lo+hi);if(Q*d(m)-m>0)lo=m;else hi=m;}return 0.5*(lo+hi);}
+function zrRelation(law,zF,zr,cvp,p){const g0=NET.g0,Q=g0*zF*zr;
+ if(law==='pressure-flow')return (p+(1-p)*zF*zr)/zF;
+ const d=law==='cube law'?(G=>Math.pow((cvp+g0/2)/(cvp+G/2),NET.cube)):(G=>Math.pow(Math.max(1+(G-g0)/p,1e-9),-2));
+ return solveG(Q,d)/g0/zF;}
+function passiveRanges(zF,cvps){const r=rigidRange(zF,true),keep=[],stop=[];
+ r.forEach(zr=>cvps.forEach(c=>{keep.push(zrRelation('cube law',zF,zr,c,null));NET.doubling.forEach(p=>keep.push(zrRelation('compliance',zF,zr,c,p)));NET.f.forEach(f=>stop.push(zrRelation('pressure-flow',zF,zr,c,f)));}));
+ return {keep:[Math.min(...keep),Math.max(...keep)],stop:[Math.min(...stop),Math.max(...stop)]};}
+// MODEL END
 const $=id=>document.getElementById(id);
-function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','target window 1–2'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
+function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','1–2 × normal gradient'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
 function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
 function calc(){
  const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value, pvp2Raw=$('pvp2').value, baseRaw=$('base').value;
@@ -121,31 +135,37 @@ function calc(){
  if(!isNaN(zP)&&!isNaN(zP2)){
    const dz=zP2-zP, or_=Math.exp(BETA*dz), orlo=Math.exp(BLO*dz), orhi=Math.exp(BHI*dz);
    const lo=Math.min(orlo,orhi), hi=Math.max(orlo,orhi);
-   $('risk').textContent='OR '+or_.toFixed(2); $('risksub').textContent='95% CI '+lo.toFixed(2)+'–'+hi.toFixed(2)+' for a change of '+((pvp2-pvp)>=0?'+':'')+(pvp2-pvp).toFixed(1)+' mmHg';
+   $('risk').textContent='OR '+or_.toFixed(2); $('risksub').textContent='95% CrI '+lo.toFixed(2)+'–'+hi.toFixed(2)+' for a change of '+((pvp2-pvp)>=0?'+':'')+(pvp2-pvp).toFixed(1)+' mmHg';
      if(ref!=='own'&&REFS[ref]!==undefined){
      const a=REFS[ref].alpha, L=z=>100/(1+Math.exp(-(a+BETA*z)));
      const p1=L(zP), p2=L(zP2);
      const R=REFS[ref], out=[zP,zP2].filter(v=>v<R.zmin-0.05||v>R.zmax+0.05);
-     msg.push('Using <b>'+ref+'</b> as the reference level (' + R.n + ' recipients, ' + R.events + ' events, its own groups span z<sub>P</sub> '+R.zmin.toFixed(2)+'–'+R.zmax.toFixed(2)+'): that series would go from about <b>'+p1.toFixed(1)+'%</b> at z<sub>P</sub> '+zP.toFixed(2)+' to <b>'+p2.toFixed(1)+'%</b> at '+zP2.toFixed(2)+'. The level is that of the reference series, not of your patient; only the change is transferable.'+(out.length?' <b>Warning:</b> '+(out.length>1?'both values are':'one value is')+' outside the range of that series, so the level shown is an extrapolation of its intercept.':''));
+     msg.push('Using <b>'+ref+'</b> as the reference level (' + R.n + ' recipients, ' + R.events + ' events, its own groups span z<sub>P</sub> '+R.zmin.toFixed(2)+'–'+R.zmax.toFixed(2)+'): at its own level and with the pooled slope, that series would go from about <b>'+p1.toFixed(1)+'%</b> at z<sub>P</sub> '+zP.toFixed(2)+' to <b>'+p2.toFixed(1)+'%</b> at '+zP2.toFixed(2)+'. The level is that of the reference series, not of your patient.'+(out.length?' <b>Warning:</b> '+(out.length>1?'both values are':'one value is')+' outside the range of that series, so the level shown is an extrapolation of its intercept.':''));
    } else if(ref==='cohort'){
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100, bg=(bgRaw===''||!isFinite(+bgRaw))?NaN:+bgRaw;
      if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)){
        const zbar=bg/gn, o=b/(1-b), RL=(z,bb)=>{const oo=o*Math.exp(bb*(z-zbar)); return 100*oo/(1+oo);}, R=(z)=>RL(z,BETA);
-       msg.push('<b>Approximate anchor.</b> Your cohort\u2019s overall rate, '+(100*b).toFixed(0)+'%, is treated as the risk at its average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). Because the curve is not linear, the average risk of a spread-out cohort is not the risk at its average gradient, so this places the level only approximately; the first option, your rate measured at one gradient, has no such error. This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
+       msg.push('<b>Approximate anchor.</b> Your cohort\u2019s overall rate, '+(100*b).toFixed(0)+'%, is treated as the risk at its average gradient of '+bg.toFixed(1)+' mmHg (z<sub>P</sub> '+zbar.toFixed(2)+'). Because the curve is not linear, the average risk of a spread-out cohort is not the risk at its average gradient, so this places the level only approximately; the first option, your rate measured at one gradient, has no such error. This patient would be at about <b>'+R(zP).toFixed(1)+'%</b> now (95% CrI '+Math.min(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'–'+Math.max(RL(zP,BLO),RL(zP,BHI)).toFixed(1)+'%) and <b>'+R(zP2).toFixed(1)+'%</b> after the change (95% CrI '+Math.min(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'–'+Math.max(RL(zP2,BLO),RL(zP2,BHI)).toFixed(1)+'%). Only the distance from your own average is modelled; the level is yours.');
      } else msg.push('Enter your cohort\u2019s overall outcome rate and its average portocaval gradient, or choose another reference above.');
    } else {
      const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
      if(!isNaN(b)&&b>0&&b<1){ const o0=b/(1-b), p2=100*((o0*or_)/(1+o0*or_)), p2lo=100*((o0*lo)/(1+o0*lo)), p2hi=100*((o0*hi)/(1+o0*hi));
-       msg.push('With a baseline rate of '+(100*b).toFixed(0)+'% at the starting gradient, the model implies about <b>'+p2.toFixed(1)+'%</b> (95% CI '+Math.min(p2lo,p2hi).toFixed(1)+'–'+Math.max(p2lo,p2hi).toFixed(1)+'%) after the change. The baseline rate is yours, not the model\u2019s.');}
+       msg.push('With a baseline rate of '+(100*b).toFixed(0)+'% at the starting gradient, the model implies about <b>'+p2.toFixed(1)+'%</b> (95% CrI '+Math.min(p2lo,p2hi).toFixed(1)+'–'+Math.max(p2lo,p2hi).toFixed(1)+'%) after the change. The baseline rate is yours, not the model\u2019s.');}
      else msg.push('Enter your rate at the starting gradient, or pick another reference above, to convert this odds ratio into an absolute risk.');
    }
  } else { $('risk').textContent='–'; $('risksub').textContent=isNaN(zP)?'':'enter the pressure after the planned change'; }
- if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (PVP '+(pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to stay above the floor.');}
+ if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (PVP '+(pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to avoid steal.');}
   else if(zP<=0){msg.push(zP===0?'Portal and central venous pressures are equal: no portocaval gradient. Check the measurements or the position of the catheters.':'PVP below CVP: the gradient is negative, which is not physiological; check the measurements.');}
-  else if(zP<1){msg.push('The gradient is below the normal value. The model predicts regression of graft vessels (portal steal) in this range; check for over-shunting or outflow problems.');}
+  else if(zP<1){msg.push('The gradient is below the normal value; with low flow this is the pattern of portal steal. Check for over-shunting.');}
   if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
- if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF;msg.push('Resistance load z<sub>R</sub> = z<sub>P</sub>/z<sub>F</sub> = '+r.toFixed(2)+': the graft\u2019s effective resistance relative to the donor. '+(r<0.7?'Flow is high relative to pressure, as in grafts with reconstructed outflow (middle hepatic vein, venoplasty) or after splenectomy; in the published series these tolerated high flow.':r>1.3?'Pressure is high relative to flow: consider venous outflow obstruction or elevated CVP before attributing risk to portal inflow.':'Flow and pressure are concordant (outflow resistance near the donor\u2019s).'));}
- else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available. In the published series flow per gram did not order outcomes once outflow was reconstructed; measure PVP and CVP.');
+ $('zr').textContent='–'; $('zrsub').textContent='';
+ if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF; $('zr').textContent=r.toFixed(2);
+   const rg=rigidRange(zF,false), pr=passiveRanges(zF,cvpAssumed?NET.cvps:[cvp]), f2=v=>v.toFixed(2), rng=v=>f2(v[0])+'–'+f2(v[1]);
+   const lowest=Math.min(pr.keep[0],pr.stop[0]), where=r>1?'above the donor value':(r>=rg[0]?'within the range of a rigid network':(r>=lowest?'below a rigid network and within the passive relations':'below a rigid network and below every passive relation'));
+   $('zrsub').textContent=where;
+   msg.push('Resistance load z<sub>R</sub> = '+f2(r)+', the effective resistance of the graft relative to the donor. At this flow load a rigid network gives a partial graft '+rng(rg)+' (its geometry and the arterial inflow). Three published relations of the normal liver give '+rng(pr.keep)+' (the two that keep distending) and '+rng(pr.stop)+' (the one that stops)'+(cvpAssumed?', over a CVP of 3 to 9 mmHg':'')+(zF>NET.measured?'; they were measured up to '+NET.measured+' times the control flow, so at this flow load they are extrapolations':'')+'. '+
+     (r>1?'Pressure is high relative to flow, the pattern of an outlet narrowing or a raised CVP.':(r<lowest?'What lowers resistance this far is not in the model.':'')));}
+ else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available; the resistance load needs PVP and CVP as well.');
  LAST = {pvp: pvp, cvp: cvp, cvpAssumed: cvpAssumed, pvf: pvf, gw: gw,
          grwr: (R.state === 'ok' ? R.v : NaN), rw: (W.state === 'ok' ? W.v : NaN), dref: dref,
          zP: zP, zF: zF, zR: (isFinite(zP) && isFinite(zF) && zF > 0) ? zP / zF : NaN};
@@ -156,7 +176,7 @@ function calc(){
    if(!isNaN(b)&&b>0&&b<1&&!isNaN(bg)) anchor={l0:Math.log(b/(1-b)), z0:bg/gn, label:'your cohort ('+(100*b).toFixed(0)+'% at '+bg.toFixed(1)+' mmHg)'};}
  else if(ref==='own'){const b=(baseRaw===''||!isFinite(+baseRaw))?NaN:+baseRaw/100;
    if(!isNaN(b)&&b>0&&b<1&&!isNaN(zP)) anchor={l0:Math.log(b/(1-b)), z0:zP, label:'your rate ('+(100*b).toFixed(0)+'% at the current gradient)'};}
- else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, band:REFS[ref].band, label:ref};   // fitted stratum: joint bootstrap band
+ else if(REFS[ref]!==undefined) anchor={a:REFS[ref].alpha, band:REFS[ref].band, label:ref};   // fitted stratum: posterior band
  draw(zP,zP2,anchor);}
 function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
  const x=z=>ml+(z-0.6)/(4-0.6)*(W-ml-mr);
@@ -174,7 +194,7 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
    const YM=top>55?100:(top>27?60:30); yv=p=>H-mb-(Math.min(p,YM)/YM)*(H-mt-mb);
    const TK=YM===100?[0,20,40,60,80,100]:(YM===60?[0,10,20,30,40,50,60]:[0,5,10,15,20,25,30]);
    let band=[];
-   if(anchor.band){                       // published stratum: percentiles of the bootstrap predictions (intercept and slope together)
+   if(anchor.band){                       // published stratum: posterior band of its level with the pooled slope, from the same draws as the curve
      ZGRID.forEach((z,i)=>band.push(x(z)+','+yv(100*anchor.band.lo[i])));
      for(let i=ZGRID.length-1;i>=0;i--)band.push(x(ZGRID[i])+','+yv(100*anchor.band.hi[i]));
    } else {                               // user anchor: only the slope is uncertain, the level is given
@@ -192,7 +212,6 @@ function draw(zp,zp2,anchor){const W=640,H=300,ml=52,mr=18,mt=14,mb=42;
    s+='<text x="'+(ml+8)+'" y="'+(mt+11)+'" font-size="10" fill="currentColor">anchored on '+anchor.label+(anchor.band?'':' — band: slope only')+'</text>';
  } else {                         // no anchor yet: the centred relation, odds relative to each cohort's own mean
    const lo=-1.6,hi=1.6; yv=l=>H-mb-((l-lo)/(hi-lo))*(H-mt-mb);
-   const zc=z=>l0+0;              // placeholder, not used
    const xc=v=>ml+(v+1.05)/2.1*(W-ml-mr);
    s='';s+='<line x1="'+xc(0)+'" y1="'+mt+'" x2="'+xc(0)+'" y2="'+(H-mb)+'" stroke="currentColor" stroke-dasharray="3 3" opacity="0.5"/>';
    s+='<line x1="'+ml+'" y1="'+yv(0)+'" x2="'+(W-mr)+'" y2="'+yv(0)+'" stroke="currentColor" stroke-dasharray="3 3" opacity="0.5"/>';
@@ -250,7 +269,7 @@ document.getElementById('copyrow').addEventListener('click',()=>{const r=caseRow
  const note=(r.zp===''?' The pressure load could not be computed from what you entered, so those fields are blank.':' Computed loads: z_P '+r.zp+(r.zf?', z_F '+r.zf+', z_R '+r.zr:'')+'.');
  if(navigator.clipboard) navigator.clipboard.writeText(row).then(()=>{$('copied').textContent='Copied.'+note+' Nothing left this page.';},()=>{$('copied').textContent='Select the line below and copy it.'+note;});
  else $('copied').textContent='Select the line below and copy it.'+note;});
-document.querySelectorAll('input,select').forEach(i=>i.addEventListener('input',calc));i=>0;
+document.querySelectorAll('input,select').forEach(i=>i.addEventListener('input',calc));
 document.getElementById('ref').addEventListener('change',calc);calc();
 </script>
 </body></html>

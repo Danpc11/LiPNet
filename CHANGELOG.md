@@ -5,6 +5,7 @@ Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.
 ## [0.8.0] – 2026-11-21
 - Documentation reduced to `README.md`, `THEORY.md` and this file; `docs/` keeps only `MANIFEST-release.json`.
 - Removed the documentation-content tests.
+- Calculator: resistance load card, with the range of the rigid network (two inflows) and of the three passive relations for the flow load and CVP entered, computed in the page with the constants of `model/`; a reference series uses its own level with the pooled slope (`bayes` keys `alphas_pooled_slope`, `pred_band_pooled_slope`), curve and band from the same draws; credible intervals; the odds ratio is labelled as a within-cohort association; footer with the 18 series and the authors; stray character in the flow card removed. `src/model/sfss_calculator.html` (old copy) removed.
 
 ## [0.7.6] – 2026-11-20
 - `manifest.py`: `inputs_fingerprint`; `stamp-release` and `verify-release`. CI verifies the release manifest on tags.

@@ -104,6 +104,30 @@ def test_calculator_javascript_parses():
     r = subprocess.run([node, '--check', path], capture_output=True, text=True)
     assert r.returncode == 0, 'the calculator JavaScript does not parse:\n' + r.stderr[-600:]
 
+def test_the_calculator_gives_the_resistance_load_of_the_model():
+    """The resistance load the page shows for a flow load and a CVP is the one src/model gives: the rigid network with
+    two inflows (P2) and the three passive relations, for the six groups that report both loads. Run with node."""
+    import re, shutil, tempfile
+    node = shutil.which('node')
+    if not node: return
+    assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True).returncode == 0
+    html = open(os.path.join(ROOT, 'sfss_calculator.html'), encoding='utf-8').read()
+    model = html[html.index('// MODEL BEGIN'):html.index('// MODEL END')]
+    from model import distension as ds
+    d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t')); B = ds.bracket(d)
+    G = {(g['study'], g['group']): g for g in ds.groups(d)}
+    cases = [dict(zF=r['zF'], cvps=[G[(r['study'], r['group'])]['cvp']] if G[(r['study'], r['group'])]['cvp'] is not None else list(ds.CVPS)) for r in B['groups']]
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False) as f:
+        f.write(model + '\nconst C=' + json.dumps([dict(zF=G[(r['study'], r['group'])]['zF'], cvps=c['cvps']) for r, c in zip(B['groups'], cases)]) +
+                ';\nconsole.log(JSON.stringify(C.map(c=>({rigid:rigidRange(c.zF,false), alone:rigidRange(c.zF,true), p:passiveRanges(c.zF,c.cvps)}))));')
+    out = json.loads(subprocess.run([node, f.name], capture_output=True, text=True, check=True).stdout)
+    for r, o in zip(B['groups'], out):
+        lo, hi = ds.rigid_range(G[(r['study'], r['group'])]['zF'])
+        assert abs(o['alone'][0] - lo) < 1e-9 and abs(o['alone'][1] - hi) < 1e-9
+        assert all(abs(a - b) < 6e-4 for a, b in zip(o['p']['keep'], r['zR_keeps_distending'])) and all(abs(a - b) < 6e-4 for a, b in zip(o['p']['stop'], r['zR_stops_distending'])), (r['study'], o['p'])
+        lo2, hi2 = ds.rigid_range(G[(r['study'], r['group'])]['zF'], alone=False); assert abs(o['rigid'][0] - lo2) < 1e-9 and abs(o['rigid'][1] - hi2) < 1e-9
+
+
 def test_plots_and_calculator():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
     names = ['nomogram', 'within_study', 'forest', 'centred', 'risk_change', 'series_pressure', 'series_flow']
