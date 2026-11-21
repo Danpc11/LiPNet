@@ -84,6 +84,11 @@ CUBE = 3.0                               # exponent of the index of contractilit
 # The slope of 0.046 is not used: it includes the rise of the caval pressure, which is not part of the gradient.
 GREENWAY = dict(intercept=2.2, slope=0.030, slope_with_the_cannula=0.046, control_flow=139.0, portal_to_lobar=(0.0, 2.0))
 FLOW_FIXED_SHARE = tuple(sorted(round(GREENWAY['intercept'] / (GREENWAY['intercept'] + GREENWAY['slope'] * GREENWAY['control_flow'] + dd / 2), 3) for dd in GREENWAY['portal_to_lobar']))
+# Highest flow, relative to control, at which each relation was measured: the cube law over 10 to 50 mL/min/kg (1.7
+# times control, Lautt et al. 1991), the pressure-flow relation up to 2.2 times the control total flow (Greenway et al.
+# 1985); the compliance relation was measured by raising the outflow pressure at control flow. Beyond the largest of them
+# every band is an extrapolation; the grafts are at 3.3 to 4.1.
+MEASURED_UP_TO = {'cube law': 1.7, 'compliance': 1.0, 'pressure-flow': 2.2}
 CVPS = (3.0, 5.0, 7.0, 9.0)              # central venous pressure where a series reports none, as in predictions.REF_CVPS
 OUTLET_SHARE = 0.05                      # share of the resistance held by the outlet anastomosis (whole_graft.py, r_out)
 
@@ -340,6 +345,7 @@ def band(zFs=np.round(np.arange(1.0, 5.01, 0.1), 2)):
             r = rigid_range(float(zF)); z = [distensible(float(zF), zr, c, law, p)['zP'] for law in LAWS if FAMILY[law] == fam for zr in r for c in CVPS for p in PARAMS[law]]; lo.append(min(z)); hi.append(max(z))
         out[fam] = dict(zP_low=[round(float(x), 4) for x in lo], zP_high=[round(float(x), 4) for x in hi])
     out['zP_low'] = out['keeps distending']['zP_low']; out['zP_high'] = out['stops distending']['zP_high']
+    out['measured_up_to_flow_load'] = max(MEASURED_UP_TO.values())
     return out
 
 

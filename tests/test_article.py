@@ -122,5 +122,70 @@ def test_the_tolerance_is_only_for_sampled_numbers():
     assert not agrees((5, 5), (4, 5)), 'a count is compared exactly'
 
 
+# ------------------------------------------------------------------ the documents that are submitted
+DOCS = {'main': os.path.join(ROOT, 'manuscript', 'Manuscript_clean.docx'), 'supplement': os.path.join(ROOT, 'manuscript', 'Supplementary_material_clean.docx')}
+STALE = ('17 series', '31 groups', '0.85 on average', 'root-mean-square error 0.31', '0.61 to 0.82', '0.39 to 0.82', '0.26 to 0.35',
+         'All five published groups', 'four of five', 'with probability 0.35 to 0.68')
+
+
+def text_of(path):
+    """The text of a .docx as Word shows it with every change accepted: paragraphs of w:t runs, deleted runs left out,
+    minus signs and non-breaking spaces made plain. Standard library only."""
+    import re, zipfile
+    from xml.sax.saxutils import unescape
+    x = zipfile.ZipFile(path).read('word/document.xml').decode('utf8')
+    x = re.sub(r'<w:del\b.*?</w:del>', '', x, flags=re.S)
+    paras = [unescape(''.join(re.findall(r'<w:t(?: [^>]*)?>([^<]*)</w:t>', p))) for p in re.findall(r'<w:p[ >].*?</w:p>', x, flags=re.S)]
+    return '\n'.join(paras).replace('\u2212', '-').replace('\u2013', '-').replace('\u00a0', ' ').replace('\u202f', ' ')
+
+
+def _forms(v):
+    """The ways the article prints a number."""
+    if isinstance(v, bool): return None
+    if isinstance(v, str): return {v.split(' / ')[0]}
+    if isinstance(v, int): return {f'{v:,}', str(v)}
+    out = {str(int(v))} if float(v).is_integer() else set()
+    for d in (1, 2, 3):
+        t = f'{v:.{d}f}'; out |= {t, t.lstrip('0') if v < 1 else t}
+        if v > 0: out.add('+' + t)
+    if 0 < abs(v) < 1: out |= {f'{100 * v:.0f}%', f'{100 * v:.0f} '}
+    return out
+
+
+def placed(numbers, text, span=300):
+    """True if the numbers appear in the order of the claim, each in one of its printed forms, all within `span`
+    characters: a number that is in the document but not where the claim puts it does not count."""
+    import re
+    forms = [f for f in (_forms(v) for v in numbers) if f]
+    if not forms: return True
+    pat = lambda f: (r'(?<![0-9.])' + re.escape(f) + r'(?![0-9])') if f[-1:].isdigit() else re.escape(f)
+    def after(k, pos, limit):
+        if k == len(forms): return True
+        hits = sorted(m.start() for f in forms[k] for m in re.finditer(pat(f), text[pos:limit]))
+        return any(after(k + 1, pos + h + 1, limit) for h in hits[:6])
+    firsts = sorted({m.start() for f in forms[0] for m in re.finditer(pat(f), text)})
+    return any(after(1, i + 1, i + span) for i in firsts)
+
+
+# where the article prints a claim in words or splits it between the main text and the supplement, the numbers to look for
+DOC_NUMBERS = {'Results: below the network in 34 of 60, none at 4 mmHg, all at 6 mmHg': [[34, 60, 4, 6]],
+               'Results: thresholds at zP = 2 and 2.4': [[2, 2.4]],
+               'Results: the further 28 to 35% by which resistance would have to fall; supplement, 8 to 11% in radius': [[0.28, 0.35], [8, 11]]}
+
+
+def test_the_submitted_documents_carry_these_numbers():
+    """The Word files that are submitted (manuscript/), not only the results: every number of every claim is printed in
+    the main text or the supplement, the numbers of an earlier version are gone, and the release they cite is this one."""
+    import re
+    T = {k: text_of(p) for k, p in DOCS.items()}; both = T['main'] + '\n' + T['supplement']
+    missing = [c[0] for c in claims() if not all(placed(g, both) for g in DOC_NUMBERS.get(c[0], [flat(c[1])]))]
+    assert not missing, 'not printed in the submitted documents: ' + '; '.join(missing)
+    stale = [s for s in STALE if s in both]; assert not stale, 'numbers of an earlier version: ' + ', '.join(stale)
+    version = re.search(r'^version: (\S+)', open(os.path.join(ROOT, 'CITATION.cff')).read(), re.M).group(1)
+    for k in DOCS: assert f'release v{version}' in T[k], f'the {k} document does not cite release v{version}'
+    d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
+    assert f'{len(d)} groups from {d.study.nunique()} published series' in T['main'] and f'{d.study.nunique()} series contribute {len(d)} groups' in T['main']
+
+
 if __name__ == '__main__':
     for c in claims(): print('ok  ' if agrees(*c[1:]) else 'FAIL', 'sampled      ' if len(c) > 3 else 'deterministic', c[0], '|', c[2])

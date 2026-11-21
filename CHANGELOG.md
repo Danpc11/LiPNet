@@ -2,6 +2,20 @@
 
 All notable changes to this repository are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow the GitHub releases, each archived at Zenodo under the concept DOI [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276).
 
+## [0.7.6] – 2026-11-20
+
+A fourth review: what the release manifest identifies, whether the submitted Word files carry the numbers, and how the result is read.
+
+### Fixed
+- **The release manifest identifies the code.** `inputs_fingerprint`, one SHA-256 over every input, identifies the code and data of a run whether it was made from a clone or an archive; `python src/manifest.py stamp-release`, run after committing the code of a release, checks file by file that the commit holds the rebuilt inputs and writes its SHA into `docs/MANIFEST-release.json`; `verify-release` checks it, and the continuous integration runs it on tags with the full history. `tests/test_cache.py` checks that the release manifest is the rebuild of the code of the tree. v0.7.5 had `"commit": null`.
+
+### Added
+- **The submitted documents are tested** (`manuscript/`, `tests/test_article.py`). The two Word files that are submitted are in the repository; every number of every claim must be printed in them, in order and within a few lines, numbers of earlier versions (17 series, 31 groups, 0.39 to 0.82 and others) must be absent, and both must cite the release of `CITATION.cff`. On the October manuscript the test finds 17 claims missing and the old counts.
+- **Figure 2A marks the measured range.** A dotted line at 2.2 times the control flow, the highest at which a relation was measured; beyond it, and for every group in panel B, the bands are extrapolations (`distension.MEASURED_UP_TO`).
+
+### Changed
+- The Discussion states the result as a negative mechanistic one: architecture and the passive response to flow set the level of $z_R$ but neither order the configurations nor reproduce the contrast inside Wang 2014; splanchnic inflow, microvascular resistance and venous drainage remain candidates these data cannot separate.
+
 ## [0.7.5] – 2026-11-20
 
 A third review: solvers, the contrast inside Wang 2014, and the counts read off survival curves.

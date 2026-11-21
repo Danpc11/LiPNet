@@ -49,9 +49,12 @@ def plane(ax, lim=5.0, model=True, label_at=2.9, label='Network model', bed=None
         ax.fill_between(x, MODEL_ZR[0] * x, MODEL_ZR[1] * x, zorder=1, **fs.MODEL_TINT)
         ax.text(0.81 * lim, 0.81 * lim * np.mean(MODEL_ZR) - 0.004 * lim, label, fontsize=FS_SMALL, rotation=42.5, ha='center', va='center', zorder=3)
     if bed:                                   # the passive relations of the normal liver: dark, those that keep distending; hatched, the one that stops
-        k, s_ = bed['keeps distending'], bed['stops distending']
+        k, s_ = bed['keeps distending'], bed['stops distending']; m = bed.get('measured_up_to_flow_load', lim)
         ax.fill_between(bed['zF'], k['zP_low'], k['zP_high'], color=BLUE, alpha=0.34, lw=0, zorder=1)
         ax.fill_between(bed['zF'], s_['zP_low'], s_['zP_high'], facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, zorder=1)
+        if m < lim:                                                        # the highest flow at which a relation was measured: beyond it, extrapolation
+            ax.plot([m, m], [0, 0.6 * lim], color=MUTED, lw=0.6, ls=(0, (1, 1.5)), zorder=2)
+            ax.text(m - 0.06, 0.62, 'Measured', fontsize=FS_SMALL, color=MUTED, ha='right', va='center'); ax.text(m + 0.06, 0.62, 'Extrapolated', fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
     ax.plot(x, x, color=INK, lw=LW_REF, ls=DASH, zorder=2); ax.plot([1], [1], 'o', ms=4, mfc=INK, zorder=5, **DOT)
     ax.text(label_at, label_at + 0.06 * lim, f'{ZR} = 1', fontsize=FS_IN, rotation=45, ha='center', va='center')
     ax.set_xlim(0, lim); ax.set_ylim(0, lim); ax.set_aspect('equal'); ax.set_xticks(range(0, int(lim) + 1)); ax.set_yticks(range(0, int(lim) + 1))

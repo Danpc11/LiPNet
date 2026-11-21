@@ -492,7 +492,7 @@ Until a preprint is available, please cite the archived software release.
 
 ## Citation
 
-The software is archived on Zenodo. The article uses release v0.7.5, which receives its own DOI when the release is published; the last archived version is v0.4.2:
+The software is archived on Zenodo. The article uses release v0.7.6, which receives its own DOI when the release is published; the last archived version is v0.4.2:
 
 **DOI: 10.5281/zenodo.23656741** (v0.4.2) · [10.5281/zenodo.22861276](https://doi.org/10.5281/zenodo.22861276) (all versions)
 

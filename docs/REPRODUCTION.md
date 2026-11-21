@@ -13,7 +13,35 @@ confirm it. The record of the run is [MANIFEST-release.json](MANIFEST-release.js
 | Then | `python -m pytest tests` with `LIPNET_EXACT=1`, and `python src/manifest.py check` |
 
 `MANIFEST-release.json` holds the SHA-256 of every input (`data/`, `src/`, `run_all.sh`, the two requirements files) and
-of every numeric result of that run, with the versions of Python and of the packages.
+of every numeric result of that run, with the versions of Python and of the packages. `inputs_fingerprint` is one
+SHA-256 over all the inputs: it identifies the code and data of the run whether it was made from a clone or from an
+archive. `commit` is the commit of this repository that holds those inputs.
+
+## Making a release
+
+The rebuild is made on an archive of the code, so the manifest it writes names no commit. The commit is recorded in the
+repository that is pushed, after the code is committed and before the manifest is:
+
+```bash
+git add -A && git commit -m "vX.Y.Z: ..."                 # the code and data of the release
+python src/manifest.py stamp-release                       # checks that this commit holds the inputs that were rebuilt,
+                                                           # file by file, and writes its SHA into docs/MANIFEST-release.json
+git commit -am "manifest: vX.Y.Z rebuilt from this commit" # the manifest, one commit later
+python src/manifest.py verify-release                      # the commit named holds the rebuilt files; nothing in data/ or
+                                                           # src/ changed since
+git push origin main && git tag vX.Y.Z && git push origin vX.Y.Z
+```
+
+The tag points at the manifest commit; `git diff <commit> vX.Y.Z -- data src` is empty. On a tag the continuous
+integration runs `verify-release` on the full history. The Zenodo deposit is made from the tag, so the deposit, the tag,
+the manifest and the figures (whose inputs `results/figures_provenance.json` records) are one state of the code.
+
+## The submitted documents
+
+`manuscript/` holds the Word files that are submitted, built from the results of the release. `tests/test_article.py`
+reads them: every number of every claim must be printed there, in the order the claim gives and within a few lines,
+numbers of earlier versions (17 series, 31 groups and others) must be absent, and both documents must cite the release
+of `CITATION.cff`.
 
 ## What is compared with what
 
@@ -24,7 +52,7 @@ of every numeric result of that run, with the versions of Python and of the pack
 | Tables of the model (`data/graph_scaling_all.tsv`, `graph3d_all.tsv`, `certificate_small.tsv`) | yes | `src/model/verify_campaigns.py` reruns the campaigns and compares every number (relative tolerance $10^{-9}$); `run_all.sh --clean` runs every size, the tests the two smallest |
 | Every other result | no | Rebuilt by `run_all.sh`; `tests/test_article.py` builds the two it needs if they are missing |
 | Figures | no | `results/figures_provenance.json`: hash of what each figure reads, of the scripts and of the images, checked by `python src/manifest.py check` |
-| Numbers quoted in the article | in `tests/test_article.py` | Counts and arithmetic exactly; sampled numbers within 0.05 (posterior mean), 0.10 (limit of a 95% interval) or 0.30 (interval of a new centre, log score) |
+| Numbers quoted in the article | in `tests/test_article.py`, and in the Word files of `manuscript/` | Counts and arithmetic exactly; sampled numbers within 0.05 (posterior mean), 0.10 (limit of a 95% interval) or 0.30 (interval of a new centre, log score) |
 
 ## Continuous integration
 
@@ -55,9 +83,10 @@ some minutes after a push, so two files of one reading can belong to two commits
 the permanent address of the commit:
 
 ```bash
-git clone --branch v0.7.5 --depth 1 https://github.com/Danpc11/LiPNet && cd LiPNet
+git clone --branch v0.7.6 --depth 1 https://github.com/Danpc11/LiPNet && cd LiPNet
 python -m venv .venv && . .venv/bin/activate && pip install -r requirements-lock.txt
 python -m pytest tests -q                                  # on the clone as it is
 bash run_all.sh --clean                                    # everything from nothing, about 30 minutes
 python -m pytest tests -q && python src/manifest.py check && python src/manifest.py compare docs/MANIFEST-release.json
+python src/manifest.py verify-release                       # on a full clone (without --depth 1)
 ```

@@ -3,6 +3,8 @@
     python src/manifest.py            write results/MANIFEST.json
     python src/manifest.py check      exit 1 if an input or a result is no longer the one recorded
     python src/manifest.py compare docs/MANIFEST-release.json      this tree and its results against the clean rebuild of the release
+    python src/manifest.py stamp-release     after committing the code of a release: record that commit in the release manifest
+    python src/manifest.py verify-release    the commit named in the release manifest holds, file by file, the code rebuilt
 
 The manifest holds the SHA-256 of every input (data/, src/), of every numeric result (results/*.json, *.tsv), the
 versions of Python and of the packages, and the commit if the tree is a git checkout. run_all.sh writes it last;
@@ -15,7 +17,7 @@ now on disk: a figure whose input, script or image has changed since it was draw
 tables of the model in data/ that no script of run_all.sh rebuilds: results/campaign_check.json
 (src/model/verify_campaigns.py) holds the hash of each table and of the code it was recomputed with.
 """
-import glob, importlib.metadata as md, json, os, platform, subprocess, sys
+import glob, hashlib, importlib.metadata as md, json, os, platform, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cache import ROOT, OUT, sha256
 
@@ -26,16 +28,65 @@ def files(patterns):
     return sorted(os.path.relpath(f, ROOT).replace(os.sep, '/') for p in patterns for f in glob.glob(f'{ROOT}/{p}', recursive=True) if '__pycache__' not in f and os.path.isfile(f))
 
 
+INPUTS = ('data/**/*', 'src/**/*.py', 'src/app_template.html', 'run_all.sh', 'requirements*.txt')
+RELEASE = os.path.join(ROOT, 'docs', 'MANIFEST-release.json')
+
+
+def fingerprint(inputs):
+    """One SHA-256 for the code and data of a run: over the sorted list of input paths and their SHA-256. It does not
+    depend on git, so it identifies the code of a run made from an archive as well as from a clone."""
+    return hashlib.sha256(''.join(f'{p} {h}\n' for p, h in sorted(inputs.items())).encode()).hexdigest()
+
+
+def _git(*args):
+    try: r = subprocess.run(['git', '-C', ROOT, *args], capture_output=True, text=True)
+    except OSError: return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
 def build():
-    inputs = files(('data/**/*', 'src/**/*.py', 'src/app_template.html', 'run_all.sh', 'requirements*.txt'))
+    inputs = files(INPUTS)
     results = [f for f in files(('results/*.json', 'results/*.tsv')) if not f.endswith('MANIFEST.json')]
-    try: commit = subprocess.run(['git', '-C', ROOT, 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip() or None
-    except OSError: commit = None
+    commit = os.environ.get('LIPNET_COMMIT') or _git('rev-parse', 'HEAD')
     def version(p):
         try: return md.version(p)
         except md.PackageNotFoundError: return None
-    return dict(python=platform.python_version(), platform=platform.platform(), commit=commit, rebuilt_from_scratch=bool(os.environ.get('LIPNET_REBUILD') or os.environ.get('LIPNET_REBUILT')),
-                packages={p: version(p) for p in PACKAGES}, inputs={f: sha256(f'{ROOT}/{f}') for f in inputs}, results={f: sha256(f'{ROOT}/{f}') for f in results})
+    ins = {f: sha256(f'{ROOT}/{f}') for f in inputs}
+    return dict(python=platform.python_version(), platform=platform.platform(), commit=commit, inputs_fingerprint=fingerprint(ins),
+                rebuilt_from_scratch=bool(os.environ.get('LIPNET_REBUILD') or os.environ.get('LIPNET_REBUILT')),
+                packages={p: version(p) for p in PACKAGES}, inputs=ins, results={f: sha256(f'{ROOT}/{f}') for f in results})
+
+
+def stamp_release():
+    """Record in docs/MANIFEST-release.json the commit that holds the code and data the release was rebuilt from.
+    Run it in the repository right after committing the code of a release, before committing the manifest: it refuses if
+    the inputs of the checkout are not the ones rebuilt, or if they differ from those of HEAD."""
+    m = json.load(open(RELEASE)); ins = {f: sha256(f'{ROOT}/{f}') for f in files(INPUTS)}
+    if fingerprint(ins) != m['inputs_fingerprint'] or ins != m['inputs']:
+        print('the inputs of this checkout are not those of the rebuild recorded in docs/MANIFEST-release.json; nothing written'); return 1
+    head = _git('rev-parse', 'HEAD')
+    if not head: print('no git repository here; nothing written'); return 1
+    if _git('status', '--porcelain', '--', 'data', 'src', 'run_all.sh', 'requirements.txt', 'requirements-lock.txt'):
+        print('the code or data differ from HEAD: commit them first; nothing written'); return 1
+    m['commit'] = head; m['commit_note'] = 'the commit holding the code and data that were rebuilt; the manifest itself is committed after it'
+    json.dump(m, open(RELEASE, 'w'), indent=1); print(f'docs/MANIFEST-release.json: commit {head}, inputs {m["inputs_fingerprint"][:12]}'); return 0
+
+
+def verify_release(path=RELEASE):
+    """The release manifest names a commit of this repository whose code and data are, file by file, the ones that were
+    rebuilt, and nothing in data/ or src/ has changed between that commit and HEAD."""
+    m = json.load(open(path)); c = m.get('commit'); bad = []
+    if fingerprint(m['inputs']) != m.get('inputs_fingerprint'): bad.append('the fingerprint does not match the inputs listed in the manifest')
+    if not c: bad.append('the manifest names no commit: run python src/manifest.py stamp-release after committing the code')
+    elif _git('cat-file', '-e', f'{c}^{{commit}}') is None: bad.append(f'commit {c} is not in this repository (a shallow clone needs fetch-depth: 0)')
+    else:
+        for p, h in m['inputs'].items():
+            try: blob = subprocess.run(['git', '-C', ROOT, 'show', f'{c}:{p}'], capture_output=True).stdout
+            except OSError: blob = b''
+            if hashlib.sha256(blob).hexdigest() != h: bad.append(f'{p} at {c[:10]} is not the file that was rebuilt')
+        changed = _git('diff', '--name-only', c, 'HEAD', '--', 'data', 'src', 'run_all.sh', 'requirements.txt', 'requirements-lock.txt')
+        if changed: bad.append('changed since the rebuilt commit: ' + changed.replace('\n', ', '))
+    print('\n'.join(bad) if bad else f"the release was rebuilt from commit {c}: {len(m['inputs'])} inputs identical, inputs {m['inputs_fingerprint'][:12]}"); return 1 if bad else 0
 
 
 def figures():
@@ -96,5 +147,7 @@ def compare(path, strict=False):
 
 if __name__ == '__main__':
     if sys.argv[1:] == ['check']: sys.exit(check())
+    if sys.argv[1:] == ['stamp-release']: sys.exit(stamp_release())
+    if sys.argv[1:] == ['verify-release']: sys.exit(verify_release())
     if len(sys.argv) >= 3 and sys.argv[1] == 'compare': sys.exit(compare(sys.argv[2], strict='--strict' in sys.argv))
     os.makedirs(OUT, exist_ok=True); m = build(); json.dump(m, open(f'{OUT}/MANIFEST.json', 'w'), indent=1); print(f"wrote results/MANIFEST.json ({len(m['results'])} results, {len(m['inputs'])} inputs)")

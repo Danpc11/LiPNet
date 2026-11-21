@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }                           # the whole history, so the commit the release manifest names is here
       - uses: actions/setup-python@v5
         with: { python-version: '3.13' }
       - run: pip install -r requirements-lock.txt
@@ -25,6 +26,9 @@ jobs:
       - run: python src/manifest.py check
         env: { PYTHONPATH: src }
       - run: python src/manifest.py compare docs/MANIFEST-release.json
+        env: { PYTHONPATH: src }
+      - run: python src/manifest.py verify-release
+        if: startsWith(github.ref, 'refs/tags/')
         env: { PYTHONPATH: src }
   # The loosest environment the code claims to run on: an older Python and whatever versions requirements.txt resolves
   # to today. Tests only, on a clone where nothing has been run.

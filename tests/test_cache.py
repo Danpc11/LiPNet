@@ -83,3 +83,17 @@ def test_the_documents_quote_the_cohort_level_test_and_an_exploratory_p4():
     assert 'does not show that the three settings share a physiological regime' in p4 and 'common haemodynamic regime' not in both and 'LiPNet predicts' not in p4
     main = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))['primary (SFSS or early dysfunction)']
     assert f"{main['mu_beta']:+.2f} ({main['mu_beta_ci'][0]:+.2f}, {main['mu_beta_ci'][1]:+.2f})" in theory and '+1.56 (+0.35' not in both, 'one primary estimate'
+
+
+def test_the_release_manifest_is_the_code_of_this_tree():
+    """docs/MANIFEST-release.json is the record of the clean rebuild of the release. Its fingerprint must be the one of the
+    code and data of this tree, file by file; if it names a commit present here, that commit must hold the same files."""
+    import manifest, subprocess
+    m = json.load(open(os.path.join(ROOT, 'docs', 'MANIFEST-release.json')))
+    now = {f: manifest.sha256(os.path.join(ROOT, f)) for f in manifest.files(manifest.INPUTS)}
+    assert m['inputs_fingerprint'] == manifest.fingerprint(m['inputs']), 'the fingerprint is the one of the inputs it lists'
+    diff = sorted(f for f in set(now) | set(m['inputs']) if now.get(f) != m['inputs'].get(f))
+    assert not diff, 'the release manifest is not the rebuild of this code: ' + ', '.join(diff[:8])
+    c = m.get('commit')
+    if c and manifest._git('cat-file', '-e', f'{c}^{{commit}}') is not None:
+        assert manifest.verify_release() == 0
