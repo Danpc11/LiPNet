@@ -15,7 +15,7 @@ def test_one_meaning_per_colour():
 
 
 def test_every_figure_of_the_article_has_a_function():
-    assert list(pf.FIGURES) == ['1', '2', '3', '4', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
+    assert list(pf.FIGURES) == ['1', '2', '3', '4', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8']
 
 
 def test_a_figure_is_drawn_at_the_width_of_the_page(tmp_path):

@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.8.0-1f6feb)
+![Version](https://img.shields.io/badge/version-0.9.0-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 Code and data for the article *Vascular resistance decouples portal flow from pressure in small-for-size liver grafts*.
@@ -49,6 +49,8 @@ Single steps:
 | `python src/predictions.py` | predictions P1 to P4, `results/predictions.json` |
 | `python src/model/liver.py`, `human.py` | the network in a human liver and in a graft, `results/model_liver.json`, `model_human.json` |
 | `python src/model/distension.py` | passive distensibility relations, `results/model_distension.json` |
+| `python src/model/viscosity.py` | resistance of the network with the blood of the recipient, `results/model_viscosity.json` |
+| `python src/model/hepatectomy.py` | published hepatectomies against the model, `results/model_hepatectomy.json` |
 | `python src/fem/run_fem.py all` | lobule finite elements, `results/fem_*` |
 | `python src/ipd/run_ipd.py all` | within-group dispersion model, curve reconstruction, `results/ipd_*.json` |
 | `python src/paper_figures.py [1 2 S3 ...]` | the figures of the article, `results/Figure_*.pdf/.png` |
@@ -69,6 +71,11 @@ them are at the end of `run_all.sh`.
   a graft from its flow load alone (`predictions.p2_model_against_observed`).
 - **Passive distensibility** (`model/distension.py`, `model/compartments.py`). Three published relations of the
   normal liver applied to the whole liver or vessel by vessel, as scenarios; uncertainty drawn jointly.
+- **Blood viscosity** (`model/viscosity.py`). Resistance of the same network at the haematocrit of the recipient,
+  from a published in vivo viscosity law applied vessel by vessel; checked against perfused livers
+  (`data/kamikado2004.tsv`).
+- **External check** (`model/hepatectomy.py`, `data/hepatectomy.tsv`). Published hepatectomies, the same liver
+  before and after resection, against the rigid network and the three relations.
 - **Clinical data** (`data/series.tsv`). Groups of published adult living-donor series, one row per reported group,
   with a provenance label on every value. Groups defined only by a cut-off and second partitions of a counted cohort
   are excluded from the main analysis.
@@ -88,14 +95,16 @@ src/
   predictions.py        P1-P4
   audit.py              sampling intervals and checks of the extraction table
   model/                network model (network, network3d, scaling, liver, human, whole_graft,
-                        distension, compartments, certify, graph_scaling, verify_campaigns)
+                        distension, compartments, viscosity, hepatectomy, certify, graph_scaling,
+                        verify_campaigns)
   fem/                  lobule finite elements
   ipd/                  patient-level layer
   paper_figures.py      figures of the article; figstyle.py, their style
   plots.py              working plots
   cache.py, manifest.py fingerprints of cached fits; manifest of a run
   build_app.py          browser calculator
-data/                   series.tsv, interventions.tsv, patient_level/, cached network tables
+data/                   series.tsv, interventions.tsv, patient_level/, hepatectomy.tsv, kamikado2004.tsv,
+                        cached network tables
 results/                generated; the cached fits and predictions.json are kept
 tests/                  pytest suite
 docs/MANIFEST-release.json   record of the clean rebuild of the release
@@ -130,6 +139,10 @@ table and page it comes from. Structural columns (`centre_id`, `cohort_id`, `rec
 | Osman 2017 | Hepatol Res 2017;47:293–302 | [10.1111/hepr.12727](https://doi.org/10.1111/hepr.12727) |
 | Yao 2018 | Transplantation 2018;102:623–631 | [10.1097/TP.0000000000002047](https://doi.org/10.1097/TP.0000000000002047) |
 
+`data/hepatectomy.tsv` holds the published hepatectomies (one row per state, before and after resection, with the
+place in the paper of each value) and `data/kamikado2004.tsv` the resistances of perfused livers by haematocrit,
+digitised from the figure of the paper.
+
 To add a series, append rows to `data/series.tsv` with every `*_basis` filled; `tests/test_indices.py` rejects a
 value without provenance. `data/cohort_template.tsv` is the format for a centre's own recipients.
 
@@ -139,6 +152,7 @@ value without provenance. `data/cohort_template.tsv` is the format for a centre'
 |---|---|
 | `test_indices.py` | loads, provenance, fits, calculator |
 | `test_liver.py`, `test_human.py` | network in a human liver, distensibility relations and solvers |
+| `test_external.py` | viscosity law, perfused livers, published hepatectomies |
 | `test_campaigns.py`, `test_fem.py`, `test_ipd.py` | network campaigns, lobule model, patient-level layer |
 | `test_cache.py` | cached fits and `predictions.json` are those of the current code; release manifest |
 | `test_figures.py` | figures and their provenance |

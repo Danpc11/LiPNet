@@ -18,9 +18,11 @@ python src/fem/run_fem.py all --quiet   # lobule finite elements -> results/fem_
 python src/model/liver.py > /dev/null    # the model applied to a human liver and a partial graft -> results/model_liver.json
 python src/model/human.py > /dev/null    # the model in physical units, growth and regrowth -> results/model_human.json
 python src/model/distension.py > /dev/null   # what a passively distensible bed can account for, as bounds -> results/model_distension.json
+python src/model/viscosity.py > /dev/null    # the network perfused with the blood of the recipient -> results/model_viscosity.json
+python src/model/hepatectomy.py > /dev/null  # published hepatectomies against the model -> results/model_hepatectomy.json
 python src/audit.py                     # what the table and the fits support -> results/audit.json
 if [ -n "$LIPNET_REBUILT" ] || [ ! -f results/campaign_check.json ]; then python src/model/verify_campaigns.py; fi   # the cached tables of the model against the code that writes them -> results/campaign_check.json
-python src/paper_figures.py             # the eleven figures of the article in one style -> results/Figure_*.pdf/.png 
+python src/paper_figures.py             # the twelve figures of the article in one style -> results/Figure_*.pdf/.png 
 python src/manifest.py                  # hashes of inputs and results, versions -> results/MANIFEST.json (python src/manifest.py check: numbers, figures, tables of the model)
 # The tables of the model in data/ (graph_scaling_all, graph3d_all, certificate_small) are cached, not rebuilt above.
 # verify_campaigns.py reruns the code behind them and compares every number (3 to 4 minutes); to write them again:

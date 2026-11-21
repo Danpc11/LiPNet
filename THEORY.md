@@ -120,6 +120,23 @@ with $s$ the share of the resistance in the distending vessels (all vessels; pre
 venous tree; portal tree) taken from the network. The coupled system pressure → calibre → resistance → pressure is
 solved as a fixed point for the factor of each generation, with a convergence check on the original equations.
 
+**Blood viscosity** (`model/viscosity.py`). The loads are normalised to a liver perfused with normal blood. With
+$\eta(D,H)$ the apparent viscosity of blood in a vessel of diameter $D$ at haematocrit $H$ (in vivo law of Pries et
+al. 1994) and $w_i$ the share of the pressure drop in generation $i$, the resistance of the network with the blood
+of the recipient is that with the reference blood times
+
+$$v=\sum_i w_i\,\frac{\eta(D_i,H_{\text{recipient}})}{\eta(D_i,H_{\text{reference}})}.$$
+
+The factor multiplies the load of the rigid network before any relation is applied: $G=g_0\,z_F\,z_R^{\text{rigid}}\,v\,d(G)$.
+
+**Hepatectomy** (`model/hepatectomy.py`). A resection that leaves a fraction $g$ of the liver with its portal
+inflow is its own reference: loads are ratios of the state after to the state before. The trunk stays and carries
+$g\,z_F$ times its flow, the other generations $z_F$:
+
+$$z_R^{\text{rigid}}=\big(1-\rho\,(1-g)\big)\left[s_{in}+(1-s_{in})\frac{z_F+\varphi a}{(1+a)\,z_F}\right],$$
+
+with $\rho$ the share of the trunks in the donor drop and $a$, $\varphi$ from the arterial flows measured.
+
 ## 7. The lobule
 
 `src/fem/` solves one hexagonal lobule (circumradius 0.55 mm, height 2 mm, central vein 30 µm) by finite elements.

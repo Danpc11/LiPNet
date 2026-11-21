@@ -2,6 +2,12 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] – 2026-11-21
+- `model/viscosity.py`: resistance of the network at the haematocrit of the recipient (in vivo viscosity law, vessel by vessel); `published_check` against perfused livers (`data/kamikado2004.tsv`); `clinical`.
+- `model/hepatectomy.py`, `data/hepatectomy.tsv`: published hepatectomies against the rigid network and the three relations.
+- `distension.bracket(viscosity=)`, `distension.joint(haematocrit=)`; without the argument the results are unchanged.
+- Figure S8; `tests/test_external.py`.
+
 ## [0.8.0] – 2026-11-21
 - Documentation reduced to `README.md`, `THEORY.md` and this file; `docs/` keeps only `MANIFEST-release.json`.
 - Removed the documentation-content tests.

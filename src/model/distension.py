@@ -210,15 +210,16 @@ def _place(value, ci, region):
                 interval='below' if ci[1] < lo else ('above' if ci[0] > hi else 'reaches'))
 
 
-def bracket(d):
+def bracket(d, viscosity=(1.0, 1.0)):
     """Each group against four regions of the model: the rigid network, the relations that keep distending, the one
     that stops, and the span of all three. For each region the point estimate and the sampling interval are placed
-    with the same rule (`_place`). This is a description: a sampling interval reaching a region is not a probability
+    with the same rule (`_place`). `viscosity` is the range of the factor by which the blood of the
+    recipient changes the resistance of the rigid network (viscosity.factor_range); 1 is normal blood. This is a description: a sampling interval reaching a region is not a probability
     that the mechanism of that region acts. `joint` gives the draws of every uncertainty together."""
     import audit
     CI = {(x['study'], x['group']): x['zR_ci_sampling'] for x in audit.paired(d, correlations=())['groups']}; rows = []
     for g in groups(d):
-        lo, hi = rigid_range(g['zF']); cvps = (g['cvp'],) if g['cvp'] is not None else CVPS; sol = {}
+        lo, hi = rigid_range(g['zF']); lo, hi = lo * viscosity[0], hi * viscosity[1]; cvps = (g['cvp'],) if g['cvp'] is not None else CVPS; sol = {}
         for law in LAWS:
             z = [distensible(g['zF'], zr, c, law, p)['zR'] for zr in (lo, hi) for c in cvps for p in PARAMS[law]]; sol[law] = [round(min(z), 3), round(max(z), 3)]
         fam = lambda which: [min(sol[l][0] for l in LAWS if FAMILY[l] == which), max(sol[l][1] for l in LAWS if FAMILY[l] == which)]
@@ -412,7 +413,7 @@ def _bisect(fun, lo, hi, n=100):
     return x
 
 
-def joint(d, draws=20000, seed=7):
+def joint(d, draws=20000, seed=7, haematocrit=None):
     """Every source of uncertainty drawn together, group by group.
 
     measurement  the two group means, each with the dispersion the paper reports (the largest reported where none
@@ -424,6 +425,9 @@ def joint(d, draws=20000, seed=7):
                  and the donor's (the two inflows of P2, whose upper end is below that of the network alone, so the
                  probability of lying below the network is not inflated)
     relations    the doubling pressure uniform over 8 to 13 mmHg, the flow-independent share uniform over 0.26 to 0.35
+    blood        only with `haematocrit` = (range of the recipient, range of the reference): the factor of
+                 viscosity.draw multiplies the resistance of the rigid network, from its own generator so that the
+                 other draws are those of the call without it
     The observed zR and the zR of each model are computed from the same draw, so the references they share cancel where
     they should. The references are common to the groups, so these are statements about one group at a time."""
     import audit
@@ -431,6 +435,8 @@ def joint(d, draws=20000, seed=7):
     from model import compartments as cm
     G8 = cm.geometries(); s_in = np.array([x[1][:x[2]].sum() for x in G8]); rem = np.array([x[3] for x in G8]); a = cm.A_RATIO
     rows = []; U = lambda lo, hi: rng.uniform(lo, hi, draws)
+    if haematocrit is not None:
+        from model import viscosity; rv = np.random.default_rng(seed + 1)
     for _, r in d.dropna(subset=['zF', 'zP']).iterrows():
         g = A[(r.study, r.group)]; rep = audit.REPORTED[(r.study, r.group)]
         stored = r.donor_PVF_per_100g_ref; ref = U(*DONOR_FLOW) * (1.0 if (pd.isna(stored) or stored == indices.DEFAULT_DONOR_REF) else stored / indices.DEFAULT_DONOR_REF)
@@ -442,7 +448,9 @@ def joint(d, draws=20000, seed=7):
             grad = r.PVP + g['gradient_sd_used'] / np.sqrt(rep['n_grad']) * rng.standard_normal(draws) - cvp
         g0 = U(*NORMAL_GRADIENTS); zF = flow / ref; zR_obs = grad / g0 / zF
         i = rng.integers(0, len(G8), draws); phi = rng.uniform(0, 1, draws)
-        zR_rig = (1 - rem[i]) * (s_in[i] * zF + (1 - s_in[i]) * (zF + phi * a) / (1 + a)) / zF; Q = g0 * zF * zR_rig
+        zR_rig = (1 - rem[i]) * (s_in[i] * zF + (1 - s_in[i]) * (zF + phi * a) / (1 + a)) / zF
+        if haematocrit is not None: zR_rig = zR_rig * viscosity.draw(rv, draws, *haematocrit)
+        Q = g0 * zF * zR_rig
         cube = _bisect(lambda G: Q * ((cvp + g0 / 2) / (cvp + G / 2)) ** CUBE - G, np.zeros(draws), 2 * Q + 1) / g0 / zF
         p = U(*DOUBLING_MMHG); comp = _bisect(lambda G: Q * np.maximum(1 + (G - g0) / p, 1e-9) ** -2.0 - G, np.zeros(draws), 2 * Q + 1) / g0 / zF
         f = U(*FLOW_FIXED_SHARE); pf = (f + (1 - f) * zF * zR_rig) / zF
