@@ -140,6 +140,36 @@ def test_the_calculator_gives_the_resistance_load_of_the_model():
     assert abs(out['thr']['zR'] - vs.thresholds()['zR_where_they_agree']) < 1e-3 and out['thr']['flow'] == 250 and out['thr']['gradient'] == 10
 
 
+def test_the_calculator_labels_use_the_thresholds_of_the_clinic():
+    """The page places a value against the thresholds in clinical use, which are constants of the code and cut-offs by
+    which the series of the table define their groups; it reads the effect of a manoeuvre from data/interventions.tsv,
+    converts a haemoglobin with the constant of the code and names the release it was built from. Run with node."""
+    import shutil, tempfile, pytest
+    from model import viscosity as vs
+    assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True).returncode == 0
+    html = open(os.path.join(ROOT, 'sfss_calculator.html'), encoding='utf-8').read()
+    version = re.search(r'^version: (\S+)', open(os.path.join(ROOT, 'CITATION.cff')).read(), re.M).group(1)
+    assert f'release v{version}.' in html and 'id="hb"' in html and 'id="hct"' in html
+    net = json.loads(re.search(r'const NET=(\{.*?\});\n', html, re.S).group(1)); thr = net['thr']
+    assert thr['flow'] == vs.FLOW_THRESHOLD == 250 and thr['gradient'] == vs.GRADIENT_THRESHOLD == 10 and thr['pvp'] == list(vs.PVP_THRESHOLDS) == [15, 20] and net['hb'] == vs.HB_TO_HCT
+    groups = ' | '.join(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t').group.astype(str))
+    assert 'PVP <15' in groups and 'PVP >=20' in groups and '>250' in groups, 'the thresholds are cut-offs the series themselves use'
+    m = pd.read_csv(os.path.join(ROOT, 'data', 'interventions.tsv'), sep='\t').dropna(subset=['delta_PVP_mmHg']); sh = m.manoeuvre.str.contains('shunt')
+    assert net['mod'] == dict(pvp=[float(-m[~sh].delta_PVP_mmHg.max()), float(-m[~sh].delta_PVP_mmHg.min())], shunt=float(-m[sh].delta_PVP_mmHg.mean()))
+    for old in ('steal risk', '>3× donor', 'above window', 'To bring z'): assert old not in html, old
+    node = shutil.which('node')
+    if not node: pytest.skip('node is not installed: the script of the page is not run')
+    tags = html[html.index('// TAGS BEGIN'):html.index('// TAGS END')]
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
+        f.write('const GN=5;const NET=' + json.dumps(net) + ';\n' + tags + '\nconsole.log(JSON.stringify({p:[[1.8,14],[2.4,17],[3.2,21],[0.8,9]].map(a=>tagP(a[0],a[1])),'
+                'f:[[2.59,233],[3.33,300],[0.74,67]].map(a=>tagF(a[0],a[1])), n:[14,17,21].map(pvpNote), h:[hctOf("28",""),hctOf("","9.5"),hctOf("5",""),hctOf("","2"),hctOf("28","9.5"),hctOf("","")]}));')
+    o = json.loads(subprocess.run([node, f.name], capture_output=True, text=True, check=True).stdout)
+    assert [x[0] for x in o['p']] == ['ok', 'warn', 'bad', 'ok'] and '10 mmHg' in o['p'][1][1] and '20 mmHg' in o['p'][2][1]
+    assert [x[0] for x in o['f']] == ['ok', 'warn', 'warn'] and '250' in o['f'][1][1] and o['f'][2][1] == 'below donor flow'
+    assert 'below 15' in o['n'][0] and 'between 15 and 20' in o['n'][1] and 'at or above 20' in o['n'][2]
+    h = o['h']; assert h[0]['h'] == 0.28 and abs(h[1]['h'] - 0.285) < 1e-12 and h[2]['h'] is None and h[2]['bad'] and h[3]['bad'] and h[4]['h'] == 0.28 and h[5]['h'] is None and not h[5]['bad']
+
+
 def test_plots_and_calculator():
     env = dict(os.environ, PYTHONPATH=os.path.join(ROOT, 'src'), MPLBACKEND='Agg')
     names = ['nomogram', 'within_study', 'forest', 'centred', 'risk_change', 'series_pressure', 'series_flow']

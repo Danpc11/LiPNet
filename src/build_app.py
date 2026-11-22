@@ -12,8 +12,13 @@ Resistance load. The page computes, for the flow load and CVP entered, the zR a 
 (model/liver.two_inflows over the networks of model/compartments.geometries) and the range of the three passive
 relations of model/distension.py, with the same constants as the Python code; with a haematocrit, the same ranges with
 the factor of model/viscosity.py, and the resistance load at which the two clinical thresholds agree.
+
+Labels. A value is placed against the thresholds in clinical use (model/viscosity.py: FLOW_THRESHOLD, GRADIENT_THRESHOLD,
+PVP_THRESHOLDS), and the effect of each manoeuvre is read from data/interventions.tsv. The page names the release
+(CITATION.cff) it was built from.
 """
-import json, os, sys
+import json, os, re, sys
+import pandas as pd
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, os.path.join(ROOT, 'src'))
 from model import distension as ds, compartments as cm, viscosity as vs
@@ -25,11 +30,15 @@ lab = lambda st: st.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mor
 
 refs = {lab(g): dict(alpha=round(B['alphas_pooled_slope'][g], 4), band=B['pred_band_pooled_slope'][g], n=B['group_counts'][g]['n'],
                      events=B['group_counts'][g]['events'], zmin=B['group_counts'][g]['zmin'], zmax=B['group_counts'][g]['zmax']) for g in B['strata']}
+M = pd.read_csv(f'{ROOT}/data/interventions.tsv', sep='\t').dropna(subset=['delta_PVP_mmHg']); shunt = M.manoeuvre.str.contains('shunt')
+version = re.search(r'^version: (\S+)', open(f'{ROOT}/CITATION.cff').read(), re.M).group(1)
 centred = [dict(s=lab(p['stratum']), zc=round(p['zP_c'], 4), lc=round(p['log_odds_c'], 4), n=p['n']) for p in C['points']]
 net = dict(geoms=[[float(w[:k].sum()), float(rem)] for _, w, k, rem in cm.geometries()], a=cm.A_RATIO, g0=indices.NORMAL_GRADIENT, cube=ds.CUBE,
            doubling=list(ds.DOUBLING_MMHG), f=list(ds.FLOW_FIXED_SHARE), cvps=list(ds.CVPS), measured=max(ds.MEASURED_UP_TO.values()),
            visc=[dict(D=[float(x) for x in D], w=[float(x) for x in w]) for D, w, _ in (vs._network(b) for b in vs.human.B_CALIBRATED)], href=list(vs.HCT_REFERENCE),
-           thr=dict(flow=vs.FLOW_THRESHOLD, gradient=vs.GRADIENT_THRESHOLD, zR=vs.GRADIENT_THRESHOLD / indices.NORMAL_GRADIENT / (vs.FLOW_THRESHOLD / indices.DEFAULT_DONOR_REF)))
+           hb=vs.HB_TO_HCT,
+           mod=dict(pvp=[float(-M[~shunt].delta_PVP_mmHg.max()), float(-M[~shunt].delta_PVP_mmHg.min())], shunt=float(-M[shunt].delta_PVP_mmHg.mean())),
+           thr=dict(flow=vs.FLOW_THRESHOLD, gradient=vs.GRADIENT_THRESHOLD, pvp=list(vs.PVP_THRESHOLDS), zR=vs.GRADIENT_THRESHOLD / indices.NORMAL_GRADIENT / (vs.FLOW_THRESHOLD / indices.DEFAULT_DONOR_REF)))
 
 rep = {'__STUDIES__': json.dumps([lab(s) for s in B['strata']]), '__REFS__': json.dumps(refs), '__ZGRID__': json.dumps(B['zgrid']),
        '__CENTRED__': json.dumps(centred), '__NET__': json.dumps(net),
@@ -37,7 +46,8 @@ rep = {'__STUDIES__': json.dumps([lab(s) for s in B['strata']]), '__REFS__': jso
        '__GN__': f"{indices.NORMAL_GRADIENT:g}", '__CVP__': f"{indices.DEFAULT_CVP:g}",
        '__OR_ZP__': f"{B['OR_per_zP']:.2f}", '__OR_LO__': f"{B['OR_per_zP_ci'][0]:.2f}", '__OR_HI__': f"{B['OR_per_zP_ci'][1]:.2f}", '__OR_MM__': f"{B['OR_per_mmHg']:.2f}",
        '__REFOPTS__': ''.join(f'<option value="{k}">{k} — {100 * r["events"] / r["n"]:.0f}% overall</option>' for k, r in refs.items()),
-       '__NSTUDIES__': str(len(B['strata'])), '__NGROUPS__': str(B['groups'])}
+       '__NSTUDIES__': str(len(B['strata'])), '__NGROUPS__': str(B['groups']), '__VERSION__': version,
+       '__THR_G__': f'{vs.GRADIENT_THRESHOLD:g}', '__THR_P0__': f'{vs.PVP_THRESHOLDS[0]:g}', '__THR_P1__': f'{vs.PVP_THRESHOLDS[1]:g}', '__THR_F__': f'{vs.FLOW_THRESHOLD:g}'}
 t = open(f'{ROOT}/src/app_template.html').read()
 for k, v in rep.items(): t = t.replace(k, v)
 assert '__' not in t.replace('__proto__', ''), 'unfilled placeholder: ' + t[t.index('__') - 40:t.index('__') + 40]

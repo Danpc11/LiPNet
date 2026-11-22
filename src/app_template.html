@@ -17,7 +17,7 @@ h1{font-size:1.35rem;margin:0 0 4px}h2{font-size:1.05rem;margin:18px 0 8px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
 label{display:block;font-size:.85rem;color:var(--muted);margin-top:8px}
-input,select{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font-size:1rem;margin-top:3px}
+input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font-size:1rem;margin-top:3px}
 .big{font-size:2rem;font-weight:700}
 .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.8rem;font-weight:600;color:#fff}
 .ok{background:var(--ok)}.warn{background:var(--warn)}.bad{background:var(--bad)}.neutral{background:var(--muted)}
@@ -37,8 +37,9 @@ small{color:var(--muted)}
   <label>Portal venous pressure PVP, mmHg<input id="pvp" type="number" step="0.5" value="17"></label>
   <label>Central venous pressure CVP, mmHg <small>(blank = 5 mmHg assumed)</small><input id="cvp" type="number" step="0.5" value="5"></label>
   <label>Haematocrit at the measurement, % <small>(optional)</small><input id="hct" type="number" step="1" placeholder="e.g. 28"></label>
+  <label>or haemoglobin, g/dL <small>(used if no haematocrit is entered)</small><input id="hb" type="number" step="0.1" placeholder="e.g. 9.5"></label>
   <label>Portal venous pressure after the planned change, mmHg<input id="pvp2" type="number" step="0.5" placeholder="e.g. 12"></label>
-  <p style="font-size:.8rem;color:var(--muted);margin:8px 0 0">Normal gradient fixed at __GN__ mmHg (the coefficients were fitted on it).</p>
+  <p style="font-size:.8rem;color:var(--muted);margin:8px 0 0">Normal gradient fixed at __GN__ mmHg (the coefficients were fitted on it). Thresholds shown: gradient __THR_G__ mmHg, PVP __THR_P0__ and __THR_P1__ mmHg, flow __THR_F__ mL/min/100 g.</p>
  </div>
  <div class="card"><h2 style="margin-top:0">Flow</h2>
   <label>Graft portal flow PVF, mL/min<input id="pvf" type="number" step="10" value="1800"></label>
@@ -88,7 +89,7 @@ small{color:var(--muted)}
 <tr><td>Middle hepatic vein / outflow</td><td>PVF 3.9× donor with gradient 6 mmHg and no injury: pressure falls below flow</td><td>Chan 2011</td></tr></table>
 <small>A gradient under normal with low flow is the pattern of portal steal. Troisi calibrated shunts to about twice the donor flow; Kyoto reported steal with a 23.7% GV/SLV graft.</small></div>
 
-<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Yagi 2005, Yagi 2006, Yamada 2008, Botha 2010, Ogura 2010, Ou 2010, Chan 2011, Wu 2011, Ishizaki 2012, Vasavada 2014, Wang 2014, Alim 2016, Uemura 2016, Kanetkar 2017, Osman 2017 and Yao 2018. Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Hernández-Lemus E, Cervera A, Tovar H, Pérez-Calixto D. Vascular resistance decouples portal flow from pressure in small-for-size liver grafts. 2026. Source: https://github.com/Danpc11/LiPNet</small></p>
+<p><small>Data extracted from the original tables of Troisi 2003, Troisi 2005, Yagi 2005, Yagi 2006, Yamada 2008, Botha 2010, Ogura 2010, Ou 2010, Chan 2011, Wu 2011, Ishizaki 2012, Vasavada 2014, Wang 2014, Alim 2016, Uemura 2016, Kanetkar 2017, Osman 2017 and Yao 2018. Vázquez-Victorio G, Pérez-Calixto M, Escutia-Guadarrama L, Hernández-Lemus E, Cervera A, Tovar H, Pérez-Calixto D. Vascular resistance decouples portal flow from pressure in small-for-size liver grafts. 2026. Source: https://github.com/Danpc11/LiPNet, release v__VERSION__.</small></p>
 </main>
 <script>
 const STUDIES=__STUDIES__;
@@ -112,8 +113,17 @@ function passiveRanges(zF,cvps,v){const r0=rigidRange(zF,true),r=v?[r0[0]*v[0],r
  return {keep:[Math.min(...keep),Math.max(...keep)],stop:[Math.min(...stop),Math.max(...stop)]};}
 // MODEL END
 const $=id=>document.getElementById(id);
-function tagP(z){if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];if(z<1)return['warn','below normal: steal risk'];if(z<=2)return['ok','1–2 × normal gradient'];if(z<=2.5)return['warn','above window'];return['bad','high'];}
-function tagF(z){if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow: steal risk'];if(z<=2)return['ok','1–2× donor'];if(z<=3)return['warn','2–3× donor'];return['bad','>3× donor'];}
+// TAGS BEGIN: where a value stands against the thresholds in clinical use (NET.thr), not against multiples of the donor
+function tagP(z,pvp){const T=NET.thr;if(isNaN(z))return['neutral','no data'];if(z<=0)return['warn',z===0?'zero pressure gradient':'negative gradient: check PVP and CVP'];
+ if(!isNaN(pvp)&&pvp>=T.pvp[1])return['bad','PVP at or above '+T.pvp[1]+' mmHg'];if(z*GN>T.gradient)return['warn','gradient above '+T.gradient+' mmHg'];return['ok','gradient at or below '+T.gradient+' mmHg'];}
+function pvpNote(pvp){const T=NET.thr.pvp;if(isNaN(pvp))return'';return 'PVP '+pvp.toFixed(1)+' mmHg, '+(pvp<T[0]?'below '+T[0]:(pvp<T[1]?'between '+T[0]+' and '+T[1]:'at or above '+T[1]))+' mmHg';}
+function tagF(z,f100){const T=NET.thr;if(isNaN(z))return['neutral','no data'];if(z===0)return['bad','no portal inflow'];if(z<1)return['warn','below donor flow'];
+ if(f100>T.flow)return['warn','above '+T.flow+' mL/min/100 g'];return['ok','at or below '+T.flow+' mL/min/100 g'];}
+function hctOf(hRaw,bRaw){const ok=(v,lo,hi)=>v!==''&&isFinite(+v)&&+v>=lo&&+v<=hi;
+ if(hRaw!=='')return ok(hRaw,10,60)?{h:+hRaw/100,from:'',bad:''}:{h:NaN,from:'',bad:'Haematocrit must be between 10 and 60%.'};
+ if(bRaw!=='')return ok(bRaw,3.5,20)?{h:+bRaw*NET.hb,from:' (from a haemoglobin of '+(+bRaw).toFixed(1)+' g/dL, taking haematocrit as '+(100*NET.hb).toFixed(0)+' times it)',bad:''}:{h:NaN,from:'',bad:'Haemoglobin must be between 3.5 and 20 g/dL.'};
+ return {h:NaN,from:'',bad:''};}
+// TAGS END
 function calc(){
  const pvpRaw=$('pvp').value, cvpRaw=$('cvp').value, pvp2Raw=$('pvp2').value, baseRaw=$('base').value;
  const ref=$('ref').value, bgRaw=$('basegrad').value;
@@ -131,9 +141,9 @@ function calc(){
  const zP=(isNaN(pvp)||isNaN(cvp))?NaN:(pvp-cvp)/gn;
  const pvp2=(pvp2Raw===''||!isFinite(+pvp2Raw)||+pvp2Raw<0)?NaN:+pvp2Raw;
  if(pvp2Raw!==''&&isNaN(pvp2))pressMsg.push('The pressure after the change must be a non-negative number.'); const zP2=(isNaN(pvp2)||isNaN(cvp))?NaN:(pvp2-cvp)/gn;
- $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tagP(zP);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
- $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'')+(isNaN(zP2)?'':' → '+(pvp2-cvp).toFixed(1)+' mmHg (z_P '+zP2.toFixed(2)+')');
- $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tagF(zF);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
+ $('zp').textContent=isNaN(zP)?'–':zP.toFixed(2);let t=tagP(zP,pvp);$('zptag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';
+ $('zpsub').textContent=isNaN(zP)?'':'gradient '+(pvp-cvp).toFixed(1)+' mmHg'+(cvpAssumed?' (CVP not entered: 5 mmHg assumed)':'')+(isNaN(zP2)?'':' → '+(pvp2-cvp).toFixed(1)+' mmHg (z_P '+zP2.toFixed(2)+')')+'; '+pvpNote(pvp);
+ $('zf').textContent=isNaN(zF)?'–':zF.toFixed(2);t=tagF(zF,pvf100);$('zftag').innerHTML='<span class="tag '+t[0]+'">'+t[1]+'</span>';$('zfsub').textContent=isNaN(zF)?'':pvf100.toFixed(0)+' mL/min/100 g';
  let msg=pressMsg.concat(flowMsg);
  if(!isNaN(zP)&&!isNaN(zP2)){
    const dz=zP2-zP, or_=Math.exp(BETA*dz), orlo=Math.exp(BLO*dz), orhi=Math.exp(BHI*dz);
@@ -157,21 +167,23 @@ function calc(){
      else msg.push('Enter your rate at the starting gradient, or pick another reference above, to convert this odds ratio into an absolute risk.');
    }
  } else { $('risk').textContent='–'; $('risksub').textContent=isNaN(zP)?'':'enter the pressure after the planned change'; }
- if(!isNaN(zP)){if(zP>2){const dP=((zP-2)*gn).toFixed(1);msg.push('To bring z<sub>P</sub> to 2 the gradient must fall by about '+dP+' mmHg (PVP '+(pvp-(zP-2)*gn).toFixed(1)+' mmHg at current CVP). Splenic artery ligation or splenectomy lowered PVP by 4–6 mmHg on average in the published series; a hemiportocaval shunt gave about 9 mmHg and needs banding to avoid steal.');}
+ if(!isNaN(zP)){const grad=zP*gn, thr=NET.thr.gradient;
+  if(grad>thr){msg.push('The gradient is '+(grad-thr).toFixed(1)+' mmHg above the clinical threshold of '+thr+' mmHg, which a PVP of '+(cvp+thr).toFixed(1)+' mmHg would meet at this CVP. In the published series, splenectomy or intentional pressure control lowered PVP by '+NET.mod.pvp[0].toFixed(1)+' to '+NET.mod.pvp[1].toFixed(1)+' mmHg on average and a hemiportocaval shunt by '+NET.mod.shunt.toFixed(1)+' mmHg, banded to avoid steal. These are reported effects, not a recommendation: the model gives no rule for choosing a manoeuvre.');}
   else if(zP<=0){msg.push(zP===0?'Portal and central venous pressures are equal: no portocaval gradient. Check the measurements or the position of the catheters.':'PVP below CVP: the gradient is negative, which is not physiological; check the measurements.');}
-  else if(zP<1){msg.push('The gradient is below the normal value; with low flow this is the pattern of portal steal. Check for over-shunting.');}
+  else if(zP<1){msg.push('The gradient is below the '+gn+' mmHg of a healthy donor.'+(isNaN(zF)?' With a flow below the donor\u2019s that would be the pattern of portal steal; enter the flow to see.':(zF<1?' With a flow below the donor\u2019s this is the pattern of portal steal: check for over-shunting.':'')));}
   if(cvpAssumed)msg.push('CVP was not entered, so 5 mmHg was assumed; each mmHg shifts z<sub>P</sub> by 0.2. Enter the measured value when available.');}
  $('zr').textContent='–'; $('zrsub').textContent='';
  if(!isNaN(zP)&&!isNaN(zF)&&zF>0){const r=zP/zF; $('zr').textContent=r.toFixed(2);
    const rg=rigidRange(zF,false), pr=passiveRanges(zF,cvpAssumed?NET.cvps:[cvp]), f2=v=>v.toFixed(2), rng=v=>f2(v[0])+'–'+f2(v[1]);
-   const hRaw=$('hct').value, hct=(hRaw===''||!isFinite(+hRaw)||+hRaw<10||+hRaw>60)?NaN:+hRaw/100, vf=isNaN(hct)?null:viscFactor(hct), ra=rigidRange(zF,true), rb=vf?[ra[0]*vf[0],ra[1]*vf[1]]:null, pb=vf?passiveRanges(zF,cvpAssumed?NET.cvps:[cvp],vf):null;
+   const HC=hctOf($('hct').value,$('hb').value), hct=HC.h, vf=isNaN(hct)?null:viscFactor(hct), ra=rigidRange(zF,true), rb=vf?[ra[0]*vf[0],ra[1]*vf[1]]:null, pb=vf?passiveRanges(zF,cvpAssumed?NET.cvps:[cvp],vf):null;
    const lowest=Math.min(pr.keep[0],pr.stop[0],pb?pb.keep[0]:9,pb?pb.stop[0]:9), where=r>1?'above the donor value':(r>=rg[0]?'within the range of a rigid network':(rb&&r>=rb[0]?'within a rigid network with this blood':(r>=lowest?'below a rigid network and within the passive relations':'below a rigid network and below every passive relation')));
    $('zrsub').textContent=where;
    msg.push('Resistance load z<sub>R</sub> = '+f2(r)+', the effective resistance of the graft relative to the donor. At this flow load a rigid network gives a partial graft '+rng(rg)+' (its geometry and the arterial inflow). Three published relations of the normal liver give '+rng(pr.keep)+' (the two that keep distending) and '+rng(pr.stop)+' (the one that stops)'+(cvpAssumed?', over a CVP of 3 to 9 mmHg':'')+(zF>NET.measured?'; they were measured up to '+NET.measured+' times the control flow, so at this flow load they are extrapolations':'')+'. '+
      (r>1?'Pressure is high relative to flow, the pattern of an outlet narrowing or a raised CVP.':(r<lowest?'What lowers resistance this far is not in the model.':'')));
-   if(vf)msg.push('Those ranges are for normal blood. At a haematocrit of '+(100*hct).toFixed(0)+'%, against '+(100*NET.href[0]).toFixed(0)+' to '+(100*NET.href[1]).toFixed(0)+'%, the resistance of the same network is '+rng(vf)+' times as high: a rigid network gives '+rng(rb)+', and the relations '+rng(pb.keep)+' and '+rng(pb.stop)+'.');
-   else msg.push('Enter the haematocrit at the measurement to see the same ranges with the blood of the recipient: resistance is proportional to blood viscosity.');
-   msg.push('The clinical thresholds of '+NET.thr.flow+' mL/min/100 g and a gradient of '+NET.thr.gradient+' mmHg agree only at z<sub>R</sub> = '+NET.thr.zR.toFixed(2)+'; '+(r<NET.thr.zR?'below it a graft reaches the pressure threshold at a higher flow.':'above it a graft reaches the pressure threshold at a lower flow.'));}
+   if(HC.bad)msg.push(HC.bad);
+   if(vf)msg.push('Those ranges are for normal blood. At a haematocrit of '+(100*hct).toFixed(HC.from?1:0)+'%'+HC.from+', against '+(100*NET.href[0]).toFixed(0)+' to '+(100*NET.href[1]).toFixed(0)+'%, the resistance of the same network is '+rng(vf)+' times as high: a rigid network gives '+rng(rb)+', and the relations '+rng(pb.keep)+' and '+rng(pb.stop)+'.');
+   else msg.push('Enter the haematocrit or the haemoglobin at the measurement to see the same ranges with the blood of the recipient: resistance is proportional to blood viscosity.');
+   msg.push('The clinical thresholds of '+NET.thr.flow+' mL/min/100 g and a gradient of '+NET.thr.gradient+' mmHg agree only at z<sub>R</sub> = '+NET.thr.zR.toFixed(2)+'; '+(Math.abs(r-NET.thr.zR)<0.005?'this graft is at it.':(r<NET.thr.zR?'below it, as here, a graft reaches the pressure threshold at a higher flow.':'above it, as here, a graft reaches the pressure threshold at a lower flow.')));}
  else if(!isNaN(zF)&&isNaN(zP))msg.push('Only flow is available; the resistance load needs PVP and CVP as well.');
  LAST = {pvp: pvp, cvp: cvp, cvpAssumed: cvpAssumed, pvf: pvf, gw: gw,
          grwr: (R.state === 'ok' ? R.v : NaN), rw: (W.state === 'ok' ? W.v : NaN), dref: dref,

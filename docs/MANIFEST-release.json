@@ -1,8 +1,8 @@
 {
  "python": "3.13.18",
  "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
- "commit": "7982e831581bbade325bf39934213680c45183ab",
- "inputs_fingerprint": "d46e157b9a86d165994242e68d1d57646c5219a3e855426df1b2ccaa82bf24bd",
+ "commit": null,
+ "inputs_fingerprint": "3f9acef32f79638529263aedac287e8299ee020b42136e9cf8fbbaeda4f1fbfd",
  "rebuilt_from_scratch": true,
  "packages": {
   "numpy": "2.5.3",
@@ -32,10 +32,10 @@
   "requirements-lock.txt": "28678298185bec5cc1331223bec1390f43488ea7205cf396828a7bfdedcab812",
   "requirements.txt": "67388506747659ab9895ef23abe56ea0d41e7c705100b6aa3f40713a1eb07a35",
   "run_all.sh": "9326045ddd82a33716d24ecff8412eac455c3930a02c96e831b2cb8d4f27ab0a",
-  "src/app_template.html": "001ad9a7a3b0f8ee70f6b70347844a68deaf2cc1aaa1535380b6ae545fabf836",
+  "src/app_template.html": "9e40a4f3c2994335107b4a806add498e3aaaea6cefe1d45476eb27fb6d02551c",
   "src/audit.py": "3625b49f22f12ba0baab3a16e60d6b8e100d190a0571a61626933c94ef995bce",
   "src/bayes.py": "a7e54e20ddf6b2e40f1da692035c8854286691e5c0df16b7758fd8a73852f0c2",
-  "src/build_app.py": "27b2f4fb2b80064edc8f8bb08c8d58a41f4e0028f32b6ffae7d62f5c64154c79",
+  "src/build_app.py": "56104096eac9d58270b899a0f9b6dc8cb949417a450b04741fe74319d309ee03",
   "src/cache.py": "e8d3680dc061a2f71d2fefd749a5da30689426e455363ffa3581df3921b62819",
   "src/fem/__init__.py": "172bb0082acc562c6fee3ee30d92026bc77fa9c3806d534fd7c34f1ea6da091e",
   "src/fem/coupling.py": "b67073d6665ded14cc716e0bf23cd47a4c1791333073294e1495b0795192fa8c",
@@ -70,7 +70,7 @@
   "src/model/network3d.py": "25d8c53e33022ee2a5285a98fab9189b0ea297264eecbc9e1e62dca41f8c0f0d",
   "src/model/scaling.py": "02a98decf1f1aa784e49a16838507d551d1b5278cff7e144202ca3d06baae077",
   "src/model/verify_campaigns.py": "b117a58b318c3882aad4ca696d27f2f47f504618ce079ed8dabec9a575f9e600",
-  "src/model/viscosity.py": "8cdad9ed9bfdc584e07efb49c02b1106ea1609eaf1bf9cddaf49222a5de87b57",
+  "src/model/viscosity.py": "31d67065c00f36efef8ef12cd0501a607d4ea46f8fbbf9a439ad8cb97c52d4e1",
   "src/model/whole_graft.py": "e8862dea3a5e7b835457f6fc0c230262bad8241c8dbb33f10454fb54ab138266",
   "src/paper_figures.py": "1f8db5d2bbb2d3e200c29e4fb05c6723a4e107522581bd5099391189436dcd7f",
   "src/plots.py": "edfab67b6216a86e25901f6cff21e026dbdcc05cd40ab3a2d2121c30d0ba8a74",
@@ -111,6 +111,5 @@
   "results/series_with_indices.tsv": "c2626425fe16df44dc74dfdf063620ba540eae4c8f0b2d3014b919583ff1ca73",
   "results/spec_curve.json": "9479550ec84e769a2272430037cafdb404e8736e8e59234762f970bac6b4e687",
   "results/within_study_fit.json": "1dcd54d0e09dc5764a7c4fbcc3d49c088d7c54e631558a0bbc8a07b2252f200c"
- },
- "commit_note": "the commit holding the code and data that were rebuilt; the manifest itself is committed after it"
+ }
 }

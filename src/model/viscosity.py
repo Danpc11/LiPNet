@@ -38,6 +38,8 @@ MICRO_BELOW_UM, MICRO_AT_UM = 70.0, 10.0          # the haematocrit of a vessel 
 MICRO = (1.0, 0.75, 0.5, 0.25)                    # haematocrit of the smallest vessels over the systemic one: 1 is the main analysis
 FLOW_THRESHOLD = 250.0          # mL/min/100 g: the flow above which inflow is modulated (Troisi et al. 2005)
 GRADIENT_THRESHOLD = 10.0       # mmHg: a portal pressure of 15 mmHg at a central venous pressure of 5 (Ogura et al. 2010); PVP - CVP > 10 (Wehrle et al. 2025)
+PVP_THRESHOLDS = (15.0, 20.0)   # mmHg: the absolute portal pressures by which series define their groups (Ogura 2010, Osman 2017; Yagi 2005, Wang 2014)
+HB_TO_HCT = 0.03                # haematocrit (fraction) per g/dL of haemoglobin, at a mean corpuscular haemoglobin concentration of 33 g/dL
 
 
 def relative_viscosity(D, H):

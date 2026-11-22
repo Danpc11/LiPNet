@@ -2,6 +2,12 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.5] – 2026-11-22
+- Calculator: a value is placed against the thresholds in clinical use and not against multiples of the donor: gradient 10 mmHg, portal pressure 15 and 20 mmHg, flow 250 mL/min/100 g (`viscosity.PVP_THRESHOLDS` added to `FLOW_THRESHOLD` and `GRADIENT_THRESHOLD`). A gradient below the donor's is no longer labelled as steal unless the flow is also below the donor's.
+- Calculator: haemoglobin accepted in place of the haematocrit (`viscosity.HB_TO_HCT`); the effect of each manoeuvre is read from `data/interventions.tsv` and shown as a reported effect, not a target; the page names the release it was built from; fields no longer overflow their card.
+- `tests/test_indices.py`: the labels, the thresholds against the cut-offs of the series, the conversion and the release shown.
+- No change to the model or to the data; results unchanged.
+
 ## [0.11.4] – 2026-11-22
 - `.zenodo.json`: description and keywords of the current content (viscosity, distension, hepatectomies); third grant in the funding note. `CITATION.cff`: concept DOI and release date.
 - README: the overview image is the one of the article as it stands (resistance load as architecture, blood and distension); the environment is created with `python3`.
