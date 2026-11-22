@@ -17,6 +17,8 @@ ranges  recipient 0.25 to 0.35: in 332 liver recipients the haematocrit was 36.8
         4.6) after it, with red cells given below 25% during it (Choi et al., Int J Med Sci 2016;13:235). The series
         of data/series.tsv available in full text do not report it at the time of the measurement. Reference 0.40
         to 0.45, normal blood.
+vessels the law takes the haematocrit of each vessel. The main analysis gives every vessel the systemic one;
+        `microvascular` lowers it in the vessels below 70 micrometres, as a scenario.
 
     python src/model/viscosity.py     -> results/model_viscosity.json
 """
@@ -48,17 +50,28 @@ def _network(b, scale=1.0):
     return D, h['dP_mmHg'] / h['dP_mmHg'].sum(), k
 
 
-def factor(H, H_ref, b=0.75, scale=1.0, segments=False):
+MICRO_BELOW_UM, MICRO_AT_UM = 70.0, 10.0          # the haematocrit of a vessel falls below the systemic one under 70 micrometres (Lipowsky et al. 1980)
+MICRO = (1.0, 0.75, 0.5, 0.25)                    # haematocrit of the smallest vessels over the systemic one: 1 is the main analysis
+
+
+def vessel_haematocrit(D, H, micro=1.0):
+    """Discharge haematocrit of a vessel of diameter D for a systemic haematocrit H: the systemic one down to 70
+    micrometres, then falling linearly in log diameter to `micro` times it at 10 micrometres and below."""
+    D = np.asarray(D, float); x = np.clip((np.log(MICRO_BELOW_UM) - np.log(D)) / (np.log(MICRO_BELOW_UM) - np.log(MICRO_AT_UM)), 0.0, 1.0)
+    return H * (1.0 - (1.0 - micro) * x)
+
+
+def factor(H, H_ref, b=0.75, scale=1.0, segments=False, micro=1.0):
     """Resistance of the network at haematocrit H over that at H_ref. With `segments`, also the factor of the portal
-    tree, the sinusoids and the hepatic venous tree."""
-    D, w, k = _network(b, scale); r = relative_viscosity(D, H) / relative_viscosity(D, H_ref); total = float((w * r).sum())
+    tree, the sinusoids and the hepatic venous tree. `micro` lowers the haematocrit of the small vessels in both bloods."""
+    D, w, k = _network(b, scale); r = relative_viscosity(D, vessel_haematocrit(D, H, micro)) / relative_viscosity(D, vessel_haematocrit(D, H_ref, micro)); total = float((w * r).sum())
     if not segments: return total
     return dict(total=total, portal=float((w[:k] * r[:k]).sum() / w[:k].sum()), sinusoidal=float(r[k]), hepatic_venous=float((w[k + 1:] * r[k + 1:]).sum() / w[k + 1:].sum()))
 
 
-def factor_range(recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=B_HUMAN):
+def factor_range(recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=B_HUMAN, micro=1.0):
     """Range of the factor over the two haematocrit ranges and the calibrated networks."""
-    z = [factor(H, Hr, b) for H in recipient for Hr in reference for b in bs]
+    z = [factor(H, Hr, b, micro=micro) for H in recipient for Hr in reference for b in bs]
     return float(min(z)), float(max(z))
 
 
@@ -105,6 +118,29 @@ def _regions(g, v):
     return dict(rigid=[round(lo, 4), round(hi, 4)], keeps_distending=fam('keeps distending'), stops_distending=fam('stops distending'))
 
 
+def microvascular(d):
+    """The main analysis gives every vessel the systemic haematocrit. In small vessels the haematocrit is lower, so the
+    law is run again with the haematocrit of the smallest vessels at 0.75, 0.5 and 0.25 of the systemic one, in the
+    recipient and in the reference: the factor, the rigid network with the blood of the recipient, how many of the six
+    groups it contains, and the law against the perfused livers."""
+    from model import distension as ds
+    k = pd.read_csv(os.path.join(ROOT, 'data', 'kamikado2004.tsv'), sep='\t'); tot = lambda h: k[np.isclose(k.haematocrit, h)].sort_values('flow_mL_min').R_total.values; out = {}
+    for m in MICRO:
+        v = factor_range(micro=m); B = ds.bracket(d, viscosity=v); gs = ds.groups(d); reg = [_regions(g, v)['rigid'] for g in gs]
+        chk = {f'{h:g}': dict(observed=round(float(np.mean(tot(h) / tot(0.30))), 3), law=round(factor(h, 0.30, scale=RAT_SCALE, micro=m), 3)) for h in (0.20, 0.10, 0.0)}
+        out[f'{m:g}'] = dict(factor=[round(v[0], 4), round(v[1], 4)], rigid_with_the_blood_of_the_recipient=[min(r[0] for r in reg), max(r[1] for r in reg)],
+                             groups_inside_the_rigid_network=B['counts']['rigid network']['point_inside'], groups_reaching_the_relations=B['counts']['all relations']['interval_reaches'],
+                             perfused_livers=chk)
+    f = [x['factor'] for x in out.values()]; n = [x['groups_inside_the_rigid_network'] for x in out.values()]
+    return dict(scenarios=out, haematocrit_of_the_smallest_vessels_over_systemic=list(MICRO), falls_below_um=MICRO_BELOW_UM, reached_at_um=MICRO_AT_UM,
+                factor_span=[min(x[0] for x in f), max(x[1] for x in f)], groups_inside_the_rigid_network=[min(n), max(n)],
+                note='a scenario: the haematocrit of hepatic vessels below 70 micrometres has not been measured in grafts')
+
+
+def _distance(obs, region):
+    return 0.0 if region[0] <= obs <= region[1] else (obs - region[1] if obs > region[1] else region[0] - obs)
+
+
 def clinical(d, draws=20000):
     """The six groups that report both loads against the model perfused with the blood of the recipient: the regions
     of `distension.bracket` with the resistance of the rigid network multiplied by the factor, and the joint draws of
@@ -120,12 +156,12 @@ def clinical(d, draws=20000):
                          joint=dict(normal_blood={m: z['observed_over_model'] for m, z in x['models'].items()}, blood_of_the_recipient={m: z['observed_over_model'] for m, z in y['models'].items()},
                                     prob_below_rigid=dict(normal_blood=x['models']['rigid network']['prob_observed_below'], blood_of_the_recipient=y['models']['rigid network']['prob_observed_below']),
                                     prob_below_every_relation=dict(normal_blood=x['prob_observed_below_every_relation'], blood_of_the_recipient=y['prob_observed_below_every_relation']))))
-    obs = np.array([r['zR_observed'] for r in rows]); rig = np.array([np.mean(r['blood_of_the_recipient']['rigid']) for r in rows]); rig0 = np.array([np.mean(r['normal_blood']['rigid']) for r in rows])
+    dist = lambda key: round(float(np.sqrt(np.mean([_distance(r['zR_observed'], r[key]['rigid']) ** 2 for r in rows]))), 3)
     return dict(factor=[round(v[0], 3), round(v[1], 3)], haematocrit_recipient=list(HCT_RECIPIENT), haematocrit_reference=list(HCT_REFERENCE), groups=rows,
                 counts=dict(normal_blood=plain['counts'], blood_of_the_recipient=visc['counts']),
                 span=dict(normal_blood={k: [min(r['normal_blood'][k][0] for r in rows), max(r['normal_blood'][k][1] for r in rows)] for k in ('rigid', 'keeps_distending', 'stops_distending')},
                           blood_of_the_recipient={k: [min(r['blood_of_the_recipient'][k][0] for r in rows), max(r['blood_of_the_recipient'][k][1] for r in rows)] for k in ('rigid', 'keeps_distending', 'stops_distending')}),
-                rmse_rigid_midrange=dict(normal_blood=round(float(np.sqrt(np.mean((rig0 - obs) ** 2))), 3), blood_of_the_recipient=round(float(np.sqrt(np.mean((rig - obs) ** 2))), 3)),
+                rms_distance_to_the_rigid_range=dict(normal_blood=dist('normal_blood'), blood_of_the_recipient=dist('blood_of_the_recipient')),
                 note='the haematocrit of the recipients is a range taken from other recipients, not a measurement of these groups')
 
 
@@ -158,7 +194,7 @@ def summary():
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
     table = {f'{Hr:g}': {f'{H:g}': [round(min(factor(H, Hr, b) for b in B_HUMAN), 3), round(max(factor(H, Hr, b) for b in B_HUMAN), 3)] for H in (0.20, 0.25, 0.30, 0.35)} for Hr in (0.40, 0.45)}
     return dict(law='Pries et al. 1994, in vivo', sinusoid_um=SINUSOID_UM, large_vessel_relative_viscosity={f'{H:g}': round(float(relative_viscosity(1e4, H)), 3) for H in (0.0, 0.25, 0.30, 0.35, 0.40, 0.45)},
-                factor_by_haematocrit=table, segments_at_0p30_over_0p42={n: round(x, 3) for n, x in factor(0.30, 0.42, segments=True).items()}, published_check=published_check(), clinical=clinical(d), thresholds=thresholds())
+                factor_by_haematocrit=table, segments_at_0p30_over_0p42={n: round(x, 3) for n, x in factor(0.30, 0.42, segments=True).items()}, published_check=published_check(), clinical=clinical(d), thresholds=thresholds(), microvascular=microvascular(d))
 
 
 if __name__ == '__main__':

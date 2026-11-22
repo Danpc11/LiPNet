@@ -2,6 +2,14 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.0] – 2026-11-21
+- `hepatectomy.trend`: no P value for the seven states (five groups of animals); exact permutation P of Spearman's rho for every choice of one state per group (`exact_p`), and rho over the draws.
+- `hepatectomy.state(corr=, base=)`, `run`, `covariance_sensitivity`: correlation between the group means before and after (0, 0.5, 0.8); the state before is shared by the states of the same animals (`group_of`, `baseline`).
+- `hepatectomy.errors`, `configurations`: error of every admissible configuration and distance to the range. Removed `rms_log_error_of_the_midrange`, `observed_over_midrange` and the numeric `trend.p_value`; states gain `observed_over_model`.
+- `viscosity.vessel_haematocrit`, `factor(micro=)`, `microvascular`: haematocrit of the vessels below 70 µm at 0.75, 0.5 and 0.25 of the systemic one. `clinical.rms_distance_to_the_rigid_range` replaces `rmse_rigid_midrange`.
+- Figure 3E, F: rho for the seven states and for one state per group; observed over the range of each model.
+- Tests for the four analyses. `test_article.py`: every claim labelled by where the article prints it (main text or supplement); claims added for the numbers that had none (two-sided sign test, network alone, whole graft, reported spreads, individual recipients, span of the intercepts, counts); `up` rounds a P value half up.
+
 ## [0.10.0] – 2026-11-21
 - `viscosity.thresholds`: the clinical thresholds of flow and gradient on the scale of the loads, and the gradient at the flow threshold by haematocrit; unrounded regions for the six groups (`viscosity._regions`).
 - `hepatectomy.band`, `animals_resected`.

@@ -80,13 +80,51 @@ def test_a_remnant_in_the_rigid_network_and_the_state_before_resection():
 def test_resistance_falls_with_the_flow_load_in_the_published_hepatectomies():
     s = hp.summary(draws=4000); res = [x for x in s['states'] if x['shunt'] == 'none']; assert len(res) == 7 == s['resections_without_shunt']
     assert s['flow_load_range'][0] < 1.5 and s['flow_load_range'][1] > 8                                            # a range of flow loads the clinical groups do not have
-    assert s['trend']['spearman_rho'] < -0.8 and s['trend']['p_value'] < 0.02
     for x in res:
         assert x['zR_observed_ci'][0] <= x['zR_observed'] <= x['zR_observed_ci'][1] and x['model']['rigid network'][0] > 0.75
+        assert all(abs(x['observed_over_model'][m][0] - x['zR_observed'] / x['model'][m][1]) < 2e-3 for m in hp.MODELS)
         if x['zF'] > 3: assert x['placement']['rigid network']['interval'] == 'below' and x['placement']['keeps distending']['interval'] == 'reaches'
-    e = s['rms_log_error_of_the_midrange']; assert e['cube law'] < e['compliance'] < e['pressure-flow'] < e['rigid network']
     g16 = [x for x in res if x['study'] == 'Golriz 2016']; assert [x['viscosity_factor'] == 1.0 for x in g16] == [True, True, False] and 0.88 < g16[2]['viscosity_factor'] < 0.95
     low = [x for x in s['states'] if x['shunt'] != 'none' and x['zF'] < 1]; assert low and all(x['zR_observed'] > 1 and x['model']['pressure-flow'][0] > x['model']['rigid network'][1] for x in low)
     f = os.path.join(ROOT, 'results', 'model_hepatectomy.json')
     if os.path.exists(f):
-        st = json.load(open(f)); assert [x['zR_observed'] for x in st['states']] == [x['zR_observed'] for x in s['states']] and st['trend']['spearman_rho'] == s['trend']['spearman_rho']
+        st = json.load(open(f)); assert [x['zR_observed'] for x in st['states']] == [x['zR_observed'] for x in s['states']] and st['trend']['spearman_rho'] == s['trend']['spearman_rho'] and st['errors']['to_the_range'] == s['errors']['to_the_range']
+
+
+def test_the_trend_is_tested_on_one_state_per_group_of_animals():
+    """Seven states come from five groups of animals: no P value for the seven, an exact one for each choice of one state per group."""
+    e = hp.exact_p([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]); assert e['rho'] == -1.0 and abs(e['p_two_sided'] - 2 / 120) < 1e-4 and abs(e['p_one_sided'] - 1 / 120) < 1e-4
+    e = hp.exact_p([1, 2, 3, 4, 5], [4, 5, 3, 2, 1]); assert abs(e['rho'] + 0.9) < 1e-9 and abs(e['p_one_sided'] - 5 / 120) < 1e-4
+    T = hp.summary(draws=3000)['trend']; assert T['p_value'] is None and T['n'] == 7 and T['groups_of_animals'] == 5 and T['spearman_rho'] < -0.8
+    assert len(T['one_state_per_group']) == 3 and all(x['n'] == 5 and x['rho'] <= -0.9 and len(set(s.split(',')[0] for s in x['states'])) == 4 for x in T['one_state_per_group'])     # Bucur 2017 has two groups of animals
+    assert T['p_two_sided_one_state_per_group'][0] < 0.02 < T['p_two_sided_one_state_per_group'][1] < 0.1
+    for c in ('0', '0.5', '0.8'): assert T['draws'][c]['all_states']['share_of_draws_negative'] > 0.99 and T['draws'][c]['one_state_per_group']['rho'][2] < 0
+
+
+def test_the_correlation_between_before_and_after_narrows_the_intervals_and_moves_no_state_across_the_rigid_network():
+    s = hp.summary(draws=4000); c = s['covariance_sensitivity']; by = c['by_correlation']; assert c['correlations'] == [0.0, 0.5, 0.8]
+    assert by['0']['widest_interval_ratio'] > by['0.5']['widest_interval_ratio'] > by['0.8']['widest_interval_ratio'] > 1.5
+    for i in range(len(s['states'])):
+        w = [by[k]['zR_observed_ci'][i][1] / by[k]['zR_observed_ci'][i][0] for k in ('0', '0.5', '0.8')]; assert w[0] > w[1] > w[2]
+    assert c['unchanged_against_the_rigid_network_and_the_two_families'] and all(by[k]['counts']['rigid network']['interval_below'] == 3 for k in by)
+    assert all(x['model'] in ('cube law', 'compliance') for x in c['placements_that_change'])
+    d = hp.load(); rng = np.random.default_rng(1); g = hp.cm.geometries(); r = d.iloc[0]; b = hp.baseline(rng, 2000)
+    a1 = hp.state(r, 2000, np.random.default_rng(5), g, corr=0.0, base=b, private=True)[1]; a2 = hp.state(d.iloc[1], 2000, np.random.default_rng(6), g, corr=0.0, base=b, private=True)[1]
+    assert np.corrcoef(a1['zR_d'], a2['zR_d'])[0, 1] > 0.3                                                          # two states of the same animals share the state before
+
+
+def test_no_error_is_measured_from_the_middle_of_a_range():
+    s = hp.summary(draws=2000); e = s['errors']; by = e['by_configuration']; assert 'rms_log_error_of_the_midrange' not in s and 'observed_over_midrange' not in s
+    assert all(v[0] <= v[1] for v in by.values()) and by['cube law'][1] < by['pressure-flow'][0] and by['compliance'][1] < by['pressure-flow'][0] and by['pressure-flow'][1] < by['rigid network'][0]
+    assert all(e['to_the_range'][m] <= by[m][1] + 1e-9 for m in hp.MODELS) and e['to_the_range']['keeps distending'] <= min(e['to_the_range']['cube law'], e['to_the_range']['compliance']) + 1e-9
+    G = hp.cm.geometries(); c = hp.configurations(4.0, 0.25, 1.0, 0.25, 5.0, 4.0, 1.0, G); p = hp.predicted(4.0, 0.25, 1.0, 0.25, 5.0, 4.0, 1.0, G)
+    assert all(abs(min(c[m]) - p[m][0]) < 1e-9 and abs(max(c[m]) - p[m][1]) < 1e-9 for m in hp.MODELS) and len(c['rigid network']) == len(G) and len(c['compliance']) == 2 * len(G)
+    v = vs.clinical(_d(), draws=2000); assert 'rmse_rigid_midrange' not in v and v['rms_distance_to_the_rigid_range']['blood_of_the_recipient'] < v['rms_distance_to_the_rigid_range']['normal_blood']
+
+
+def test_a_lower_haematocrit_in_small_vessels_does_not_change_which_groups_the_network_contains():
+    assert np.allclose(vs.vessel_haematocrit([1e4, 70.0, 10.0, 5.0], 0.4, 0.5), [0.4, 0.4, 0.2, 0.2]) and abs(float(vs.vessel_haematocrit(26.46, 0.4, 0.5)) - 0.3) < 1e-3
+    assert abs(vs.factor(0.30, 0.42, micro=1.0) - vs.factor(0.30, 0.42)) < 1e-12 and vs.factor(0.30, 0.42, micro=0.25) > vs.factor(0.30, 0.42, micro=0.5) > vs.factor(0.30, 0.42)
+    m = vs.microvascular(_d()); sc = m['scenarios']; assert list(sc) == ['1', '0.75', '0.5', '0.25'] and m['groups_inside_the_rigid_network'] == [5, 5]
+    assert all(x['groups_reaching_the_relations'] == 6 for x in sc.values()) and sc['0.25']['factor'][0] > sc['1']['factor'][0] and sc['0.25']['factor'][1] < 0.95
+    err = {k: abs(x['perfused_livers']['0']['observed'] - x['perfused_livers']['0']['law']) for k, x in sc.items()}; assert err['1'] < err['0.75'] < err['0.5'] < err['0.25']      # the perfused livers favour the systemic haematocrit in every vessel

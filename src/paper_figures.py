@@ -356,18 +356,22 @@ def figure_3():
     e.set_xscale('log'); e.set_yscale('log'); e.set_xlim(0.25, 12); e.set_ylim(0.1, 3.4)
     e.set_xticks([0.3, 1, 3, 10]); e.set_xticklabels(['0.3', '1', '3', '10']); e.set_yticks([0.1, 0.3, 1, 3]); e.set_yticklabels(['0.1', '0.3', '1', '3']); e.minorticks_off()
     e.set_xlabel(f'Flow load, {ZF}'); e.set_ylabel(f'Resistance load, {ZR}')
-    T = H['trend']; e.text(11.3, 2.9, f"Resections: $\\rho$ = {T['spearman_rho']:.2f}, $P$ = {T['p_value']:.4f}", fontsize=FS_IN, ha='right', va='center')
+    T = H['trend']; ro, po = T['rho_one_state_per_group'], T['p_two_sided_one_state_per_group']
+    for yy, s_, kw in ((2.95, f"Seven resections: $\\rho$ = {T['spearman_rho']:.2f}", dict(fontsize=FS_IN)), (2.36, 'One per group of animals:', dict(fontsize=FS_SMALL, color=MUTED)),
+                       (1.93, f"$\\rho$ = {ro[0]:.2f} to {ro[1]:.2f}", dict(fontsize=FS_SMALL, color=MUTED))):
+        e.text(11.3, yy, s_, ha='right', va='center', **kw)
     key = [Line2D([], [], marker=mk, ls='', ms=4.0 if mk != 'D' else 3.6, mfc=INK, mec=INK, mew=0.9, label=s) for s, mk in STUDY_MARK.items()] + [Line2D([], [], marker='o', ls='', ms=4.0, mfc='white', mec=INK, mew=0.9, label='With shunt')]
     key += [Patch(color=BLUE, alpha=0.16, lw=0, label='Rigid network'), Patch(facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, label='Stops distending'), Patch(color=BLUE, alpha=0.34, lw=0, label='Keeps distending')]
     e.legend(handles=key, loc='lower left', handletextpad=0.35, handlelength=1.1, borderaxespad=0.0, labelspacing=0.18, fontsize=FS_SMALL)
-    # F: observed over model, one point per resection
-    models = [('rigid network', 'Rigid network'), ('pressure-flow', 'Stops distending'), ('compliance', 'Compliance'), ('cube law', 'Cube law')]; res = [x for x in H['states'] if x['shunt'] == 'none']
+    # F: observed over the range of each model, one bar per resection: no central prediction is drawn
+    models = [('rigid network', 'Rigid network'), ('pressure-flow', 'Stops distending'), ('compliance', 'Compliance'), ('cube law', 'Cube law')]; res = [x for x in H['states'] if x['shunt'] == 'none']; ER = H['errors']['by_configuration']
     f.plot([1, 1], [-0.6, len(models) - 0.3], color=INK, lw=LW_REF, ls=DASH, zorder=1)
     for k, (m, lab) in enumerate(models):
-        y = len(models) - 1 - k
-        for x, v in zip(res, H['observed_over_midrange'][m]): f.plot(v, y, STUDY_MARK[x['study']], ms=4.2 if STUDY_MARK[x['study']] != 'D' else 3.7, mfc=INK, mec='white', mew=0.5, alpha=0.9, zorder=3)
-        f.text(0.17, y + 0.3, lab, fontsize=FS_IN, ha='left', va='center'); f.text(0.17, y - 0.3, f"r.m.s. log error {H['rms_log_error_of_the_midrange'][m]:.2f}", fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
-    f.set_xscale('log'); f.set_xlim(0.16, 2.2); f.set_ylim(-0.6, len(models) - 0.3); fs.bare(f); f.set_xticks([0.2, 0.5, 1, 2]); f.set_xticklabels(['0.2', '0.5', '1', '2']); f.minorticks_off(); f.set_xlabel(f'Observed {ZR} over model')
+        y = len(models) - 1 - k; f.plot([1, 1], [y + 0.14, y + 0.56], color='white', lw=3, zorder=2)
+        for j, x in enumerate(sorted(res, key=lambda x: x['zF'])):
+            yy = y + 0.04 - 0.062 * j; f.plot(x['observed_over_model'][m], [yy, yy], color=INK, lw=1.5, solid_capstyle='round', zorder=3)
+        f.text(0.165, y + 0.47, lab, fontsize=FS_IN, ha='left', va='center'); f.text(0.165, y + 0.25, f"r.m.s. log error {ER[m][0]:.2f} to {ER[m][1]:.2f}", fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
+    f.set_xscale('log'); f.set_xlim(0.16, 2.2); f.set_ylim(-0.6, len(models) - 0.3); fs.bare(f); f.set_xticks([0.2, 0.5, 1, 2]); f.set_xticklabels(['0.2', '0.5', '1', '2']); f.minorticks_off(); f.set_xlabel(f'Observed {ZR} over model range')
     for ax, s, y in ((da, 'A', 120.5), (dd, 'D', 60.5)): fig.text(3 / 180, y / 122, s, fontsize=fs.FS_LETTER, fontweight='bold', va='center', ha='left', color=INK)
     fs.letter(fig, b, 'B', 12, 4); fs.letter(fig, c, 'C', 22, 4); fs.letter(fig, e, 'E', 12, 4); fs.letter(fig, f, 'F', 4, 4); save(fig, 'Figure_3')
 

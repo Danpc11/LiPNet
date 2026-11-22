@@ -1,8 +1,8 @@
 {
  "python": "3.13.18",
  "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
- "commit": "dac8411dc25ef2dd64123dd608145eac40f69c6f",
- "inputs_fingerprint": "d0b59fe4a74b3897683f8af2d57621ce2674c9a31f4a21e0f5deab5a5947639f",
+ "commit": null,
+ "inputs_fingerprint": "2966ef776d38de984cb0b10c081cbed050b68f2da36c56bc5a76fc121e9d6100",
  "rebuilt_from_scratch": true,
  "packages": {
   "numpy": "2.5.3",
@@ -62,7 +62,7 @@
   "src/model/compartments.py": "a2fe2c115d8fd01b0ad7ad0048414f660dc841b65d4b2fb8a816c1126f91238f",
   "src/model/distension.py": "7ccd1109862f626738cc0dbf3a0ba6a0fab1835a5485f2d28a086c30dcdb7dbe",
   "src/model/graph_scaling.py": "4f417e6de919aaf93fa18c638b22683d4281de3c3ea2843e92a37e760f20e3a5",
-  "src/model/hepatectomy.py": "f7d0d0b63c50851e40eb4accb1c91554b85cd8daf75fb8bda48244ed524a3cda",
+  "src/model/hepatectomy.py": "db3c93100c74e980d052a8e59bedb61fb5ba8ec9263c4bec30ced28cd8369222",
   "src/model/human.py": "930bcc39ae30ff526551c86f73ae56dd1c7e764354a16e603dddd6ec0040a320",
   "src/model/liver.py": "f669b1bc644c035c61a04c2582a26b89de47865f98f6adbe966836315e58c139",
   "src/model/merge_campaigns.py": "b8428ce123aae3c79b85a2e46dd465dab6adf8bae9dfc6e4e17288899d59d149",
@@ -70,9 +70,9 @@
   "src/model/network3d.py": "25d8c53e33022ee2a5285a98fab9189b0ea297264eecbc9e1e62dca41f8c0f0d",
   "src/model/scaling.py": "02a98decf1f1aa784e49a16838507d551d1b5278cff7e144202ca3d06baae077",
   "src/model/verify_campaigns.py": "b117a58b318c3882aad4ca696d27f2f47f504618ce079ed8dabec9a575f9e600",
-  "src/model/viscosity.py": "97383562d9e23bc61d11223a017d57c9faf2bc342bb7fd350038efb4267b8e7d",
+  "src/model/viscosity.py": "f2d98f0b8011b0e6bcc9f654438429cde597c9d0b7729f9fc54da38728cc99f2",
   "src/model/whole_graft.py": "e8862dea3a5e7b835457f6fc0c230262bad8241c8dbb33f10454fb54ab138266",
-  "src/paper_figures.py": "42eb42f67fd6f174a5d665f83770ca330ed4925471502e92906490f20665f003",
+  "src/paper_figures.py": "436b3e580384ce64d63f27f0691b5576aef1da4e0ac36912a329519a59f93098",
   "src/plots.py": "b45710b03768e236fe10fa2f1a9cab9d93f75c385baabfea642a48cfdba855ef",
   "src/predictions.py": "c249ab990b35471fd2b0318a64337b18ed2511b7d6c0a2ed357da85bffe0ea4b"
  },
@@ -95,15 +95,15 @@
   "results/fem_perfusion.json": "1ff6f2ec894c4da9b032def3aafc91b6984d6e20236e22c3b24ddb59a464b8a4",
   "results/fem_transport.json": "18de606ea153aac5285aafb721e73a693ee57e3229da9f6cb90d2a89975a38e6",
   "results/fem_two_phase.json": "bed0f13e4dd77256ab44bb2b0c8b66f94da4c9d42fc9745a17a1154fd49f7702",
-  "results/figures_provenance.json": "ac8bafd23f15f82af735054d01c2dbdeac54dc635da8b87d6707e694dfe8898f",
+  "results/figures_provenance.json": "f3b4d54da7c667f0a94f9b831b5a5c149b5fcbe35978b1144c5e09ce9ee035c2",
   "results/ipd_ecological.json": "334aae40cac3ef8c3b516b90ec4370af2f8c9c45ca1e63c89ec6d2f28d259ac9",
   "results/ipd_patient_level.json": "ab4bdb30e2dd966fc30b18de1f69de7004684d342f40135468bc5676295536ad",
   "results/meta_slope.json": "ac4f44678bc1d865c7695fc2e36959be11f3a42d5f7ae5e06cdbaa09af47245e",
   "results/model_distension.json": "f1fbb4b4cec2f29182b63a99faebe6acadec4f9a3b0c8aa3129db42aeb72230c",
-  "results/model_hepatectomy.json": "b97eba2db08841b3fdc00a5066b75c2403a17b836166c44cb04bf81040b26807",
+  "results/model_hepatectomy.json": "acc172084b9ac08216d280bfada91b2a7c816d549f490caa17b2634462a1441e",
   "results/model_human.json": "52da28b9eab7be43ffe798bd7e3d6b85b7845d7795aa26630a5f71d9aa5d3c83",
   "results/model_liver.json": "d0c148f82fd957e701de3b65a6301db07163db200412ca7d82a0730a96ac0d34",
-  "results/model_viscosity.json": "484033857667d197e82b53069a0ce8d2eced855f86650fbf079f051584ed1d81",
+  "results/model_viscosity.json": "dfc460376de14b6a702384951a7a033465d73809c7acf938ed1290197f97c3e8",
   "results/pooled_fit.json": "9a30401dd1c0f98121bfb9028ebab3421f388dfd1241eaada12b4f0e0276cfe6",
   "results/prediction_allometry.tsv": "c27b94c70ccca90e13dd8fef522232defa5d708859e547466289e86ce494afc3",
   "results/predictions.json": "d29823afff92b75be26f5eed5c385ec37e8fb8f7d9320bf87cd3fef559be92b9",
@@ -111,6 +111,5 @@
   "results/series_with_indices.tsv": "c2626425fe16df44dc74dfdf063620ba540eae4c8f0b2d3014b919583ff1ca73",
   "results/spec_curve.json": "9479550ec84e769a2272430037cafdb404e8736e8e59234762f970bac6b4e687",
   "results/within_study_fit.json": "1dcd54d0e09dc5764a7c4fbcc3d49c088d7c54e631558a0bbc8a07b2252f200c"
- },
- "commit_note": "the commit holding the code and data that were rebuilt; the manifest itself is committed after it"
+ }
 }

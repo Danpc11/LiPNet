@@ -128,6 +128,9 @@ of the recipient is that with the reference blood times
 $$v=\sum_i w_i\,\frac{\eta(D_i,H_{\text{recipient}})}{\eta(D_i,H_{\text{reference}})}.$$
 
 The factor multiplies the load of the rigid network before any relation is applied: $G=g_0\,z_F\,z_R^{\text{rigid}}\,v\,d(G)$.
+$H$ is the haematocrit of each vessel. The main analysis gives every vessel the systemic one; `microvascular` runs the
+law with $H_i=H\,[1-(1-m)\,x_i]$, $x_i=\ln(70/D_i)/\ln(70/10)$ clipped to $[0,1]$ ($D$ in µm), for $m$ = 0.75, 0.5
+and 0.25, in the recipient and in the reference.
 
 **Hepatectomy** (`model/hepatectomy.py`). A resection that leaves a fraction $g$ of the liver with its portal
 inflow is its own reference: loads are ratios of the state after to the state before. The trunk stays and carries
@@ -136,6 +139,13 @@ $g\,z_F$ times its flow, the other generations $z_F$:
 $$z_R^{\text{rigid}}=\big(1-\rho\,(1-g)\big)\left[s_{in}+(1-s_{in})\frac{z_F+\varphi a}{(1+a)\,z_F}\right],$$
 
 with $\rho$ the share of the trunks in the donor drop and $a$, $\varphi$ from the arterial flows measured.
+
+Intervals come from draws of the group means. A mean after resection is drawn as $m+\text{se}\,(r\,\epsilon_0+\sqrt{1-r^2}\,\epsilon_1)$,
+with $\epsilon_0$ the standard draw of the mean before, shared by the states measured in the same animals, and $r$ the
+correlation between before and after (0 in the main analysis; 0.5 and 0.8 in `covariance_sensitivity`). States of the
+same animals are not independent, so the trend of $z_R$ with $z_F$ carries a P value only for one state per group of
+animals (exact permutation of Spearman's $\rho$, every choice of the state). A model gives a range over its admissible
+configurations; errors are computed for each configuration and to the range, never from its middle.
 
 ## 7. The lobule
 
