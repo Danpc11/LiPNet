@@ -1,7 +1,7 @@
 """Command line for the patient-level layer. Run from the repository root:
 
     python src/ipd/run_ipd.py patients      # the published patient-level table
-    python src/ipd/run_ipd.py ecological    # slope for a patient vs for a group mean
+    python src/ipd/run_ipd.py ecological    # the slope with the load spread inside each group, and over the imputed spreads
     python src/ipd/run_ipd.py figures
     python src/ipd/run_ipd.py all
 
@@ -17,6 +17,9 @@ from ipd import patient_level as pl
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 OUT = os.path.join(ROOT, 'results')
 SIGMAS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2)
+READING = ('sensitivity of the between-group slope to the spread of the pressure load inside the groups, under an assumed logistic '
+           'curve common to the recipients of a stratum and a normal spread; the data are group counts and do not identify an '
+           'association in individual recipients')
 
 
 def primary():
@@ -39,12 +42,13 @@ def cmd_ecological(args):
     d = primary()
     out = dict(reported_within_group_sd_mmHg=sorted(
         float(x) for x in d.gradient_sd.dropna().unique()),
-        pooled_sigma_zP=ec.pooled_sigma())
+        pooled_sigma_zP=ec.pooled_sigma(), reading=READING)
     out['sweep'] = ec.sweep(d, SIGMAS, chains=args.chains, warmup=args.warmup,
                             samples=args.samples)
     out['reported_sigma_fit'] = ec.fit(d, sigma=None, chains=args.chains,
                                        warmup=args.warmup, samples=args.samples)
     out['reported_sigma_fit'].pop('sigma_by_group', None)
+    out['imputation'] = ec.imputation(d, chains=args.chains, warmup=args.warmup, samples=args.samples)
     dump('ipd_ecological', out, args.quiet)
     return out
 
@@ -83,8 +87,8 @@ def cmd_figures(args):
     for sd in out['reported_within_group_sd_mmHg']:
         ax.axvline(sd, color='0.6', lw=0.6, ls='--')
     ax.set_xlabel('assumed within-group SD of the gradient [mmHg]')
-    ax.set_ylabel(r'slope for a patient, $\mu_\beta$')
-    ax.set_title('Ecological bias is small and runs one way', fontsize=8)
+    ax.set_ylabel(r'slope of the integrated model, $\mu_\beta$')
+    ax.set_title('The slope under an assumed spread within groups', fontsize=8)
     fig.tight_layout()
     os.makedirs(OUT, exist_ok=True)
     fig.savefig(os.path.join(OUT, 'ipd_ecological.pdf'), bbox_inches='tight')

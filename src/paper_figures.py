@@ -11,10 +11,11 @@ Figure 2    A the three terms of the resistance load (diagram); B the six groups
 Figure 3    each term where the other does not act: A to C the viscosity law in perfused livers; D to F published hepatectomies
             against the rigid network and the three relations
 Figure 4    A slope per stratum; B outcome against pressure load with the fitted curve of each stratum; C specification curve;
-            D the primary slope as a risk inside one cohort; E a whole graft with a narrowed outlet or inlet (a prediction)
+            D the primary slope as the risk of a group against the difference of its gradient from another group of the cohort;
+            E a whole graft with a narrowed outlet or inlet (a prediction)
 Figure S1   A scaling of the optimum with the number of lobules; B, C allometric closure
 Figure S2   inlet and outlet obstruction of a whole graft
-Figure S3   slope for a patient against the within-group dispersion of the gradient
+Figure S3   slope of the integrated model against the spread of the gradient assumed within groups, and over the spreads imputed
 Figure S4   each recipient of a hemiportocaval shunt
 Figure S5   the model against a human vascular cast
 Figure S6   growth with the body and regrowth of a graft
@@ -249,7 +250,7 @@ CONFIGURATION = {'outflow reconstruction': ('o', True, 'Outflow reconstruction')
 def figure_2():
     """A the three terms of the resistance load; B the six groups in the flow-pressure plane with the two clinical thresholds; C their
     resistance load against the rigid network with normal blood and with the blood of the recipient; D the gradient at the flow
-    threshold against the haematocrit; E the contrast inside one cohort."""
+    threshold against the haematocrit (lighter above the haematocrit at which the law was checked in perfused livers); E the contrast inside one cohort."""
     d = series(); p = d.dropna(subset=['zF', 'zP']); flow_only = d[d.zF.notna() & d.zP.isna() & d.in_main_analysis]; P = load('predictions')['P2_discordance']
     U = {(g['study'], g['group']): g for g in P['uncertainty']['groups']}; V = load('model_viscosity'); T = V['thresholds']; S = V['clinical']['span']; n0, n1 = S['normal_blood']['rigid'], S['blood_of_the_recipient']['rigid']
     fig = fs.figure(170); t = _mm(fig, 3, 137, 174, 30); a = fs.axes(fig, 15, 72, 50, 50); b = fs.axes(fig, 123, 72, 53, 50); c = fs.axes(fig, 15, 11, 50, 33); e = fs.axes(fig, 120, 11, 38, 33)
@@ -291,7 +292,9 @@ def figure_2():
     # D: what the rigid network gives at the flow threshold as the blood changes
     K = T['curve']; h = 100 * np.array(K['haematocrit']); hr, hc = V['clinical']['haematocrit_reference'], V['clinical']['haematocrit_recipient']
     c.axvspan(100 * hc[0], 100 * hc[1], color=BAND, lw=0, zorder=0); c.axvspan(100 * hr[0], 100 * hr[1], color=BAND, lw=0, zorder=0)
-    c.fill_between(h, K['gradient_low'], K['gradient_high'], color=BLUE, alpha=0.34, lw=0, zorder=1); c.plot([20, 45], [T['gradient_mmHg']] * 2, **thr)
+    lo_, hi_ = np.array(K['gradient_low']), np.array(K['gradient_high']); hk = 100 * V['published_check']['haematocrit_checked_up_to']        # the law was set against perfused livers up to here
+    c.fill_between(h, lo_, hi_, where=h <= hk + 1e-9, color=BLUE, alpha=0.34, lw=0, zorder=1); c.fill_between(h, lo_, hi_, where=h >= hk - 1e-9, color=BLUE, alpha=0.16, lw=0, zorder=1); c.plot([20, 45], [T['gradient_mmHg']] * 2, **thr)
+    c.text(20.4, 12.9, f'Darker: law checked in\nperfused livers, to {hk:.0f}%', fontsize=FS_SMALL, color=MUTED, ha='left', va='center', linespacing=1.1)
     c.text(30, 15.3, 'Recipient', fontsize=FS_IN, ha='center', va='center'); c.text(42.5, 15.3, 'Normal', fontsize=FS_IN, ha='center', va='center'); c.text(20.4, T['gradient_mmHg'] + 0.55, 'Pressure threshold', fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
     ri = T['rise_of_the_gradient_from_0p25_to_0p35']; c.text(44.6, 4.9, f"25 to 35%: gradient +{100 * (ri[0] - 1):.0f} to {100 * (ri[1] - 1):.0f}%", fontsize=FS_IN, ha='right', va='center')
     c.set_xlim(20, 45); c.set_ylim(4, 16); c.set_xticks([20, 25, 30, 35, 40, 45]); c.set_yticks([4, 8, 12, 16]); c.set_xlabel('Haematocrit (%)'); c.set_ylabel(f"Gradient at {T['flow_mL_min_100g']:.0f} mL/min/100 g (mmHg)")
@@ -342,6 +345,8 @@ def figure_3():
     e.fill_between(zz, np.minimum(lo('cube law'), lo('compliance')), np.maximum(hi('cube law'), hi('compliance')), color=BLUE, alpha=0.34, lw=0, zorder=0)
     e.fill_between(zz, lo('pressure-flow'), hi('pressure-flow'), facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, zorder=0)
     e.plot([0.25, 12], [1, 1], color=INK, lw=LW_REF, ls=DASH, zorder=1)
+    mu_ = H['relations_measured_up_to_flow_load']; e.plot([mu_, mu_], [0.1, 0.62], color=MUTED, lw=0.7, ls=(0, (1, 1.5)), zorder=1)       # beyond it the bands of the relations are extrapolations
+    e.text(mu_ / 1.045, 0.107, 'Relations measured', fontsize=FS_SMALL, color=MUTED, rotation=90, ha='right', va='bottom')
     for x in H['states']:
         mk = STUDY_MARK[x['study']]; filled = x['shunt'] == 'none'
         e.plot([x['zF'], x['zF']], x['zR_observed_ci'], color=INK, lw=0.7, solid_capstyle='butt', zorder=3); e.plot(x['zF'], x['zR_observed'], mk, ms=4.6 if mk != 'D' else 4.0, mfc=INK if filled else 'white', mec=INK, mew=0.9, zorder=5)
@@ -381,9 +386,16 @@ def _trajectories(c, out, inn, h, small=FS_SMALL):
     c.text(0.92, 1.12, 'Donor', fontsize=small, ha='right', va='bottom')
 
 
+def largest_contrast(d, strata):
+    """Largest difference of the portocaval gradient (mmHg) between two groups of one stratum of a fit."""
+    m = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]; m = m.assign(stratum=m.study + ' / ' + m.outcome_type); m = m[m.stratum.isin(strata)]
+    return float(indices.NORMAL_GRADIENT * (m.groupby('stratum').zP.max() - m.groupby('stratum').zP.min()).max())
+
+
 def figure_4(h=1.5):
-    """A slope per stratum; B outcome against pressure load; C specification curve; D what a change of the gradient does to the risk
-    inside a cohort; E a whole graft with a narrowed outlet or inlet (a prediction no data here test)."""
+    """A slope per stratum; B outcome against pressure load, each curve dashed beyond the groups of its stratum; C specification curve; D the primary slope as the risk of a group against
+    the difference of its gradient from another group of the cohort, dashed beyond the largest difference the cohorts hold; E a whole
+    graft with a narrowed outlet or inlet (a prediction no data here test)."""
     from model import whole_graft as wg
     BM = load('bayes_main'); E = BM['exploratory (all outcomes)']; PR = BM['primary (SFSS or early dysfunction)']; S = load('spec_curve'); d = series(); name = lambda s: s.split(' / ')[0]
     strata = sorted(E['strata'], key=lambda s: E['beta_by_stratum'][s]['mean']); centre = {r.study: r.centre_id for r in d.itertuples()}
@@ -402,8 +414,9 @@ def figure_4(h=1.5):
     m = d[d.in_main_analysis & d.zP.notna() & d.events.notna()]; m = m.assign(stratum=m.study + ' / ' + m.outcome_type); m = m[m.stratum.isin(E['strata'])]
     b.axvspan(1, 2, color=BAND, lw=0, zorder=0)
     for s in E['strata']:
-        g = m[m.stratum == s]; z = np.linspace(max(0.8, g.zP.min() - 0.35), min(4.0, g.zP.max() + 0.35), 60)
-        b.plot(z, 100 / (1 + np.exp(-(E['alphas'][s] + E['beta_by_stratum'][s]['mean'] * z))), color=col[s], zorder=2)
+        g = m[m.stratum == s]; z = np.linspace(max(0.8, g.zP.min() - 0.35), min(4.0, g.zP.max() + 0.35), 60); zin = np.linspace(g.zP.min(), g.zP.max(), 40)
+        curve = lambda v: 100 / (1 + np.exp(-(E['alphas'][s] + E['beta_by_stratum'][s]['mean'] * v)))
+        b.plot(z, curve(z), color=col[s], lw=0.9, ls=(0, (2.2, 1.6)), zorder=2); b.plot(zin, curve(zin), color=col[s], zorder=2)      # solid between the groups of the stratum, dashed beyond them
         b.scatter(g.zP, g.pct, s=10 + g.n / 5, marker=shapes[s], color=col[s], edgecolor='white', linewidth=0.6, zorder=3)
     b.set_xlim(0.8, 4.0); b.set_ylim(0, 60); b.set_xticks([1, 2, 3, 4]); b.set_xlabel(f'Pressure load, {ZP}'); b.set_ylabel('Adverse outcome (%)')
     S = sorted(S, key=lambda s: s['mu_beta']); c.axvline(0, color=MUTED, lw=0.5, ls=DASH)
@@ -418,11 +431,13 @@ def figure_4(h=1.5):
     c.set_xlim(-0.6, 3.6); c.set_ylim(-0.7, len(S) - 0.3); fs.bare(c); c.set_xticks([0, 1, 2, 3]); c.set_xlabel('$\\mu_\\beta$ across specifications')
     # D: the primary slope read as a risk inside one cohort
     g0 = indices.NORMAL_GRADIENT; dG = np.linspace(-8, 8, 161); logit = lambda q: np.log(q / (1 - q)); risk = lambda q, beta: 100 / (1 + np.exp(-(logit(q) + beta * dG / g0)))
+    span = largest_contrast(d, PR['strata']); inside = np.abs(dG) <= span + 1e-9                           # the largest difference of gradient between two groups of one cohort
     dx.axvline(0, color=MUTED, lw=0.5, ls=DASH, zorder=1); dx.fill_between(dG, risk(0.10, PR['mu_beta_ci'][0]), risk(0.10, PR['mu_beta_ci'][1]), color=BAND, lw=0, zorder=0)
     for q, colr in zip((0.05, 0.10, 0.20), fs.ramp(3)):
-        dx.plot(dG, risk(q, PR['mu_beta']), color=colr, zorder=3); dx.text(8.25, risk(q, PR['mu_beta'])[-1], f'{100 * q:.0f}%', fontsize=FS_IN, ha='left', va='center')
-    dx.text(-7.6, 73, 'Risk at the present\ngradient: 5, 10 or 20%', fontsize=FS_IN, ha='left', va='center', linespacing=1.15); dx.text(-7.6, 57, 'Shading, 95% credible\ninterval at 10%', fontsize=FS_SMALL, color=MUTED, ha='left', va='center', linespacing=1.15)
-    dx.set_xlim(-8, 8); dx.set_ylim(0, 80); dx.set_yticks([0, 20, 40, 60, 80]); dx.set_xticks([-8, -4, 0, 4, 8]); dx.set_xlabel('Change of the portocaval gradient within a cohort (mmHg)'); dx.set_ylabel('Small-for-size syndrome\nor early dysfunction (%)')
+        y = risk(q, PR['mu_beta']); dx.plot(dG, y, color=colr, lw=0.9, ls=(0, (2.2, 1.6)), zorder=3); dx.plot(dG[inside], y[inside], color=colr, zorder=4); dx.text(8.25, y[-1], f'{100 * q:.0f}%', fontsize=FS_IN, ha='left', va='center')
+    dx.text(-7.6, 73, 'Risk of the reference\ngroup: 5, 10 or 20%', fontsize=FS_IN, ha='left', va='center', linespacing=1.15); dx.text(-7.6, 57, 'Shading, 95% credible\ninterval at 10%', fontsize=FS_SMALL, color=MUTED, ha='left', va='center', linespacing=1.15)
+    dx.text(-7.6, 41.5, f'Dashed, beyond the\nlargest difference\nobserved, {span:.1f} mmHg', fontsize=FS_SMALL, color=MUTED, ha='left', va='center', linespacing=1.15)
+    dx.set_xlim(-8, 8); dx.set_ylim(0, 80); dx.set_yticks([0, 20, 40, 60, 80]); dx.set_xticks([-8, -4, 0, 4, 8]); dx.set_xlabel('Difference of gradient between groups of a cohort (mmHg)'); dx.set_ylabel('Small-for-size syndrome\nor early dysfunction (%)')
     # E: a whole graft
     dd = np.linspace(1.0, 0.5, 26); _trajectories(ex, wg.sweep('out', d=dd, h=h), wg.sweep('in', d=dd, h=h), h, small=FS_IN)
     fs.letter(fig, a, 'A', 17, 4); fs.letter(fig, b, 'B', 10, 4); fs.letter(fig, c, 'C', 36, 4); fs.letter(fig, dx, 'D', 17, 4); fs.letter(fig, ex, 'E', 11, 4); save(fig, 'Figure_4')
@@ -516,16 +531,28 @@ def figure_s2(h=1.5):
 
 # ------------------------------------------------------------------ Figures S3 and S4
 def figure_s3():
+    """A the slope of the integrated model against one spread of the gradient assumed for every group; B the same model with the
+    reported spreads and, for the series that report none, each value of the grid."""
     E = load('ipd_ecological'); sw = E['sweep']; x = np.array([s['sigma_mmHg'] for s in sw]); y = np.array([s['mu_beta'] for s in sw]); ci = np.array([s['mu_beta_ci'] for s in sw])
-    fig = fs.figure(64, fs.SINGLE); ax = fs.axes(fig, 12, 12, 73, 48)
+    fig = fs.figure(64); ax = fs.axes(fig, 14, 12, 70, 46); bx = fs.axes(fig, 108, 12, 66, 46)
     for sd in E['reported_within_group_sd_mmHg']: ax.axvline(sd, color=NEUTRAL, lw=0.7, zorder=0)
     ax.fill_between(x, ci[:, 0], ci[:, 1], zorder=1, **fs.MODEL_TINT); ax.axhline(0, color=INK, lw=0.5); ax.axhline(y[0], color=INK, lw=LW_REF, ls=DASH, zorder=2)
     ax.plot(x, y, color=BLUE, zorder=3); ax.plot(x, y, 'o', ms=4.5, mfc=BLUE, zorder=4, **DOT)
-    ax.text(0.08, y[0] - 0.09, f'Group-mean estimate, {y[0]:+.2f}', fontsize=FS_SMALL, ha='left', va='top'); ax.text(np.mean(E['reported_within_group_sd_mmHg']), 3.82, 'Dispersions reported', fontsize=FS_SMALL, color=MUTED, ha='center', va='top')
+    ax.text(0.08, y[0] - 0.09, f'Group-mean estimate, {y[0]:+.2f}', fontsize=FS_SMALL, ha='left', va='top'); ax.text(np.mean(E['reported_within_group_sd_mmHg']), 4.5, 'Dispersions reported', fontsize=FS_SMALL, color=MUTED, ha='center', va='top')
     pp = min(s.get('prob_positive', s.get('prob_mu_positive', 1.0)) for s in sw); ax.text(0.08, 0.5, f'$P$($\\mu_\\beta$ > 0) > {np.floor(pp * 100) / 100:.2f} at every dispersion', fontsize=FS_SMALL, ha='left', va='bottom')
     ax.text(0.08, ci[0, 1] - 0.08, '95% credible interval', fontsize=FS_SMALL, color=MUTED, ha='left', va='top')
-    ax.set_xlim(-0.2, 6.2); ax.set_ylim(-0.15, 3.9); ax.set_xticks(range(0, 7)); ax.set_yticks([0, 1, 2, 3]); ax.set_xlabel('Within-group SD of the gradient (mmHg)'); ax.set_ylabel('Slope for a patient, $\\mu_\\beta$')
-    save(fig, 'Figure_S3')
+    ax.set_xlim(-0.2, 6.2); ax.set_ylim(-0.15, 4.6); ax.set_xticks(range(0, 7)); ax.set_yticks([0, 1, 2, 3, 4]); ax.set_xlabel('SD of the gradient assumed within every group (mmHg)'); ax.set_ylabel('Slope of the integrated model, $\\mu_\\beta$')
+    # B: the values given to the series that report no dispersion, each varied on its own
+    I = E['imputation']; first, second = I['series_without_dispersion']; vals = I['values_mmHg']; cols = fs.ramp(len(vals))
+    bx.axhline(0, color=INK, lw=0.5); bx.axhline(y[0], color=INK, lw=LW_REF, ls=DASH, zorder=2)
+    for f in I['fits']:
+        i, j = vals.index(f['sd_mmHg'][second]), vals.index(f['sd_mmHg'][first]); xx = i + 0.17 * (j - (len(vals) - 1) / 2)
+        bx.plot([xx, xx], f['mu_beta_ci'], color=cols[j], lw=1.0, solid_capstyle='butt', zorder=3); bx.plot(xx, f['mu_beta'], 'o', ms=4.2, mfc=cols[j], zorder=4, **DOT)
+    bx.legend(handles=[Line2D([], [], marker='o', ls='', ms=4.2, mfc=cols[j], label=f'{v:g}', **DOT) for j, v in enumerate(vals)], title=f'SD given to {first} (mmHg)', title_fontsize=FS_SMALL, fontsize=FS_SMALL,
+              loc='upper center', ncol=len(vals), columnspacing=1.0, handletextpad=0.1, borderaxespad=0.0)
+    bx.text(-0.42, 3.5, f"{I['groups_imputed']} of {I['groups']} groups report no dispersion; $P$($\\mu_\\beta$ > 0) > {np.floor(I['prob_positive_min'] * 100) / 100:.2f} in every fit", fontsize=FS_SMALL, ha='left', va='bottom')
+    bx.set_xlim(-0.5, len(vals) - 0.5); bx.set_ylim(-0.15, 4.6); bx.set_xticks(range(len(vals))); bx.set_xticklabels([f'{v:g}' for v in vals]); bx.set_yticks([0, 1, 2, 3, 4]); bx.set_xlabel(f'SD of the gradient given to {second} (mmHg)'); bx.set_ylabel('Slope of the integrated model, $\\mu_\\beta$')
+    fs.letter(fig, ax, 'A', 11, 3); fs.letter(fig, bx, 'B', 11, 3); save(fig, 'Figure_S3')
 
 
 def figure_s4():

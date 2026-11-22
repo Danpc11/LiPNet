@@ -231,7 +231,7 @@ def summary(draws=20000):
                 trend=trend(d, runs), errors=errors([runs[0.0][i][1] for i in idx]), counts=count(res),
                 covariance_sensitivity=dict(correlations=list(PRE_POST), by_correlation=cov, placements_that_change=changes, unchanged_against_the_rigid_network_and_the_two_families=bool(all(fam(c) == fam(0.0) for c in PRE_POST)),
                                             note='correlation between the group means before and after; the main intervals take 0. The state before is shared by the states of the same animals'),
-                band=band(geoms=geoms), baseline_gradient_where_not_reported_mmHg=list(BASELINE_GRADIENT),
+                band=band(geoms=geoms), relations_measured_up_to_flow_load=float(max(ds.MEASURED_UP_TO.values())), baseline_gradient_where_not_reported_mmHg=list(BASELINE_GRADIENT),
                 note='group means of published series; states with a portocaval shunt are listed and not counted')
 
 

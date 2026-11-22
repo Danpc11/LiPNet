@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.11.5-1f6feb)
+![Version](https://img.shields.io/badge/version-0.11.6-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 Code and data for the article *Vascular resistance decouples portal flow from pressure in small-for-size liver grafts*.
@@ -83,8 +83,9 @@ them are at the end of `run_all.sh`.
   prior sensitivity, specification curve, internal-external validation, recovery simulation.
 - **Lobule** (`src/fem/`). Finite elements of one hexagonal lobule: anisotropic Darcy flow, transport with
   haemoglobin binding, sinusoid-hepatocyte exchange, nitric oxide wall model.
-- **Patient level** (`src/ipd/`). The series that print their recipients one by one; group events integrated over
-  the within-group spread of $z_P$. Kaplan-Meier curve reconstruction is implemented and tested on simulated cohorts,
+- **Patient level** (`src/ipd/`). The series that print their recipients one by one; and a sensitivity
+  analysis of the between-group slope, with the group events integrated over an assumed spread of $z_P$ inside each
+  group and over the spreads imputed where none is reported (it identifies no association in individual recipients). Kaplan-Meier curve reconstruction is implemented and tested on simulated cohorts,
   and not applied to any series.
 
 ## Repository layout

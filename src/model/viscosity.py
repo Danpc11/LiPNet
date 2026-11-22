@@ -105,6 +105,7 @@ def published_check():
     out['observed_over_predicted_total_at_rat_size'] = [round(float(e), 3) for e in err]
     out['text_check'] = dict(given_in_the_text=dict(R_portal=0.251, R_sinusoidal=0.212, R_hepatic_venous=0.105),
                              digitised={c: float(k[(k.flow_mL_min == 15) & np.isclose(k.haematocrit, 0.30)][c].iloc[0]) for c in ('R_portal', 'R_sinusoidal', 'R_hepatic_venous')})
+    out['haematocrit_checked_up_to'] = float(k.haematocrit.max())
     out['note'] = 'the highest haematocrit perfused was 30%: between the recipient and the reference (up to 45%) the law is applied beyond these livers'
     return out
 

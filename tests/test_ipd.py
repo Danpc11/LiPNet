@@ -201,14 +201,50 @@ def test_every_series_agrees_on_the_size_of_the_within_group_spread():
 
 
 def test_within_group_spread_does_not_overturn_the_association():
-    """The slope stays positive across every assumed spread, and over the range the series
-    actually report it is no smaller than the published estimate."""
+    """The slope stays positive across every assumed spread, and over the range the series actually report it is not
+    below the group-mean slope by more than Monte Carlo error. The direction is a result of the sweep, not a premise:
+    `ratio_to_sigma0` is recorded for every spread."""
     sw = ec.sweep(primary(), (0.0, 0.4, 0.8), chains=4, warmup=6000, samples=15000)
     mu = np.array([s['mu_beta'] for s in sw])
     assert np.all(mu > 0), 'slope changed sign: %s' % mu
     assert np.all(np.array([s['prob_positive'] for s in sw]) > 0.9)
-    assert mu[1] >= mu[0] - 0.1, 'ecological bias must not inflate the published estimate'
+    assert mu[1] >= mu[0] - 0.1, 'at the reported spreads the slope fell below the group-mean slope: %s' % mu
     assert np.all(np.array([s['rhat'] for s in sw]) < 1.05)
+    assert sw[0]['ratio_to_sigma0'] == 1.0 and all(abs(s['ratio_to_sigma0'] - s['mu_beta'] / mu[0]) < 1e-12 for s in sw)
+
+
+def test_the_spread_given_where_none_is_reported_is_varied_series_by_series():
+    """Four of the seven groups of the primary fit report no dispersion. `imputation` keeps the reported ones and gives
+    each series without one, on its own, every value from no spread to the largest any series reports."""
+    p = primary(); I = ec.imputation(p, chains=2, warmup=1500, samples=3000)
+    assert I['series_without_dispersion'] == ['Osman 2017', 'Wang 2014'] and (I['groups_imputed'], I['groups'], I['patients_imputed'], I['patients']) == (4, 7, 352, 573)
+    sds = ec.corrected_sigma_mmHg(); assert I['values_mmHg'] == [0.0, sds[0], round(ec.pooled_sigma() * ec.MMHG_PER_ZP, 6), sds[-1]] == [0.0, 2.62, 3.8, 4.5]
+    assert len(I['fits']) == 16 and len({tuple(sorted(f['sd_mmHg'].items())) for f in I['fits']}) == 16
+    assert all(f['mu_beta'] > 0 and f['prob_positive'] > 0.9 for f in I['fits']) and I['mu_beta_range'] == [min(f['mu_beta'] for f in I['fits']), max(f['mu_beta'] for f in I['fits'])]
+    r = ec.fit(p, sigma=None, fill={'Osman 2017': 0.0, 'Wang 2014': 0.9}, chains=1, warmup=200, samples=200); f = ec.usable(p)
+    got = dict(zip(zip(f.study, f.group), np.array(r['sigma_by_group']) * ec.MMHG_PER_ZP))
+    assert sorted(round(v, 2) for (st, _), v in got.items() if st == 'Uemura 2016') == [3.1, 3.8, 4.1], 'a reported dispersion is not replaced'
+    assert {round(v, 2) for (st, _), v in got.items() if st == 'Osman 2017'} == {0.0} and {round(v, 2) for (st, _), v in got.items() if st == 'Wang 2014'} == {4.5}
+    assert (r['groups_imputed'], r['patients_imputed']) == (4, 352)
+    d0 = ec.fit(p, sigma=None, chains=1, warmup=300, samples=300); d1 = ec.fit(p, sigma=None, fill=ec.pooled_sigma(), chains=1, warmup=300, samples=300)
+    assert d0['mu_beta'] == d1['mu_beta'], 'the default is the pooled median'
+
+
+def test_an_assumed_central_venous_pressure_does_not_move_the_integrated_slope():
+    """A central venous pressure assumed for a series shifts the pressure load of all its groups by the same amount, and
+    the load is centred within the study: the fit is the same whatever value is assumed."""
+    p = primary(); q = p.copy(); imputed = q.CVP_basis.eq('imputed'); assert imputed.sum() >= 4
+    q.loc[imputed, 'zP'] = q.loc[imputed, 'zP'] - 4.0 / ec.MMHG_PER_ZP                   # a central venous pressure of 9 mmHg in place of 5
+    a = ec.fit(p, sigma=None, chains=1, warmup=300, samples=500); b = ec.fit(q, sigma=None, chains=1, warmup=300, samples=500)
+    assert abs(a['mu_beta'] - b['mu_beta']) < 1e-6 and np.allclose(a['mu_beta_ci'], b['mu_beta_ci'], atol=1e-6)
+
+
+def test_the_module_states_what_its_slope_is_not():
+    """The slope of the integrated model is a sensitivity analysis under an assumed individual curve. Neither the module
+    nor the result it writes calls it an association in patients."""
+    from ipd import run_ipd
+    assert 'not identified' in ec.__doc__ and 'not an association observed in patients' in ec.__doc__
+    assert 'do not identify' in run_ipd.READING and 'sensitivity' in run_ipd.READING
 
 
 if __name__ == '__main__':

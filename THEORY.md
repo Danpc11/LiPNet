@@ -181,12 +181,17 @@ $$\beta_s\sim\mathcal N(\mu_\beta,\tau_\beta^2),\qquad \alpha_s\sim\mathcal N(0,
 
 fitted by NUTS (`bayes.py`). Centring within stratum separates the within-study slope from the level of each study.
 
-With the within-group spread of the load, each patient carries $x\sim\mathcal N(\mu_g,\sigma_g^2)$ and the group
-probability is the average of the individual curve,
+The slope is one between groups. As a sensitivity analysis for entering the mean of a group whose recipients are
+spread, each recipient is given a load $x\sim\mathcal N(\mu_g,\sigma_g^2)$ and the group probability is the average
+of an assumed individual curve,
 
 $$\bar p_g=\int \text{logit}^{-1}\big(\alpha_s+\beta_s(x-\bar z_{P,s})\big)\,\mathcal N(x;\mu_g,\sigma_g^2)\,dx,$$
 
-evaluated by Gauss-Hermite quadrature (`ipd/ecological.py`); $\sigma_g=0$ returns the model above.
+evaluated by Gauss-Hermite quadrature (`ipd/ecological.py`); $\sigma_g=0$ returns the model above. The data remain
+group counts, so $\beta_s$ here is the slope the individual curve would need under three assumptions (one logistic
+curve per stratum, a normal spread, and a load unrelated within a group to other causes of the outcome), not an
+association observed in recipients. $\sigma_g$ is the dispersion of the group where the series gives one; where it
+gives none, each such series takes every value from 0 to the largest reported (`ecological.imputation`).
 
 A centre recalibrates the level with its own rate and mean load, keeping the slope:
 $\alpha=\text{logit}(\text{rate})-\beta\,\bar z_P$ (`indices.baseline_from_rate`, `indices.recalibrate`).

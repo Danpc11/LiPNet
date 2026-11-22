@@ -2,6 +2,13 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.6] – 2026-11-22
+- `ipd.ecological`: the module states what its slope is. The data are group counts, so the slope of the integrated likelihood is the one an individual logistic curve would need under an assumed normal spread of the load inside each group; it is a sensitivity analysis of the between-group slope and identifies no association in recipients. The docstring no longer says that the spread can only flatten the slope: the sweep returns towards the prior beyond 5 mmHg, and `sweep` records `ratio_to_sigma0` (was `inflation_vs_sigma0`). `results/ipd_ecological.json` carries the reading.
+- `ipd.ecological.imputation`: the fit with the reported dispersions repeated over what is given to the series that report none, each varied on its own over 0, the smallest and the largest dispersion reported and their pooled median (16 fits for the primary outcome, where 4 of 7 groups report none). `fit(fill=)` takes one value or one per study; `usable` returns the rows a fit uses. The sweep and the fit with the pooled median are unchanged to the last digit.
+- Figure S3 has a second panel with the 16 fits. Figure 2D draws the band lighter above the haematocrit at which the law was checked in perfused livers (`model_viscosity.json: published_check.haematocrit_checked_up_to`). Figure 3E marks the flow up to which the relations of the normal liver were measured (`model_hepatectomy.json: relations_measured_up_to_flow_load`). Figure 4D is drawn against the difference of gradient between groups of a cohort, dashed beyond the largest difference the cohorts hold (`paper_figures.largest_contrast`).
+- Tests: the imputation grid, the invariance of the integrated fit to an assumed central venous pressure, the reading of the module, and the new values printed in the figures.
+- No change to the network, the outcome model or the data.
+
 ## [0.11.5] – 2026-11-22
 - Calculator: a value is placed against the thresholds in clinical use and not against multiples of the donor: gradient 10 mmHg, portal pressure 15 and 20 mmHg, flow 250 mL/min/100 g (`viscosity.PVP_THRESHOLDS` added to `FLOW_THRESHOLD` and `GRADIENT_THRESHOLD`). A gradient below the donor's is no longer labelled as steal unless the flow is also below the donor's.
 - Calculator: haemoglobin accepted in place of the haematocrit (`viscosity.HB_TO_HCT`); the effect of each manoeuvre is read from `data/interventions.tsv` and shown as a reported effect, not a target; the page names the release it was built from; fields no longer overflow their card.

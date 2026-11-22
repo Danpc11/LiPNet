@@ -1,9 +1,7 @@
-"""What the group means hide: the pressure load of a patient is not the pressure load of a group.
+"""What the group means hide: a sensitivity analysis for the spread of the pressure load inside a group.
 
-The primary analysis in src/bayes.py regresses the event count of a group on that group's
-MEAN pressure load. The quantity a surgeon acts on is the load of a patient. The two
-coincide only if every patient in a group sat at the group mean, and the series that report
-a spread say they did not:
+The primary analysis in src/bayes.py regresses the event count of a group on that group's MEAN pressure load. It is an
+association between groups. Every series that reports a dispersion says its recipients did not all sit at the mean:
 
     Ogura 2010, final PVP <15      gradient 6.2 mmHg   +/- 0.3  (n = 86)
     Ogura 2010, final PVP >=15     gradient 9.9 mmHg   +/- 0.4  (n = 43)
@@ -15,39 +13,51 @@ a spread say they did not:
     Chan 2011                      gradient 6 mmHg     SD 2.7  (from the range, n = 46)
     Wu 2011                        gradient 10.6 mmHg  SD 4.5
 
-Two of those numbers are not standard deviations. Ogura's Results section reports the same
-cohort's MELD as 23.2 +/- 1.1 (n = 86) and 22.9 +/- 1.7 (n = 43), while its own Table 1
-gives the MELD of that cohort as 22.9 +/- 10.6. Multiplying by sqrt(n) recovers 10.2 and
-11.1: the Results-section spreads are standard errors of the mean, whatever the methods
-section says. Applying the same conversion to the gradient gives within-group standard
-deviations of 2.8 and 2.6 mmHg, not 0.3 and 0.4. `sem_to_sd` does this and
-`WITHIN_GROUP_SD` records it.
+Two of those numbers are not standard deviations. Ogura's Results section reports the same cohort's MELD as
+23.2 +/- 1.1 (n = 86) and 22.9 +/- 1.7 (n = 43), while its own Table 1 gives the MELD of that cohort as 22.9 +/- 10.6.
+Multiplying by sqrt(n) recovers 10.2 and 11.1: the Results-section spreads are standard errors of the mean, whatever
+the methods section says. Applying the same conversion to the gradient gives within-group standard deviations of 2.8
+and 2.6 mmHg, not 0.3 and 0.4. `sem_to_sd` does this and `WITHIN_GROUP_SD` records it.
 
-Once corrected, every series that reports a dispersion agrees: the within-group standard
-deviation of the portocaval gradient is 2.6 to 4.5 mmHg, which is comparable to the whole
-between-group range of the meta-analysis. Fitting group means as if they
-were patient values is the ecological fallacy, and in a logistic model it attenuates the
-slope towards zero.
+Once corrected, the nine dispersions run from 2.6 to 4.5 mmHg, which is comparable to the whole between-group range of
+the meta-analysis.
 
-This module replaces the group-mean likelihood with an integrated one. Patient i of group g
-carries an unobserved load x_i ~ Normal(mu_g, sigma_g^2), and the group's event probability
-is the average over that distribution,
+What this module does. It replaces the group-mean likelihood with one that averages an ASSUMED individual curve over
+that spread. Patient i of group g is given an unobserved load x_i ~ Normal(mu_g, sigma_g^2), and the event probability
+of the group is the average over that distribution,
 
     pbar_g = Integral logistic(alpha_s + beta_s (x - xbar_s)) Normal(x; mu_g, sigma_g^2) dx,
 
-evaluated by Gauss-Hermite quadrature. events_g ~ Binomial(n_g, pbar_g) as before. With
-sigma = 0 the integral collapses to the original model, which is how the sampler is checked
-against the published fit.
+evaluated by Gauss-Hermite quadrature. events_g ~ Binomial(n_g, pbar_g) as before. With sigma = 0 the integral
+collapses to the original model, which is how the sampler is checked against the published fit.
 
-beta then estimates the slope for a PATIENT rather than for a group mean, and the gap
-between the two is the ecological bias. It does not need new data: it needs the spread that
-nine groups already report or imply, and a sweep over what the spread might be in the ones
-that do not.
+What the slope then is, and what it is not. The data are the same group counts as in src/bayes.py: no outcome is
+observed with the load of the recipient who had it, so the slope of an individual relation is not identified by them.
+beta is the slope the individual curve would need to have for the group counts to arise IF
+    (1) one logistic curve holds for every recipient of a stratum,
+    (2) the load is normally distributed inside each group with the spread given, and
+    (3) inside a group the load is unrelated to anything else that moves the outcome.
+None of the three can be checked with group counts, and the second fails by construction where a group is defined by
+a cut-off of the pressure itself (Osman 2017, Ogura 2010), whose spread is bounded by the cut-off. The module therefore
+answers one narrow question: how much does the between-group slope depend on having entered the mean of a group where
+its recipients are spread? It measures the effect of aggregating a nonlinear curve. It does not remove ecological
+confounding, and its slope is not an association observed in patients.
 
-The sampler is a plain adaptive random-walk Metropolis in NumPy, so this module has no
-dependency beyond NumPy, SciPy, pandas and indices.py. At sigma = 0 it reproduces the NUTS fit of
-src/bayes.py to within Monte Carlo error; that agreement is the test in tests/test_ipd.py.
+The direction is not fixed either. For small spreads the averaged curve is flatter than the individual one, so the
+slope that reproduces the same counts is larger; for spreads comparable to the distance between the groups the counts
+stop distinguishing the groups and the estimate returns towards the prior. `sweep` shows both.
+
+Imputed values. Only some groups report a dispersion. `fit` gives each group its own where there is one and a single
+value where there is none (the pooled median by default); `imputation` repeats that fit over what is given to the
+series that report none, each varied on its own, from no spread to the largest any series reports. An assumed central
+venous pressure needs no such analysis: it shifts every group of a study by the same amount and the load is centred
+within the study (tests/test_ipd.py).
+
+The sampler is a plain adaptive random-walk Metropolis in NumPy, so this module has no dependency beyond NumPy, SciPy,
+pandas and indices.py. At sigma = 0 it reproduces the NUTS fit of src/bayes.py to within Monte Carlo error; that
+agreement is the test in tests/test_ipd.py.
 """
+import itertools
 import numpy as np
 import pandas as pd
 import indices
@@ -125,17 +135,24 @@ def _loglik(theta, S, mu_g, sigma_g, xbar_s, n, ev, n_s, gh_x, gh_w,
     return ll + lp
 
 
-def fit(d, sigma=None, chains=4, warmup=4000, samples=8000, seed=0,
+def usable(d, by_outcome=True):
+    """The rows a fit uses: strata (a study and, by default, an outcome definition) with at least two groups at
+    different pressure loads."""
+    d = d.copy()
+    d['stratum'] = d.study.astype(str) + ((' / ' + d.outcome_type.astype(str)) if by_outcome else '')
+    return d.groupby('stratum').filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
+
+
+def fit(d, sigma=None, fill=None, chains=4, warmup=4000, samples=8000, seed=0,
         alpha_scale=2.5, mu_scale=1.5, tau_scale=0.5, by_outcome=True):
     """Fit the integrated model.
 
-    sigma : None uses each group's reported within-group SD and the pooled median where it
-            is missing; a float applies that SD (in z_P units) to every group; 0 reproduces
-            the group-mean model of src/bayes.py.
+    sigma : None uses each group's own within-group SD where the series gives one and `fill` where it does not; a float
+            applies that SD (in z_P units) to every group; 0 reproduces the group-mean model of src/bayes.py.
+    fill  : with sigma None, the SD (in z_P units) given to the groups with none: one value, or one per study in a
+            dict (studies not named take the pooled median). None is the pooled median for all of them.
     """
-    d = d.copy()
-    d['stratum'] = d.study.astype(str) + ((' / ' + d.outcome_type.astype(str)) if by_outcome else '')
-    d = d.groupby('stratum').filter(lambda x: len(x) >= 2 and x.zP.nunique() > 1)
+    d = usable(d, by_outcome)
     strata = sorted(d.stratum.unique())
     S = np.array([strata.index(s) for s in d.stratum])
     n_s = len(strata)
@@ -146,13 +163,19 @@ def fit(d, sigma=None, chains=4, warmup=4000, samples=8000, seed=0,
 
     if sigma is None:
         sg = reported_sigma(d)
-        fill = pooled_sigma()
-        sg = np.where(np.isnan(sg), fill, sg)
-        sigma_label = 'reported, pooled median %.2f where missing' % fill
+        missing = np.isnan(sg)
+        pooled = pooled_sigma()
+        if isinstance(fill, dict):
+            given = np.array([float(fill.get(str(st), pooled)) for st in d.study])
+            sigma_label = 'reported; where missing, ' + ', '.join('%s %.2f' % (k, v) for k, v in sorted(fill.items()))
+        else:
+            given = np.full(len(d), pooled if fill is None else float(fill))
+            sigma_label = ('reported, pooled median %.2f where missing' % pooled) if fill is None else 'reported, %.2f where missing' % float(fill)
+        sg = np.where(missing, given, sg)
     else:
         sg = np.full(len(d), float(sigma))
+        missing = np.zeros(len(d), bool)
         sigma_label = 'fixed at %.2f' % float(sigma)
-    sg = np.nan_to_num(sg, nan=0.0)
 
     gh_x, gh_w = np.polynomial.hermite.hermgauss(GH_NODES)
     args = (S, mu_g, sg, xbar_s, n, ev, n_s, gh_x, gh_w, alpha_scale, mu_scale, tau_scale)
@@ -189,7 +212,7 @@ def fit(d, sigma=None, chains=4, warmup=4000, samples=8000, seed=0,
     q = lambda x: [float(np.percentile(x, 2.5)), float(np.percentile(x, 97.5))]
     return dict(sigma=sigma_label,
                 sigma_by_group=[float(x) for x in sg],
-                strata=strata, groups=int(len(d)),
+                strata=strata, groups=int(len(d)), groups_imputed=int(missing.sum()), patients_imputed=int(n[missing].sum()),
                 patients=int(n.sum()), events=int(ev.sum()),
                 mu_beta=float(mu_draws.mean()), mu_beta_ci=q(mu_draws),
                 tau_beta=float(tau_draws.mean()), tau_beta_ci=q(tau_draws),
@@ -223,12 +246,12 @@ def _ess(x):
 
 
 def sweep(d, sigmas=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0), **kw):
-    """The slope for a patient as a function of the assumed within-group spread.
+    """The slope of the integrated model as a function of one within-group spread assumed for every group.
 
-    sigma is in z_P units, so 0.8 corresponds to a within-group SD of 4 mmHg, which is what
-    Uemura and Ishizaki report. The point of the sweep is that the direction of the bias is
-    known even when its size is not: dispersion inside a group can only flatten the
-    group-level slope, so the published estimate is a lower bound on the patient-level one.
+    sigma is in z_P units, so 0.8 corresponds to a within-group SD of 4 mmHg, which is what Uemura and Ishizaki report.
+    `ratio_to_sigma0` is the slope over the group-mean slope (sigma = 0). It is above one for spreads below the distance
+    between the groups and falls back, towards the prior, beyond it: the sweep states the direction for each spread and
+    does not assume one.
     """
     out = []
     for s in sigmas:
@@ -239,5 +262,26 @@ def sweep(d, sigmas=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0), **kw):
                         prob_positive=r['prob_mu_positive'], rhat=r['rhat']))
     base = out[0]['mu_beta']
     for o in out:
-        o['inflation_vs_sigma0'] = o['mu_beta'] / base if base != 0 else float('nan')
+        o['ratio_to_sigma0'] = o['mu_beta'] / base if base != 0 else float('nan')
     return out
+
+
+def imputation(d, values_mmHg=None, by_outcome=True, **kw):
+    """The fit with the reported dispersions, repeated over what is given to the series that report none.
+
+    Each series without a dispersion takes, on its own, every value of `values_mmHg` (by default no spread, the smallest
+    and the largest dispersion any series reports, and their pooled median), so two such series give sixteen fits. The
+    groups that report a dispersion keep it throughout. Returns the fits and the range of the slope over them."""
+    f = usable(d, by_outcome); missing = np.isnan(reported_sigma(f)); series = sorted(set(f.study[missing].astype(str)))
+    sds = corrected_sigma_mmHg()
+    values = [float(v) for v in (values_mmHg if values_mmHg is not None else (0.0, sds[0], pooled_sigma() * MMHG_PER_ZP, sds[-1]))]
+    fits = []
+    for combo in itertools.product(values, repeat=len(series)):
+        r = fit(d, sigma=None, fill={st: v / MMHG_PER_ZP for st, v in zip(series, combo)}, by_outcome=by_outcome, **kw)
+        fits.append(dict(sd_mmHg=dict(zip(series, combo)), mu_beta=r['mu_beta'], mu_beta_ci=r['mu_beta_ci'], prob_positive=r['prob_mu_positive'], rhat=r['rhat']))
+    mu = [x['mu_beta'] for x in fits]
+    return dict(series_without_dispersion=series, values_mmHg=values, groups=int(len(f)), groups_imputed=int(missing.sum()),
+                patients=int(f.n.sum()), patients_imputed=int(f.n[missing].sum()), fits=fits,
+                mu_beta_range=[float(min(mu)), float(max(mu))], lowest_lower_bound=float(min(x['mu_beta_ci'][0] for x in fits)),
+                highest_upper_bound=float(max(x['mu_beta_ci'][1] for x in fits)), prob_positive_min=float(min(x['prob_positive'] for x in fits)),
+                rhat_max=float(max(x['rhat'] for x in fits)))
