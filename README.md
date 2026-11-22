@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.11.3-1f6feb)
+![Version](https://img.shields.io/badge/version-0.11.4-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 Code and data for the article *Vascular resistance decouples portal flow from pressure in small-for-size liver grafts*.
@@ -18,7 +18,7 @@ $$z_P = z_F\, z_R \qquad \text{pressure load} = \text{flow load} \times \text{re
 The model, its equations and its assumptions are in **[THEORY.md](THEORY.md)**.
 
 <p align="center">
-  <img src="assets/graphical_abstract.png" alt="LiPNet: the liver as a perfusion network, and the relation between flow, resistance and pressure loads" width="480">
+  <img src="assets/graphical_abstract.png" alt="Portal pressure in a partial graft is portal flow times the resistance of the graft, and that resistance has three terms: architecture, blood and distension" width="760">
 </p>
 
 ## Installation
@@ -26,7 +26,7 @@ The model, its equations and its assumptions are in **[THEORY.md](THEORY.md)**.
 Python 3.11 or later.
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
+python3 -m venv .venv && . .venv/bin/activate    # inside the environment the interpreter is `python`
 pip install -r requirements-lock.txt     # exact environment of the release (reproduces every printed digit)
 # or: pip install -r requirements.txt   # recent versions; sampled numbers may move in the second decimal
 ```

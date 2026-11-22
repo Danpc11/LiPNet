@@ -2,6 +2,13 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.4] – 2026-11-22
+- `.zenodo.json`: description and keywords of the current content (viscosity, distension, hepatectomies); third grant in the funding note. `CITATION.cff`: concept DOI and release date.
+- README: the overview image is the one of the article as it stands (resistance load as architecture, blood and distension); the environment is created with `python3`.
+- `requirements.txt` lists pytest, which the README runs; `requirements-lock.txt` pointed to a document that no longer exists.
+- `.gitignore` names the result files that are kept.
+- No change to the code that computes or to the data; results unchanged.
+
 ## [0.11.3] – 2026-11-22
 - `data/hepatectomy.tsv`: columns `animal_group` and `baseline_group`. `hepatectomy.group_of` reads the first and `baseline_of` the second; groups are no longer inferred from study, flow before and n. The three states of Golriz 2022 are three groups of animals with one pooled state before. Results unchanged.
 - Figure 3E prints the exact P of the trend with one state per group of animals.

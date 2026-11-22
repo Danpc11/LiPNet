@@ -64,7 +64,7 @@ def sem_to_sd(sem, n):
 # Within-group SD of the portocaval gradient in mmHg, by study, after the corrections
 # above. Ogura: standard errors converted with sqrt(n). Botha: computed from the published
 # patient-level table (patient_level.group_row). Chan: estimated from the published range
-# (patient_level.sd_from_range). Others: as reported.
+# (audit.sd_from_range). Others: as reported.
 WITHIN_GROUP_SD = {'Ogura 2010': (2.78, 2.62), 'Uemura 2016': (4.1, 3.8, 3.1),
                    'Ishizaki 2012': (4.4,), 'Botha 2010': (3.91,), 'Chan 2011': (2.71,), 'Wu 2011': (4.5,)}
 

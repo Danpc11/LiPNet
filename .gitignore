@@ -1,5 +1,7 @@
 results/*
 !results/bayes_*.json
 !results/spec_curve.json
+!results/predictions.json
+!results/cvp_scenarios.json
 __pycache__/
 *.pyc

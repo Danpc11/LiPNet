@@ -1,8 +1,8 @@
 {
  "python": "3.13.18",
  "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
- "commit": "30a5f773f710041ce7acf6d36f1419c3530d7ce8",
- "inputs_fingerprint": "baa53a825fe5d7c6f018a48cb23077c8093eaa2f8c99a7b746e0a7f299a5f984",
+ "commit": null,
+ "inputs_fingerprint": "d46e157b9a86d165994242e68d1d57646c5219a3e855426df1b2ccaa82bf24bd",
  "rebuilt_from_scratch": true,
  "packages": {
   "numpy": "2.5.3",
@@ -29,8 +29,8 @@
   "data/patient_level/ogura2010_deaths.tsv": "39827e2c21896594495026f5859cee939a316bcfc141f64c173f598deddbd424",
   "data/patients.tsv": "b43b8ae30a4de031f73021ea19a9058de4fe9cca47b8fc444f4501e3dc7fe2de",
   "data/series.tsv": "97e43a3e9ee026d2b29ffa49f65aec9956a7510a87ddb1e439b29f25f971b11f",
-  "requirements-lock.txt": "462e79439492eeffd397eb5a2683896501080556a563c72b8e581cfe26e03a19",
-  "requirements.txt": "0be4e5ece34c712d3f88133f2bbe8cf2be94dbe19ec20b4aee5388057d6fe279",
+  "requirements-lock.txt": "28678298185bec5cc1331223bec1390f43488ea7205cf396828a7bfdedcab812",
+  "requirements.txt": "67388506747659ab9895ef23abe56ea0d41e7c705100b6aa3f40713a1eb07a35",
   "run_all.sh": "9326045ddd82a33716d24ecff8412eac455c3930a02c96e831b2cb8d4f27ab0a",
   "src/app_template.html": "001ad9a7a3b0f8ee70f6b70347844a68deaf2cc1aaa1535380b6ae545fabf836",
   "src/audit.py": "3625b49f22f12ba0baab3a16e60d6b8e100d190a0571a61626933c94ef995bce",
@@ -52,7 +52,7 @@
   "src/figstyle.py": "16519bfa4d5677d7c644820393f83f77eb549cf3b0b647a0792e9d1c84a83f94",
   "src/indices.py": "533754760270ad4498fdad8ae1ec1f280857568bf57776ba233b01842b1fe4c8",
   "src/ipd/__init__.py": "b5d97129f9e30567a9aa451c86f763aba1731ff27c1929533438043efb72be6c",
-  "src/ipd/ecological.py": "a0d08afafb701874f2f71231e840dd0d68fea00b6267f1f81b777e25ddc90beb",
+  "src/ipd/ecological.py": "d424a5f718351cd76b020f7e45e54578bf263bc57f549c7928fbfc356ab4b0f7",
   "src/ipd/km_reconstruct.py": "c17dc79643fc867642e536ac6afe5a409c1c6b6ce62ba21b099dbb27e241e40a",
   "src/ipd/patient_level.py": "87593e8c8870b118fcd4bedcd0d58c129a8c1fd34fe66811cb1ba35e5e4f504b",
   "src/ipd/run_ipd.py": "9fdde43eb953e9def6501e5c934216faec422745da8f36a0173556d4b6edb83e",
@@ -111,6 +111,5 @@
   "results/series_with_indices.tsv": "c2626425fe16df44dc74dfdf063620ba540eae4c8f0b2d3014b919583ff1ca73",
   "results/spec_curve.json": "9479550ec84e769a2272430037cafdb404e8736e8e59234762f970bac6b4e687",
   "results/within_study_fit.json": "1dcd54d0e09dc5764a7c4fbcc3d49c088d7c54e631558a0bbc8a07b2252f200c"
- },
- "commit_note": "the commit holding the code and data that were rebuilt; the manifest itself is committed after it"
+ }
 }
