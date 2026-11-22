@@ -11,8 +11,9 @@ observed zF from the flow per 100 g of remnant (or the flow and the resected fra
          vein); where the outflow pressure is not given, the gradient before resection is taken between 3 and 6 mmHg
          (those reported here are 3.8 to 5.8) and the outflow pressure unchanged. Intervals: the group means drawn with
          their standard errors. The papers do not give the paired differences, so the correlation between before and
-         after is a scenario (0, 0.5, 0.8; the main intervals take 0), and the state before is shared by the states
-         measured in the same animals.
+         after is a scenario (0, 0.5, 0.8; the main intervals take 0), and the draw of the state before is shared by
+         the states that use the same measurement before (column baseline_group). Which animals a state was measured
+         in is a column of the table (animal_group), not inferred from the values.
 trend    seven states from five groups of animals: rho of the seven is a description with no P value; the test is on
          one state per group of animals, with the exact permutation P.
 errors   of every admissible configuration of a model, and to its range; the mid-range of a model is not a prediction.
@@ -61,8 +62,15 @@ def predicted(zF, g, phi, a, g0, cvp, v=1.0, geoms=None):
 
 
 def group_of(r):
-    """The animals a state was measured in: the states of a stepwise resection share them, and their state before."""
-    return (r.study, float(r.flow_before), int(r.n))
+    """The animals a state was measured in, as the table says (`animal_group`): the states of a stepwise resection are
+    the same animals. It is not inferred from the numbers: two groups of animals can share the state before."""
+    return str(r.animal_group)
+
+
+def baseline_of(r):
+    """The measurement before the procedure that a state uses (`baseline_group`): the same animals in a stepwise
+    resection, and one pooled value for the three groups of Golriz 2022. Its draws are shared by those states."""
+    return str(r.baseline_group)
 
 
 def baseline(rng, draws):
@@ -151,10 +159,10 @@ def _rho_draws(zF_d, zR_d):
 
 
 def run(d, draws, geoms, corr):
-    """Every state at one correlation between before and after, with the state before shared inside a group of animals."""
+    """Every state at one correlation between before and after; the states that use one measurement before share its draws."""
     rng = np.random.default_rng(3); bases = {}; out = []
     for _, r in d.iterrows():
-        key = group_of(r)
+        key = baseline_of(r)
         if key not in bases: bases[key] = baseline(rng, draws)
         out.append(state(r, draws, rng, geoms, corr=corr, base=bases[key], private=True))
     return out
@@ -218,7 +226,7 @@ def summary(draws=20000):
     changes = [dict(correlation=c, state=f"{rows[i]['study']}, {rows[i]['state']}", model=m, at_zero=rows[i]['placement'][m]['interval'], now=runs[c][i][0]['placement'][m]['interval'])
                for c in PRE_POST[1:] for i in idx for m in MODELS + ('keeps distending',) if runs[c][i][0]['placement'][m]['interval'] != rows[i]['placement'][m]['interval']]
     fam = lambda c: {m: cov[f'{c:g}']['counts'][m] for m in ('rigid network', 'keeps distending', 'pressure-flow')}
-    animals = int(d[d.shunt == 'none'].drop_duplicates(['study', 'flow_before', 'n']).n.sum())          # the states of a stepwise resection are the same animals
+    animals = int(d[d.shunt == 'none'].drop_duplicates('animal_group').n.sum())                         # the states of a stepwise resection are the same animals
     return dict(states=rows, resections_without_shunt=len(res), animals_resected=animals, flow_load_range=[float(zF.min()), float(zF.max())],
                 trend=trend(d, runs), errors=errors([runs[0.0][i][1] for i in idx]), counts=count(res),
                 covariance_sensitivity=dict(correlations=list(PRE_POST), by_correlation=cov, placements_that_change=changes, unchanged_against_the_rigid_network_and_the_two_families=bool(all(fam(c) == fam(0.0) for c in PRE_POST)),

@@ -91,6 +91,18 @@ def test_resistance_falls_with_the_flow_load_in_the_published_hepatectomies():
         st = json.load(open(f)); assert [x['zR_observed'] for x in st['states']] == [x['zR_observed'] for x in s['states']] and st['trend']['spearman_rho'] == s['trend']['spearman_rho'] and st['errors']['to_the_range'] == s['errors']['to_the_range']
 
 
+def test_the_animals_of_each_state_are_named_in_the_table():
+    """Which animals a state was measured in, and which measurement before it uses, are columns of the table. Two groups
+    of animals can share the state before (Golriz 2022 pools it), so neither is inferred from the numbers."""
+    d = hp.load(); assert d.animal_group.notna().all() and d.baseline_group.notna().all()
+    res = d[d.shunt == 'none']; assert res.animal_group.nunique() == 5 and len(res) == 7
+    assert d[d.study == 'Golriz 2016'].animal_group.nunique() == 1 and d[d.study == 'Golriz 2022'].animal_group.nunique() == 3 and d[d.study == 'Golriz 2022'].baseline_group.nunique() == 1
+    before = ['flow_before', 'PVP_before', 'out_before', 'gradient_before', 'HAF_before']
+    for _, g in d.groupby('baseline_group'): assert all(g[c].nunique(dropna=False) == 1 for c in before), g.baseline_group.iloc[0]      # one measurement before, one set of values
+    for _, g in d.groupby('animal_group'): assert g.n.nunique() == 1 and g.study.nunique() == 1 and g.baseline_group.nunique() == 1
+    assert [hp.group_of(r) for _, r in d.iterrows()] == list(d.animal_group) and hp.summary(draws=500)['animals_resected'] == 48
+
+
 def test_the_trend_is_tested_on_one_state_per_group_of_animals():
     """Seven states come from five groups of animals: no P value for the seven, an exact one for each choice of one state per group."""
     e = hp.exact_p([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]); assert e['rho'] == -1.0 and abs(e['p_two_sided'] - 2 / 120) < 1e-4 and abs(e['p_one_sided'] - 1 / 120) < 1e-4

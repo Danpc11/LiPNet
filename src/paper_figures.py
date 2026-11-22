@@ -348,9 +348,9 @@ def figure_3():
     e.set_xscale('log'); e.set_yscale('log'); e.set_xlim(0.25, 12); e.set_ylim(0.1, 3.4)
     e.set_xticks([0.3, 1, 3, 10]); e.set_xticklabels(['0.3', '1', '3', '10']); e.set_yticks([0.1, 0.3, 1, 3]); e.set_yticklabels(['0.1', '0.3', '1', '3']); e.minorticks_off()
     e.set_xlabel(f'Flow load, {ZF}'); e.set_ylabel(f'Resistance load, {ZR}')
-    T = H['trend']; ro = T['rho_one_state_per_group']
+    T = H['trend']; ro, po = T['rho_one_state_per_group'], T['p_two_sided_one_state_per_group']
     for yy, s_, kw in ((2.95, f"Seven resections: $\\rho$ = {T['spearman_rho']:.2f}", dict(fontsize=FS_IN)), (2.36, 'One per group of animals:', dict(fontsize=FS_SMALL, color=MUTED)),
-                       (1.93, f"$\\rho$ = {ro[0]:.2f} to {ro[1]:.2f}", dict(fontsize=FS_SMALL, color=MUTED))):
+                       (1.93, f"$\\rho$ = {ro[0]:.2f} to {ro[1]:.2f}", dict(fontsize=FS_SMALL, color=MUTED)), (1.58, f"$P$ = {po[0]:.3f} to {po[1]:.3f}", dict(fontsize=FS_SMALL, color=MUTED))):
         e.text(11.3, yy, s_, ha='right', va='center', **kw)
     key = [Line2D([], [], marker=mk, ls='', ms=4.0 if mk != 'D' else 3.6, mfc=INK, mec=INK, mew=0.9, label=s) for s, mk in STUDY_MARK.items()] + [Line2D([], [], marker='o', ls='', ms=4.0, mfc='white', mec=INK, mew=0.9, label='With shunt')]
     key += [Patch(color=BLUE, alpha=0.16, lw=0, label='Rigid network'), Patch(facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, label='Stops distending'), Patch(color=BLUE, alpha=0.34, lw=0, label='Keeps distending')]

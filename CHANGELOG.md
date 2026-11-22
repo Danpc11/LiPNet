@@ -2,6 +2,11 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.3] – 2026-11-22
+- `data/hepatectomy.tsv`: columns `animal_group` and `baseline_group`. `hepatectomy.group_of` reads the first and `baseline_of` the second; groups are no longer inferred from study, flow before and n. The three states of Golriz 2022 are three groups of animals with one pooled state before. Results unchanged.
+- Figure 3E prints the exact P of the trend with one state per group of animals.
+- README: where the result files of a release are found.
+
 ## [0.11.2] – 2026-11-22
 - Fixed: `ipd.ecological.reported_sigma` gave every group of a series the mean dispersion of that series; each group now takes its own (`gradient_sd` of the table). `results/ipd_ecological.json: reported_sigma_fit` changes; no other result does.
 - One definition instead of several: the networks of the rigid range (`liver.B_CANOPY`, `human.B_CALIBRATED`; `viscosity.B_HUMAN` removed), the regions of a group (`distension.regions`, used by `bracket` and by `viscosity`), the rigid network of a remnant (`hepatectomy.rigid_each`), the donor references (`indices.NORMAL_GRADIENT`, `DEFAULT_DONOR_REF`, `DEFAULT_CVP`, read by `human`, `ipd`, `audit`, `predictions`, `distension` and `build_app`), `audit.sd_from_range` (the copy in `ipd.patient_level` removed).

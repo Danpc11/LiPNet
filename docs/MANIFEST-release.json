@@ -1,8 +1,8 @@
 {
  "python": "3.13.18",
  "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
- "commit": "9eac71901cc967f237c284add881d784a8cc6301",
- "inputs_fingerprint": "60ca71fb369305e5a89b1556ae2d674fe7407e728b20ded41b80c09176475d30",
+ "commit": null,
+ "inputs_fingerprint": "baa53a825fe5d7c6f018a48cb23077c8093eaa2f8c99a7b746e0a7f299a5f984",
  "rebuilt_from_scratch": true,
  "packages": {
   "numpy": "2.5.3",
@@ -21,7 +21,7 @@
   "data/curves/TEMPLATE_study_group.csv": "4cdc4e6cd2ab61fed665951fd2500c02af49becfa8ec2707d8db19e7d5f18a48",
   "data/graph3d_all.tsv": "afd26cbc2d0d206623eece75fa02b9e275a789a5ef3f362b2b359cb962aabc64",
   "data/graph_scaling_all.tsv": "6313ea40b9015e7cf039be1be472f1f8d56d9d2f11f23e4ae2576c763bbf72e1",
-  "data/hepatectomy.tsv": "9d45af94368fb2e2f104724881f7ae6224fa86d98949330ee3f95efc5b357ecd",
+  "data/hepatectomy.tsv": "f105cc1f9ed3f9321696e3adc1ba58ea150fddc9b0e9e394dc4e869b87229731",
   "data/interventions.tsv": "649a478da5cdf172b4b6974164459bf79a04b5daf81d7ed08f00fefb6803e006",
   "data/kamikado2004.tsv": "94ef8e56b05deed6772c4a0473f73c37a31a29b8b12bcea35365f69144178a57",
   "data/patient_level/botha2010.tsv": "7835fed5eb8942b5b40db8ededf478629b8efa8bd41e18893940b4830289187a",
@@ -62,7 +62,7 @@
   "src/model/compartments.py": "7c004700a099499a9f64a05c9573ff5617b25ec96bd80610326377a1b977d96e",
   "src/model/distension.py": "6b84c2490f89119aa64adae612642f58f87a58b622c82eb301b2f26347ca009d",
   "src/model/graph_scaling.py": "4f417e6de919aaf93fa18c638b22683d4281de3c3ea2843e92a37e760f20e3a5",
-  "src/model/hepatectomy.py": "112b2a1cd1dbee5ce9d131d8aec74c402d3321485a99a3328042e44d1ca0b7f7",
+  "src/model/hepatectomy.py": "3111709c60fd55aa1d01b8c2b195ead6a2581a5e7fc617197807baf8c23a7537",
   "src/model/human.py": "231d92fe88c948a289fe2a42588cd92f08524be0b3b6e07e1cd618a58cda1fb0",
   "src/model/liver.py": "43da3e1046b31694514d5871ec883b1b82ece3bb2c1df50ba804b7f4bcb3d5c1",
   "src/model/merge_campaigns.py": "b8428ce123aae3c79b85a2e46dd465dab6adf8bae9dfc6e4e17288899d59d149",
@@ -72,7 +72,7 @@
   "src/model/verify_campaigns.py": "b117a58b318c3882aad4ca696d27f2f47f504618ce079ed8dabec9a575f9e600",
   "src/model/viscosity.py": "8cdad9ed9bfdc584e07efb49c02b1106ea1609eaf1bf9cddaf49222a5de87b57",
   "src/model/whole_graft.py": "e8862dea3a5e7b835457f6fc0c230262bad8241c8dbb33f10454fb54ab138266",
-  "src/paper_figures.py": "af9accfdecea7bd67b8a39509787b6ebfc17312c50658d73aeddfd675652ed1a",
+  "src/paper_figures.py": "1f8db5d2bbb2d3e200c29e4fb05c6723a4e107522581bd5099391189436dcd7f",
   "src/plots.py": "edfab67b6216a86e25901f6cff21e026dbdcc05cd40ab3a2d2121c30d0ba8a74",
   "src/predictions.py": "5b31455ce5670b00998ec12f0e16a0da5f74c084c4c01771ca6e0fab8291e20e"
  },
@@ -95,7 +95,7 @@
   "results/fem_perfusion.json": "1ff6f2ec894c4da9b032def3aafc91b6984d6e20236e22c3b24ddb59a464b8a4",
   "results/fem_transport.json": "18de606ea153aac5285aafb721e73a693ee57e3229da9f6cb90d2a89975a38e6",
   "results/fem_two_phase.json": "bed0f13e4dd77256ab44bb2b0c8b66f94da4c9d42fc9745a17a1154fd49f7702",
-  "results/figures_provenance.json": "b40e8e0f064db68e0e85a7dcd7a84782a5179e8c77edf6f02c05b9a4c9f11d32",
+  "results/figures_provenance.json": "4c73a6bff271e2a4d99cac8df37ca6b8c357b00d857cd78b8534277c67656150",
   "results/ipd_ecological.json": "36f135fcc709e078060f93e489d1668e760f7d528f3adbb67a7a003efad53c22",
   "results/ipd_patient_level.json": "ab4bdb30e2dd966fc30b18de1f69de7004684d342f40135468bc5676295536ad",
   "results/meta_slope.json": "ac4f44678bc1d865c7695fc2e36959be11f3a42d5f7ae5e06cdbaa09af47245e",
@@ -111,6 +111,5 @@
   "results/series_with_indices.tsv": "c2626425fe16df44dc74dfdf063620ba540eae4c8f0b2d3014b919583ff1ca73",
   "results/spec_curve.json": "9479550ec84e769a2272430037cafdb404e8736e8e59234762f970bac6b4e687",
   "results/within_study_fit.json": "1dcd54d0e09dc5764a7c4fbcc3d49c088d7c54e631558a0bbc8a07b2252f200c"
- },
- "commit_note": "the commit holding the code and data that were rebuilt; the manifest itself is committed after it"
+ }
 }
