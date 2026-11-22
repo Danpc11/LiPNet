@@ -56,6 +56,7 @@ CASTS = {'portal vein': dict(d_ratio=0.70, l_ratio=0.72, n=2.80),
          'hepatic artery': dict(d_ratio=0.74, l_ratio=0.66, n=2.76)}
 HUMAN_GENERATIONS = 14                      # 3^13 = 1.6e6 lobules, the order of a human liver
 ARTERIAL_FRACTION = 0.25                    # hepatic artery share of total hepatic inflow in the donor
+B_CANOPY = (1.0, 0.75, 0.5)                 # maintenance exponents at which the symmetric canopy enters the rigid range, b in [0.5, 1]
 
 
 def diameter_ratio(b, n=3.0, l_ratio=3.0 ** (-1 / 3)):

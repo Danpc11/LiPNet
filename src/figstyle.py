@@ -74,7 +74,7 @@ def letter(fig, ax, s, dx=9.0, dy=3.5):
     fig.text(b.x0 - dx / W, b.y1 + dy / H, s, fontsize=FS_LETTER, fontweight='bold', va='center', ha='left', color=INK)
 
 
-def bare(ax, keep='bottom'):
+def bare(ax):
     """An axis that carries rows of labels instead of a scale on its left side."""
     ax.set_yticks([]); ax.spines['left'].set_visible(False)
 

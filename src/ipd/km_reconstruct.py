@@ -35,7 +35,6 @@ def kaplan_meier(time, status):
     order = np.argsort(time, kind='mergesort')
     time, status = time[order], status[order]
     ts = np.unique(time[status == 1])
-    n = len(time)
     s, out_s, out_n = 1.0, [], []
     for t in ts:
         at_risk = int(np.sum(time >= t))
@@ -46,7 +45,7 @@ def kaplan_meier(time, status):
     return ts, np.array(out_s), np.array(out_n)
 
 
-def reconstruct(points, risk, total_events=None, tol=1e-6, max_iter=200):
+def reconstruct(points, risk, total_events=None, max_iter=200):
     """Guyot reconstruction.
 
     points : sequence of (t, S) read off the published curve, t increasing, S decreasing

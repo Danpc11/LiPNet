@@ -27,7 +27,7 @@ import json, os, sys
 import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import figstyle as fs
-from figstyle import INK, MUTED, GRID, BAND, NEUTRAL, BLUE, RED, PORTAL, SINUSOID, HEPATIC, EVENT, FS, FS_IN, FS_SMALL, LW, LW_REF, DASH, DOT
+from figstyle import INK, MUTED, GRID, BAND, NEUTRAL, BLUE, RED, PORTAL, SINUSOID, HEPATIC, EVENT, FS, FS_IN, FS_SMALL, LW_REF, DASH, DOT
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, PathPatch, FancyBboxPatch, RegularPolygon, Ellipse
@@ -44,20 +44,12 @@ load = lambda name: json.load(open(f'{OUT}/{name}.json'))
 save = lambda fig, name: fs.save(fig, name, OUT)
 
 
-def plane(ax, lim=5.0, model=True, label_at=2.9, label='Network model', bed=None):
-    """The flow-pressure plane: donor diagonal, the window between one and two, the wedge the rigid network reaches and,
-    if `bed` is given (results/model_distension.json), the band of a fully distensible bed."""
+def plane(ax, lim=5.0, model=True, label_at=2.9, label='Network model'):
+    """The flow-pressure plane: donor diagonal, the window between one and two and the wedge the rigid network reaches."""
     x = np.array([0, lim]); ax.fill_between([1, 2], 1, 2, color=BAND, lw=0, zorder=0)
     if model:
         ax.fill_between(x, MODEL_ZR[0] * x, MODEL_ZR[1] * x, zorder=1, **fs.MODEL_TINT)
         ax.text(0.81 * lim, 0.81 * lim * np.mean(MODEL_ZR) - 0.004 * lim, label, fontsize=FS_SMALL, rotation=42.5, ha='center', va='center', zorder=3)
-    if bed:                                   # the passive relations of the normal liver: dark, those that keep distending; hatched, the one that stops
-        k, s_ = bed['keeps distending'], bed['stops distending']; m = bed.get('measured_up_to_flow_load', lim)
-        ax.fill_between(bed['zF'], k['zP_low'], k['zP_high'], color=BLUE, alpha=0.34, lw=0, zorder=1)
-        ax.fill_between(bed['zF'], s_['zP_low'], s_['zP_high'], facecolor='none', edgecolor=BLUE, hatch='//////', lw=0, alpha=0.55, zorder=1)
-        if m < lim:                                                        # the highest flow at which a relation was measured: beyond it, extrapolation
-            ax.plot([m, m], [0, 0.6 * lim], color=MUTED, lw=0.6, ls=(0, (1, 1.5)), zorder=2)
-            ax.text(m - 0.06, 0.62, 'Measured', fontsize=FS_SMALL, color=MUTED, ha='right', va='center'); ax.text(m + 0.06, 0.62, 'Extrapolated', fontsize=FS_SMALL, color=MUTED, ha='left', va='center')
     ax.plot(x, x, color=INK, lw=LW_REF, ls=DASH, zorder=2); ax.plot([1], [1], 'o', ms=4, mfc=INK, zorder=5, **DOT)
     ax.text(label_at, label_at + 0.06 * lim, f'{ZR} = 1', fontsize=FS_IN, rotation=45, ha='center', va='center')
     ax.set_xlim(0, lim); ax.set_ylim(0, lim); ax.set_aspect('equal'); ax.set_xticks(range(0, int(lim) + 1)); ax.set_yticks(range(0, int(lim) + 1))
@@ -106,7 +98,7 @@ def _schematic(ax):
 
 def _network_2d(ax, R=4.5, b=0.75):
     from model import network as lc
-    G = lc.build_liver_graph(R=R); gin, gout = lc.split_liver(G); xy = G['xy']; cen, cor, pairs, Lh = lc.hex_lobules(R, 1.0)
+    G = lc.build_liver_graph(R=R); gin, gout = lc.split_liver(G); xy = G['xy']; cen, _, _, Lh = lc.hex_lobules(R, 1.0)
     tree = min((lc.best_sinusoid_tree(gin, b, seed=s) for s in range(3)), key=lambda s: s['D'])
     for (x, y) in cen: th = np.pi / 6 + np.arange(7) * np.pi / 3; ax.plot(x + Lh * np.cos(th), y + Lh * np.sin(th), color=GRID, lw=0.4, zorder=0)
     w, keep = tree['w'], tree['keep']; r = np.zeros(gin.m); r[keep] = (w[keep] * gin.L[keep]) ** 0.25; rm = r[keep].max()
@@ -356,7 +348,7 @@ def figure_3():
     e.set_xscale('log'); e.set_yscale('log'); e.set_xlim(0.25, 12); e.set_ylim(0.1, 3.4)
     e.set_xticks([0.3, 1, 3, 10]); e.set_xticklabels(['0.3', '1', '3', '10']); e.set_yticks([0.1, 0.3, 1, 3]); e.set_yticklabels(['0.1', '0.3', '1', '3']); e.minorticks_off()
     e.set_xlabel(f'Flow load, {ZF}'); e.set_ylabel(f'Resistance load, {ZR}')
-    T = H['trend']; ro, po = T['rho_one_state_per_group'], T['p_two_sided_one_state_per_group']
+    T = H['trend']; ro = T['rho_one_state_per_group']
     for yy, s_, kw in ((2.95, f"Seven resections: $\\rho$ = {T['spearman_rho']:.2f}", dict(fontsize=FS_IN)), (2.36, 'One per group of animals:', dict(fontsize=FS_SMALL, color=MUTED)),
                        (1.93, f"$\\rho$ = {ro[0]:.2f} to {ro[1]:.2f}", dict(fontsize=FS_SMALL, color=MUTED))):
         e.text(11.3, yy, s_, ha='right', va='center', **kw)
@@ -580,7 +572,7 @@ def figure_s6():
     fig = fs.figure(118); a = fs.axes(fig, 13, 69, 66, 42); b = fs.axes(fig, 108, 69, 66, 42); c = fs.axes(fig, 13, 11, 66, 42); d = fs.axes(fig, 130, 11, 44, 42)
     sizes = np.geomspace(human.NEWBORN_LIVER_G, human.ADULT_LIVER_G, 25); V = sizes / human.DENSITY
     for bb, col in zip((0.6, 0.75, 0.93), fs.ramp(3)): a.plot(V, [r['portal_diameter_mm'] for r in human.growth(bb, 1.0, sizes)['rows']], color=col, label=f'Model, $b$ = {bb:g}', zorder=2)
-    for k, (v, (w, dia, vel)) in enumerate(zip(human.measured_growth()['liver_volume_mL'], human.PORTAL_BY_WEIGHT)):
+    for k, (v, (_, dia, _)) in enumerate(zip(human.measured_growth()['liver_volume_mL'], human.PORTAL_BY_WEIGHT)):
         a.plot([v, v], dia, color=INK, lw=1.6, zorder=3, label='Children, range by body weight' if k == 0 else None)
     a.plot([human.urata_volume(70)], [human.PORTAL_DIAMETER_MM['adults'][0]], 's', ms=4.2, mfc=INK, zorder=4, label='Adults, pooled ultrasound', **DOT)
     a.set_xscale('log'); a.set_yscale('log'); a.set_xlim(120, 1700); a.set_ylim(2.5, 60); a.set_yticks([3, 5, 10, 20]); a.set_yticklabels(['3', '5', '10', '20']); a.set_ylabel('Portal vein diameter (mm)'); a.legend(loc='upper left', handlelength=1.4, borderaxespad=0.1)

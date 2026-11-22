@@ -150,20 +150,6 @@ class Mesh(object):
         return is_in[r['a']] & is_in[r['b']]
 
     # -- helpers ----------------------------------------------------------
-    def elem_mean(self, c):
-        """Nodal field -> element average."""
-        return c[self.tri].mean(axis=1)
-
-    def elem_to_node(self, ce):
-        """Element field -> nodal field, area-weighted."""
-        w = np.bincount(self.tri.ravel(), weights=np.repeat(self.area, 3), minlength=self.n)
-        v = np.bincount(self.tri.ravel(), weights=np.repeat(ce * self.area, 3), minlength=self.n)
-        return v / np.maximum(w, 1e-300)
-
-    def integrate(self, c):
-        """Integral of a nodal field over the lobule cross-section [field * m^2]."""
-        return float(np.sum(self.area * self.elem_mean(c)))
-
     @property
     def cross_area(self):
         return float(np.sum(self.area))

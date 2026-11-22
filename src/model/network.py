@@ -5,8 +5,8 @@ Formulation:
     shear        tau_e = |f_e| / r_e^3
     cost         C_b = sum_e a_e w_e^alpha,  alpha = b/2,  a_e = l_e^{3b/2}
                  (proportional to sum_e (r_e^2 l_e)^b: vessel mass to the power b)
-    loading      one source (hilum: HA+PV inlet), one sink (hepatic vein outlet):
-                 I = e_s - e_t, D = I^T L^+ I = R_st  (rank-one loading)
+    loading      a demand mu on the nodes and its independent fluctuation (class Loaded):
+                 Q = mu mu^T + Cov, <D> = tr(L^+ Q)
 
 Geometry from Lorente, Hautefeuille & Sanchez-Cedillo, Sci. Rep. 10, 16194 (2020):
     splitting number n = 3, d_{i+1}/d_i = L_{i+1}/L_i = 3^{-1/3} (theory);
@@ -18,10 +18,8 @@ Geometry from Lorente, Hautefeuille & Sanchez-Cedillo, Sci. Rep. 10, 16194 (2020
 import numpy as np, networkx as nx
 from scipy.linalg import solve
 
-LN3 = np.log(3.0)
-
 # --------------------------------------------------------------------------
-# Part B: explicit planar canopy-to-canopy graph
+# explicit planar canopy-to-canopy graph
 # --------------------------------------------------------------------------
 def hex_lobules(R=5.5, s=1.0):
     """triangular lattice of lobule centres inside a disk of radius R (spacing s);
@@ -91,7 +89,6 @@ def build_liver_graph(R=5.5, s=1.0, seed=0):
     nin, ein, din, lid_in = ternary_tree(corners, origin, seed=seed)
     nout, eout, dout, lid_out = ternary_tree(centres, origin, seed=seed + 1)
     xy = [nin[0]]; E = []
-    off_in = 1                       # inlet internal + leaves (leaves == triads)
     for (p, c), d in zip(ein, din):
         E.append((p, c, 'in', d))
     xy = list(map(tuple, nin))
@@ -136,19 +133,6 @@ class Loaded:
                 Q += sigma ** 2 * np.outer(v, v)
         self.Q = Q
     def a(self, b): return self.L ** (1.5 * b)
-    def cost(self, w, b, keep=None):
-        keep = np.arange(self.m) if keep is None else keep
-        return float(np.sum(self.a(b)[keep] * w[keep] ** (b / 2)))
-    def support_ok(self, keep):
-        H = nx.Graph(); H.add_edges_from(self.E[k] for k in keep)
-        if self.src not in H: return False
-        comp = nx.node_connected_component(H, self.src)
-        return all(c in comp for c in self.dem)
-    def src_component(self, keep):
-        """edges of keep lying in the connected component of the source (drops dangling pieces)."""
-        H = nx.Graph(); H.add_edges_from(self.E[k] for k in keep)
-        comp = nx.node_connected_component(H, self.src)
-        return np.array([k for k in keep if self.E[k][0] in comp])
     def solve(self, w, keep=None):
         """returns <D>, grad wrt w on keep, and mean edge flows f (for shear)."""
         keep = np.arange(self.m) if keep is None else keep
@@ -169,12 +153,6 @@ class Loaded:
             f = np.zeros(self.m); f[keep] = w[keep] * (B.T @ phi)
         return D, grad, f
     def dissipation(self, w, keep=None): return self.solve(w, keep)[0]
-    def cycle_rank(self, keep):
-        H = nx.Graph(); H.add_edges_from(self.E[k] for k in keep)
-        return H.number_of_edges() - H.number_of_nodes() + nx.number_connected_components(H)
-    def d_norm(self, w, b, keep=None):
-        """budget-invariant D C^{1/alpha}."""
-        return self.dissipation(w, keep) * self.cost(w, b, keep) ** (2 / b)
 
 def split_liver(G):
     """the canopy graph as two loaded subproblems sharing the budget:
@@ -241,7 +219,3 @@ def best_sinusoid_tree(g, b, sigma=0.0, sweeps=20, seed=0, init=None):
         if not moved: break
     sol = tree_allocation(g, keep_of(choice), b, 1.0, sigma); sol['choice'] = choice
     return sol
-
-# --------------------------------------------------------------------------
-# local shear set-point adaptation on the fixed liver support (Eq. 6 of the Letter)
-# --------------------------------------------------------------------------

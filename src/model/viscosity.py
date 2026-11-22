@@ -33,8 +33,11 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 HCT_REFERENCE = (0.40, 0.45)
 HCT_RECIPIENT = (0.25, 0.35)
 SINUSOID_UM = Flow().d_sin * 1e6
-B_HUMAN = (0.6, 2 / 3, 0.75, 0.85, 0.93)        # the calibrated human livers of the rigid range (compartments.geometries)
 RAT_SCALE = (10.0 / 1500.0) ** (1 / 3)          # linear scale of a 10 g liver against the 1500 g one
+MICRO_BELOW_UM, MICRO_AT_UM = 70.0, 10.0          # the haematocrit of a vessel falls below the systemic one under 70 micrometres (Lipowsky et al. 1980)
+MICRO = (1.0, 0.75, 0.5, 0.25)                    # haematocrit of the smallest vessels over the systemic one: 1 is the main analysis
+FLOW_THRESHOLD = 250.0          # mL/min/100 g: the flow above which inflow is modulated (Troisi et al. 2005)
+GRADIENT_THRESHOLD = 10.0       # mmHg: a portal pressure of 15 mmHg at a central venous pressure of 5 (Ogura et al. 2010); PVP - CVP > 10 (Wehrle et al. 2025)
 
 
 def relative_viscosity(D, H):
@@ -49,9 +52,6 @@ def _network(b, scale=1.0):
     h = human.liver(b); D = 2000.0 * np.asarray(h['r_mm']) * scale; k = int(h['g']); D[k] = SINUSOID_UM
     return D, h['dP_mmHg'] / h['dP_mmHg'].sum(), k
 
-
-MICRO_BELOW_UM, MICRO_AT_UM = 70.0, 10.0          # the haematocrit of a vessel falls below the systemic one under 70 micrometres (Lipowsky et al. 1980)
-MICRO = (1.0, 0.75, 0.5, 0.25)                    # haematocrit of the smallest vessels over the systemic one: 1 is the main analysis
 
 
 def vessel_haematocrit(D, H, micro=1.0):
@@ -69,13 +69,13 @@ def factor(H, H_ref, b=0.75, scale=1.0, segments=False, micro=1.0):
     return dict(total=total, portal=float((w[:k] * r[:k]).sum() / w[:k].sum()), sinusoidal=float(r[k]), hepatic_venous=float((w[k + 1:] * r[k + 1:]).sum() / w[k + 1:].sum()))
 
 
-def factor_range(recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=B_HUMAN, micro=1.0):
+def factor_range(recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=human.B_CALIBRATED, micro=1.0):
     """Range of the factor over the two haematocrit ranges and the calibrated networks."""
     z = [factor(H, Hr, b, micro=micro) for H in recipient for Hr in reference for b in bs]
     return float(min(z)), float(max(z))
 
 
-def draw(rng, n, recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=B_HUMAN):
+def draw(rng, n, recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=human.B_CALIBRATED):
     """n draws of the factor: both haematocrits uniform in their ranges, one of the calibrated networks each."""
     nets = [_network(b) for b in bs]; H = rng.uniform(*recipient, n); Hr = rng.uniform(*reference, n); i = rng.integers(0, len(nets), n); out = np.empty(n)
     for j, (D, w, k) in enumerate(nets):
@@ -108,14 +108,11 @@ def published_check():
 
 
 def _regions(g, v):
-    """The regions of `distension.bracket` for one group, unrounded: the rigid network times the range v of the factor,
-    and the relations solved on it."""
+    """The regions of `distension.regions` for one group at four decimals, so that a count made on them is not decided
+    by the third."""
     from model import distension as ds
-    lo, hi = ds.rigid_range(g['zF']); lo, hi = lo * v[0], hi * v[1]; cvps = (g['cvp'],) if g['cvp'] is not None else ds.CVPS; sol = {}
-    for law in ds.LAWS:
-        z = [ds.distensible(g['zF'], zr, c, law, p)['zR'] for zr in (lo, hi) for c in cvps for p in ds.PARAMS[law]]; sol[law] = [min(z), max(z)]
-    fam = lambda which: [round(min(sol[l][0] for l in ds.LAWS if ds.FAMILY[l] == which), 4), round(max(sol[l][1] for l in ds.LAWS if ds.FAMILY[l] == which), 4)]
-    return dict(rigid=[round(lo, 4), round(hi, 4)], keeps_distending=fam('keeps distending'), stops_distending=fam('stops distending'))
+    reg = ds.regions(g, v, digits=4)[1]
+    return dict(rigid=reg['rigid network'], keeps_distending=reg['keeps distending'], stops_distending=reg['stops distending'])
 
 
 def microvascular(d):
@@ -165,9 +162,6 @@ def clinical(d, draws=20000):
                 note='the haematocrit of the recipients is a range taken from other recipients, not a measurement of these groups')
 
 
-FLOW_THRESHOLD = 250.0          # mL/min/100 g: the flow above which inflow is modulated (Troisi et al. 2005)
-GRADIENT_THRESHOLD = 10.0       # mmHg: a portal pressure of 15 mmHg at a central venous pressure of 5 (Ogura et al. 2010); PVP - CVP > 10 (Wehrle et al. 2025)
-
 
 def thresholds(hcts=np.round(np.arange(0.20, 0.4501, 0.01), 2)):
     """The two thresholds in clinical use on the scale of the loads. They are one point of the flow-pressure plane, so
@@ -177,9 +171,9 @@ def thresholds(hcts=np.round(np.arange(0.20, 0.4501, 0.01), 2)):
     import indices
     from model import distension as ds
     zF = FLOW_THRESHOLD / indices.DEFAULT_DONOR_REF; zP = GRADIENT_THRESHOLD / indices.NORMAL_GRADIENT; lo, hi = ds.rigid_range(zF); g0 = indices.NORMAL_GRADIENT
-    f = {float(H): [factor(float(H), Hr, b) for Hr in HCT_REFERENCE for b in B_HUMAN] for H in hcts}
+    f = {float(H): [factor(float(H), Hr, b) for Hr in HCT_REFERENCE for b in human.B_CALIBRATED] for H in hcts}
     grad = {H: [g0 * zF * lo * min(v), g0 * zF * hi * max(v)] for H, v in f.items()}
-    rise = [factor(0.35, Hr, b) / factor(0.25, Hr, b) for Hr in HCT_REFERENCE for b in B_HUMAN]
+    rise = [factor(0.35, Hr, b) / factor(0.25, Hr, b) for Hr in HCT_REFERENCE for b in human.B_CALIBRATED]
     cross = [H for H in sorted(grad) if grad[H][0] <= GRADIENT_THRESHOLD <= grad[H][1]]
     r = lambda x: [round(float(y), 3) for y in x]
     return dict(flow_mL_min_100g=FLOW_THRESHOLD, gradient_mmHg=GRADIENT_THRESHOLD, zF=round(zF, 3), zP=round(zP, 3), zR_where_they_agree=round(zP / zF, 3),
@@ -192,7 +186,7 @@ def thresholds(hcts=np.round(np.arange(0.20, 0.4501, 0.01), 2)):
 def summary():
     import indices
     d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
-    table = {f'{Hr:g}': {f'{H:g}': [round(min(factor(H, Hr, b) for b in B_HUMAN), 3), round(max(factor(H, Hr, b) for b in B_HUMAN), 3)] for H in (0.20, 0.25, 0.30, 0.35)} for Hr in (0.40, 0.45)}
+    table = {f'{Hr:g}': {f'{H:g}': [round(min(factor(H, Hr, b) for b in human.B_CALIBRATED), 3), round(max(factor(H, Hr, b) for b in human.B_CALIBRATED), 3)] for H in (0.20, 0.25, 0.30, 0.35)} for Hr in (0.40, 0.45)}
     return dict(law='Pries et al. 1994, in vivo', sinusoid_um=SINUSOID_UM, large_vessel_relative_viscosity={f'{H:g}': round(float(relative_viscosity(1e4, H)), 3) for H in (0.0, 0.25, 0.30, 0.35, 0.40, 0.45)},
                 factor_by_haematocrit=table, segments_at_0p30_over_0p42={n: round(x, 3) for n, x in factor(0.30, 0.42, segments=True).items()}, published_check=published_check(), clinical=clinical(d), thresholds=thresholds(), microvascular=microvascular(d))
 

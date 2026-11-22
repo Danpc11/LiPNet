@@ -41,8 +41,9 @@ REPORTED = {
 
 
 def sd_from_range(lo, hi, n):
-    """Wan et al., BMC Med Res Methodol 2014: SD from the range of n observations."""
-    return (hi - lo) / (2 * norm.ppf((n - 0.375) / (n + 0.25)))
+    """Standard deviation estimated from the range of n observations (Wan et al., BMC Med Res Methodol 2014):
+    SD ~ (hi - lo) / xi(n), with xi(n) = 2 Phi^-1((n - 0.375) / (n + 0.25)). It assumes approximate normality."""
+    return float((hi - lo) / (2 * norm.ppf((n - 0.375) / (n + 0.25))))
 
 
 def table_checks(d):
@@ -77,7 +78,7 @@ def paired(d, correlations=(-0.5, 0.5)):
     cv_max, sd_max = max(cvs), max(sds)                       # used where a paper reports no dispersion
     measured_refs = sorted(v for v in d.donor_PVF_per_100g_ref.dropna().unique() if v != indices.DEFAULT_DONOR_REF)
     for _, r in p.iterrows():
-        rep = REPORTED[(r.study, r.group)]; grad = 5 * r.zP
+        rep = REPORTED[(r.study, r.group)]; grad = indices.NORMAL_GRADIENT * r.zP
         cv = rep['cv_flow'] or (sd_from_range(*rep['flow_range'], rep['n_flow']) / r.PVF_per_100g if rep.get('flow_range') else cv_max)
         sd = rep['sd_grad'] or (sd_from_range(*rep['grad_range'], rep['n_grad']) if rep.get('grad_range') else sd_max)
         ratio_se = lambda rho: ratio_log_se(cv, rep['n_flow'], sd, rep['n_grad'], grad, rho)
@@ -93,7 +94,7 @@ def paired(d, correlations=(-0.5, 0.5)):
             zR_ci_sampling=[float(r.zR * np.exp(-1.96 * se)), float(r.zR * np.exp(1.96 * se))], zR_log_se=float(se),
             zR_ci_by_correlation={f'{rho:+.1f}': [float(r.zR * np.exp(-1.96 * ratio_se(rho))), float(r.zR * np.exp(1.96 * ratio_se(rho)))] for rho in correlations},
             # reference values that put the group at zR = 1, one at a time
-            donor_gradient_at_which_zR_is_one_mmHg=float(5 * r.zR),
+            donor_gradient_at_which_zR_is_one_mmHg=float(indices.NORMAL_GRADIENT * r.zR),
             donor_flow_reference_at_which_zR_is_one=(None if own_ref else float(ref / r.zR)),
             zR_at_largest_measured_donor_reference=(None if own_ref else float(r.zR * max(measured_refs) / ref))))
     return dict(groups=rows, flow_cv_where_unreported=float(cv_max), gradient_sd_where_unreported=float(sd_max),
@@ -123,8 +124,8 @@ def slope(d):
     for st, g in c.groupby(indices.strata(c).values):
         sd = g.gradient_sd.dropna()
         rows.append(dict(stratum=st, groups=int(len(g)), defined_by=g.group.tolist(), events=int(g.events.sum()), recipients=int(g.n.sum()),
-                         span_mmHg=float(5 * (g.zP.max() - g.zP.min())), within_group_sd_mmHg=([float(sd.min()), float(sd.max())] if len(sd) else None),
-                         span_over_within_group_sd=(float(5 * (g.zP.max() - g.zP.min()) / sd.mean()) if len(sd) else None),
+                         span_mmHg=float(indices.NORMAL_GRADIENT * (g.zP.max() - g.zP.min())), within_group_sd_mmHg=([float(sd.min()), float(sd.max())] if len(sd) else None),
+                         span_over_within_group_sd=(float(indices.NORMAL_GRADIENT * (g.zP.max() - g.zP.min()) / sd.mean()) if len(sd) else None),
                          own_slope=float(own[st]['beta']), own_slope_se=float(own[st]['se']),
                          groups_defined_by_pressure=bool(g.group.str.contains('PVP|PVPG|PSG').all())))
     out = dict(strata=rows)
@@ -150,13 +151,13 @@ def slope(d):
 def model_against_data(d):
     from model import liver
     p = d.dropna(subset=['zF', 'zP']); out = dict(observed_zR=[float(x) for x in p.zR])
-    lob = [liver.lobar_graft(liver.HUMAN_GENERATIONS, b, 1) for b in (1.0, 0.75, 0.5)]
+    lob = [liver.lobar_graft(liver.HUMAN_GENERATIONS, b, 1) for b in liver.B_CANOPY]
     out['network_lobar_graft'] = [float(min(l['zR'] for l in lob)), float(max(l['zR'] for l in lob))]
     two = [liver.two_inflows(zF, l['share_inlet'], l['zR'], arterial_load=phi)['zR'] for l in lob for zF in (p.zF.min(), p.zF.max()) for phi in (0.0, 1.0)]
     out['network_with_arterial_inflow'] = [float(min(two)), float(max(two))]
     out['network_with_arterial_inflow_any_split'] = [float(liver.two_inflows(float(p.zF.max()), 0.0, arterial_load=0.0)['zR']), 1.0]
     from model import human
-    cal = [human.liver(b) for b in (0.6, 2 / 3, 0.75, 0.85, 0.93)]
+    cal = [human.liver(b) for b in human.B_CALIBRATED]
     two = [liver.two_inflows(zF, c['share_inlet'], 1 - c['trunks_removed'], arterial_load=phi)['zR'] for c in cal for zF in (p.zF.min(), p.zF.max()) for phi in (0.0, 1.0)]
     out['human_calibration_lobar_graft'] = [float(min(1 - c['trunks_removed'] for c in cal)), float(max(1 - c['trunks_removed'] for c in cal))]
     out['human_calibration_with_arterial_inflow'] = [float(min(two)), float(max(two))]

@@ -27,10 +27,12 @@ import os
 
 import numpy as np
 import pandas as pd
+import indices
+from audit import sd_from_range
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 BOTHA = os.path.join(ROOT, 'data', 'patient_level', 'botha2010.tsv')
-MMHG_PER_ZP = 5.0
+MMHG_PER_ZP = indices.NORMAL_GRADIENT
 
 # what the paper states in its own tables and text, for the transcription control
 BOTHA_REPORTED = dict(n=16, before_n=11, before_median=18.0, before_range=(12.0, 25.0),
@@ -153,17 +155,6 @@ CHAN = os.path.join(ROOT, 'data', 'patient_level', 'chan2011_groups.tsv')
 CHAN_DONOR_PVF = 81.0          # mL/min/100 g, right liver of the donor, same paper
 CHAN_GRADIENT_MEDIAN = 6.0     # mmHg after graft implantation, whole cohort
 CHAN_GRADIENT_RANGE = (-1.0, 11.0)
-
-
-def sd_from_range(lo, hi, n):
-    """Standard deviation estimated from a published range (Wan et al., BMC Med Res
-    Methodol 2014): SD ~ (hi - lo) / xi(n), with xi(n) = 2 Phi^-1((n - 0.375)/(n + 0.25)).
-    It is an approximation that assumes approximate normality, and it is reported as
-    such, but it turns a range into one more check on the within-group spread instead of
-    leaving that spread unmeasured."""
-    from scipy.stats import norm
-    xi = 2.0 * norm.ppf((n - 0.375) / (n + 0.25))
-    return float((hi - lo) / xi)
 
 
 def chan_outcome_contrast(path=CHAN):

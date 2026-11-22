@@ -2,6 +2,14 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.2] – 2026-11-22
+- Fixed: `ipd.ecological.reported_sigma` gave every group of a series the mean dispersion of that series; each group now takes its own (`gradient_sd` of the table). `results/ipd_ecological.json: reported_sigma_fit` changes; no other result does.
+- One definition instead of several: the networks of the rigid range (`liver.B_CANOPY`, `human.B_CALIBRATED`; `viscosity.B_HUMAN` removed), the regions of a group (`distension.regions`, used by `bracket` and by `viscosity`), the rigid network of a remnant (`hepatectomy.rigid_each`), the donor references (`indices.NORMAL_GRADIENT`, `DEFAULT_DONOR_REF`, `DEFAULT_CVP`, read by `human`, `ipd`, `audit`, `predictions`, `distension` and `build_app`), `audit.sd_from_range` (the copy in `ipd.patient_level` removed).
+- Removed, called by nothing: `network.Loaded.support_ok`, `src_component`, `cycle_rank`, `d_norm`, `cost` and `LN3`; `fem.darcy.calibrate`, `fem.mesh.elem_to_node`, `integrate`, `elem_mean`, `fem.network_link.share_vs_cost_exponent`; the `bed` branch of `paper_figures.plane`; unused imports, variables and arguments (`pooled_sigma(d)`, `reconstruct(tol=)`, `figstyle.bare(keep=)`).
+- `build_app.py` no longer reads `results/within_study_fit.json`.
+- Tests: `WITHIN_GROUP_SD` against the table and the patient-level tables; the calculator tests are skipped, not passed, without node.
+- README, module docstrings and comments brought in line with the code.
+
 ## [0.11.1] – 2026-11-21
 - `test_article.py`: builders for `results/ipd_patient_level.json` and `results/model_liver.json`, which the claims added in 0.11.0 read and a clone without results does not have; a test that every result the claims read is kept in the repository or has a builder. No change to code, data or results.
 

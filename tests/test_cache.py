@@ -74,7 +74,7 @@ def test_the_comparison_is_not_fooled_by_an_old_file():
 def test_the_release_manifest_is_the_code_of_this_tree():
     """docs/MANIFEST-release.json is the record of the clean rebuild of the release. Its fingerprint must be the one of the
     code and data of this tree, file by file; if it names a commit present here, that commit must hold the same files."""
-    import manifest, subprocess
+    import manifest
     m = json.load(open(os.path.join(ROOT, 'docs', 'MANIFEST-release.json')))
     now = {f: manifest.sha256(os.path.join(ROOT, f)) for f in manifest.files(manifest.INPUTS)}
     assert m['inputs_fingerprint'] == manifest.fingerprint(m['inputs']), 'the fingerprint is the one of the inputs it lists'

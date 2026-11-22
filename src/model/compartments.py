@@ -46,10 +46,10 @@ def geometries():
     """Donor pressure-drop shares by generation of the networks that make up the rigid range: the canopy at b = 1,
     0.75, 0.5 and the calibrated human liver at b = 0.6 to 0.93. Returns (name, shares, k, trunk share removed)."""
     out = []
-    for b in (1.0, 0.75, 0.5):
+    for b in liver.B_CANOPY:
         c = liver.canopy(liver.HUMAN_GENERATIONS, b); dP = c['dP'] / c['dP'].sum()
         out.append((f'canopy b={b:g}', dP, int(c['k']), float(dP[0] + dP[-1])))
-    for b in (0.6, 2 / 3, 0.75, 0.85, 0.93):
+    for b in human.B_CALIBRATED:
         h = human.liver(b); dP = h['dP_mmHg'] / h['dP_mmHg'].sum()
         out.append((f'human b={b:.2f}', dP, int(h['g']), float(h['trunks_removed'])))
     return out

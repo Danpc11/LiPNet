@@ -129,7 +129,7 @@ def p2_model_against_observed(d):
     import audit
     from model import liver, human
     A = {(g['study'], g['group']): g for g in audit.paired(d)['groups']}; p = d.dropna(subset=['zF', 'zP']); rows = []
-    lob = [liver.lobar_graft(liver.HUMAN_GENERATIONS, b, 1) for b in (1.0, 0.75, 0.5)]; cal = [human.liver(b) for b in (0.6, 2 / 3, 0.75, 0.85, 0.93)]
+    lob = [liver.lobar_graft(liver.HUMAN_GENERATIONS, b, 1) for b in liver.B_CANOPY]; cal = [human.liver(b) for b in human.B_CALIBRATED]
     measured = human.two_inflows_measured()
     for _, r in p.iterrows():
         z = [liver.two_inflows(r.zF, l['share_inlet'], l['zR'], arterial_load=phi)['zR'] for l in lob for phi in (0.0, 1.0)]
@@ -187,10 +187,10 @@ def p2_performance(d, model, uncertainty):
     references   the error of the central configuration when the donor flow, the normal gradient and the assumed CVP
                  are varied together over the 60 combinations of p2_reference_sweep: the observed zR and the flow load
                  at which the network is evaluated both change"""
-    from model import liver, human, compartments as cm
-    p = d.dropna(subset=['zF', 'zP']); G8 = [g for g in cm.geometries()]; zF = p.zF.to_numpy(float); obs = p.zR.to_numpy(float)
+    from model import compartments as cm
+    p = d.dropna(subset=['zF', 'zP']); G8 = cm.geometries(); zF = p.zF.to_numpy(float); obs = p.zR.to_numpy(float)
     cen = [g for g in G8 if g[0] == f"human b={CENTRAL['b']:.2f}"][0]
-    rig = lambda zf, geom, phi: cm.rigid(zf, geom, phi)
+    rig = cm.rigid
     central = np.array([rig(z, cen, CENTRAL['arterial_load']) for z in zF])
     configs = [(g, phi) for g in G8 for phi in ARTERIAL_GRID]; adm = np.array([[rig(z, g, phi) for z in zF] for g, phi in configs])
     U = {(x['study'], x['group']): x for x in uncertainty['groups']}; M = {(x['study'], x['group']): x for x in model['groups']}
@@ -250,8 +250,8 @@ def p2_reference_sweep(d, model_lowest=0.81):
     grid = []
     for f in REF_FLOWS:
         for g in REF_GRADIENTS:
-            m, who = zr_max(f, g, 5.0)
-            grid.append(dict(donor_ref_flow=f, normal_gradient=g, assumed_cvp=5.0, max_zR=round(m, 3), max_group=who,
+            m, who = zr_max(f, g, indices.DEFAULT_CVP)
+            grid.append(dict(donor_ref_flow=f, normal_gradient=g, assumed_cvp=indices.DEFAULT_CVP, max_zR=round(m, 3), max_group=who,
                              all_below_one=bool(m < 1)))
     cvp = []
     for c in REF_CVPS:
@@ -304,7 +304,7 @@ def p2_uncertainty(d, model, draws=40000, seed=0):
     rng = np.random.default_rng(seed); u = rng.uniform(size=(3, draws)); e = rng.standard_normal(draws); rows = []
     span = lambda x: [round(float(v), 3) for v in np.percentile(x, [2.5, 97.5])]
     for _, r in d.dropna(subset=['zF', 'zP']).iterrows():
-        g = A[(r.study, r.group)]; rep = audit.REPORTED[(r.study, r.group)]; grad = 5 * r.zP; lo = pred[(r.study, r.group)]
+        g = A[(r.study, r.group)]; rep = audit.REPORTED[(r.study, r.group)]; grad = indices.NORMAL_GRADIENT * r.zP; lo = pred[(r.study, r.group)]
         se = lambda cv, sd, rho: audit.ratio_log_se(cv, rep['n_flow'], sd, rep['n_grad'], grad, rho)
         cvs = (g['flow_cv_used'],) if g['flow_cv_reported'] else FLOW_CVS; sds = (g['gradient_sd_used'],) if g['gradient_sd_reported'] else GRADIENT_SDS
         sweep = [(cv, sd, rho, se(cv, sd, rho)) for cv in cvs for sd in sds for rho in CORRELATIONS]; worst = max(sweep, key=lambda x: x[3])
@@ -366,7 +366,7 @@ def p3_within_cohort(d):
     if old:                                          # another table, other model code, or LIPNET_REBUILD: fit again, all of them
         print('cached fits not computed from the current table and model code: ' + ', '.join(old) + '; running bayes.py', flush=True); bayes.main()
         if cache.stale(FITS) and not os.environ.get('LIPNET_REBUILD'): raise RuntimeError('bayes.py did not write ' + ', '.join(cache.stale(FITS)))
-    read = lambda name, make=None: json.load(open(f'{OUT}/{name}.json'))
+    read = lambda name: json.load(open(f'{OUT}/{name}.json'))
     main = read('bayes_main'); iecv_ = read('bayes_iecv'); spec = read('spec_curve'); prio = read('bayes_priors'); meas = read('bayes_measurement'); recov = read('bayes_recovery')
     pairs = []
     for st, g in c.groupby(indices.strata(c).values):

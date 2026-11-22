@@ -9,8 +9,8 @@ ROOT = os.path.join(os.path.dirname(__file__), '..'); sys.path.insert(0, os.path
 import indices
 
 def test_sources_parse_on_older_python():
-    """Every source file must parse under the oldest Python the CI uses (3.9 grammar), so nested-quote f-strings
-    and other 3.12-only syntax cannot slip in."""
+    """Every source file must parse with the grammar of Python 3.9, older than the oldest Python of the CI (3.11), so
+    nested-quote f-strings and other 3.12-only syntax cannot slip in."""
     import ast, glob
     files = glob.glob(os.path.join(ROOT, 'src', '**', '*.py'), recursive=True) + [__file__]
     for f in files:
@@ -98,7 +98,7 @@ def test_calculator_javascript_parses():
     assert js, 'the calculator must contain its script'
     node = shutil.which('node')
     if not node:
-        return                                              # nothing to check with
+        import pytest; pytest.skip('node is not installed: the script of the page is not run')
     with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
         f.write(js.group(1)); path = f.name
     r = subprocess.run([node, '--check', path], capture_output=True, text=True)
@@ -107,9 +107,9 @@ def test_calculator_javascript_parses():
 def test_the_calculator_gives_the_resistance_load_of_the_model():
     """The resistance load the page shows for a flow load and a CVP is the one src/model gives: the rigid network with
     two inflows (P2) and the three passive relations, for the six groups that report both loads. Run with node."""
-    import re, shutil, tempfile
+    import shutil, tempfile, pytest
     node = shutil.which('node')
-    if not node: return
+    if not node: pytest.skip('node is not installed: the script of the page is not run')
     assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True).returncode == 0
     html = open(os.path.join(ROOT, 'sfss_calculator.html'), encoding='utf-8').read()
     model = html[html.index('// MODEL BEGIN'):html.index('// MODEL END')]
@@ -133,7 +133,7 @@ def test_the_calculator_gives_the_resistance_load_of_the_model():
                 ';\nconsole.log(JSON.stringify({v:[0.25,0.30,0.35].map(viscFactor), p:C.map(c=>passiveRanges(c.zF,c.cvps,viscFactor(0.30))), thr:NET.thr}));')
     out = json.loads(subprocess.run([node, f.name], capture_output=True, text=True, check=True).stdout)
     for H, v in zip((0.25, 0.30, 0.35), out['v']):
-        ref = [vs.factor(H, Hr, b) for Hr in vs.HCT_REFERENCE for b in vs.B_HUMAN]; assert abs(v[0] - min(ref)) < 1e-9 and abs(v[1] - max(ref)) < 1e-9
+        ref = [vs.factor(H, Hr, b) for Hr in vs.HCT_REFERENCE for b in vs.human.B_CALIBRATED]; assert abs(v[0] - min(ref)) < 1e-9 and abs(v[1] - max(ref)) < 1e-9
     v30 = out['v'][1]
     for r, o in zip(B['groups'], out['p']):
         e = vs._regions(G[(r['study'], r['group'])], v30); assert all(abs(a - b) < 1e-3 for a, b in zip(o['keep'], e['keeps_distending'])) and all(abs(a - b) < 1e-3 for a, b in zip(o['stop'], e['stops_distending'])), (r['study'], o, e)
@@ -149,7 +149,6 @@ def test_plots_and_calculator():
     assert subprocess.run([sys.executable, os.path.join(ROOT, 'src', 'build_app.py')], capture_output=True).returncode == 0
     html = open(os.path.join(ROOT, 'sfss_calculator.html')).read()
     B = json.load(open(os.path.join(ROOT, 'results', 'bayes_main.json')))['primary (SFSS or early dysfunction)']
-    W = json.load(open(os.path.join(ROOT, 'results', 'within_study_fit.json')))
     assert '__' not in html.replace('__proto__', '')
     assert f"const BETA={B['mu_beta']:.4f}" in html, 'the calculator must use the primary analysis of the paper'
     opts_ = re.findall(r'<option value="([^"]+)"', html)

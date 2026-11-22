@@ -39,7 +39,7 @@ def cmd_ecological(args):
     d = primary()
     out = dict(reported_within_group_sd_mmHg=sorted(
         float(x) for x in d.gradient_sd.dropna().unique()),
-        pooled_sigma_zP=ec.pooled_sigma(d))
+        pooled_sigma_zP=ec.pooled_sigma())
     out['sweep'] = ec.sweep(d, SIGMAS, chains=args.chains, warmup=args.warmup,
                             samples=args.samples)
     out['reported_sigma_fit'] = ec.fit(d, sigma=None, chains=args.chains,

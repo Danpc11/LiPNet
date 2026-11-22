@@ -41,18 +41,19 @@ against the published fit.
 
 beta then estimates the slope for a PATIENT rather than for a group mean, and the gap
 between the two is the ecological bias. It does not need new data: it needs the spread that
-six of the groups already report, and an honest sweep over what the spread might be in the
-ones that do not.
+nine groups already report or imply, and a sweep over what the spread might be in the ones
+that do not.
 
 The sampler is a plain adaptive random-walk Metropolis in NumPy, so this module has no
-dependency beyond NumPy, SciPy and pandas. At sigma = 0 it reproduces the NUTS fit of
+dependency beyond NumPy, SciPy, pandas and indices.py. At sigma = 0 it reproduces the NUTS fit of
 src/bayes.py to within Monte Carlo error; that agreement is the test in tests/test_ipd.py.
 """
 import numpy as np
 import pandas as pd
+import indices
 
 GH_NODES = 21                      # Gauss-Hermite nodes; 21 is exact enough for a logistic
-MMHG_PER_ZP = 5.0                  # z_P = (PVP - CVP) / 5 mmHg
+MMHG_PER_ZP = indices.NORMAL_GRADIENT   # z_P = (PVP - CVP) / 5 mmHg
 
 
 def sem_to_sd(sem, n):
@@ -77,20 +78,22 @@ def corrected_sigma_mmHg():
 
 
 def reported_sigma(d):
-    """Within-group SD of the pressure load, in z_P units, where the series reports it."""
+    """Within-group SD of the pressure load of each group, in z_P units: the value of the table for that group
+    (`gradient_sd`) and, for a series whose dispersion is computed here and not printed in its paper (Botha, Chan),
+    the value of WITHIN_GROUP_SD. NaN where there is neither."""
     s = []
     for _, row in d.iterrows():
         vals = WITHIN_GROUP_SD.get(str(row.get('study')))
-        if vals is not None:
-            s.append(float(np.mean(vals)) / MMHG_PER_ZP)
-        elif not pd.isna(row.get('gradient_sd')):
+        if not pd.isna(row.get('gradient_sd')):
             s.append(float(row['gradient_sd']) / MMHG_PER_ZP)
+        elif vals is not None and len(vals) == 1:
+            s.append(float(vals[0]) / MMHG_PER_ZP)
         else:
             s.append(np.nan)
     return np.array(s)
 
 
-def pooled_sigma(d, kind='median'):
+def pooled_sigma(kind='median'):
     """A single within-group SD to stand in where none is reported, pooled over every
     series that reports one, after the standard-error correction above."""
     s = np.array(corrected_sigma_mmHg()) / MMHG_PER_ZP
@@ -143,7 +146,7 @@ def fit(d, sigma=None, chains=4, warmup=4000, samples=8000, seed=0,
 
     if sigma is None:
         sg = reported_sigma(d)
-        fill = pooled_sigma(d)
+        fill = pooled_sigma()
         sg = np.where(np.isnan(sg), fill, sg)
         sigma_label = 'reported, pooled median %.2f where missing' % fill
     else:

@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.11.1-1f6feb)
+![Version](https://img.shields.io/badge/version-0.11.2-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 Code and data for the article *Vascular resistance decouples portal flow from pressure in small-for-size liver grafts*.
@@ -34,7 +34,7 @@ pip install -r requirements-lock.txt     # exact environment of the release (rep
 ## Running
 
 ```bash
-python -m pytest tests -q                # about 2 minutes on a fresh clone
+python -m pytest tests -q                # about 3 minutes on a fresh clone
 bash run_all.sh                          # every result, figure and the calculator; reuses valid cached fits (~5 min)
 bash run_all.sh --clean                  # empties results/ and recomputes everything, fits included (~30 min)
 python src/manifest.py check             # results, figures and cached tables are the ones their inputs give
@@ -52,7 +52,7 @@ Single steps:
 | `python src/model/viscosity.py` | resistance of the network with the blood of the recipient, `results/model_viscosity.json` |
 | `python src/model/hepatectomy.py` | published hepatectomies against the model, `results/model_hepatectomy.json` |
 | `python src/fem/run_fem.py all` | lobule finite elements, `results/fem_*` |
-| `python src/ipd/run_ipd.py all` | within-group dispersion model, curve reconstruction, `results/ipd_*.json` |
+| `python src/ipd/run_ipd.py all` | patient-level tables, within-group dispersion model, `results/ipd_*.json` |
 | `python src/paper_figures.py [1 2 S3 ...]` | the figures of the article, `results/Figure_*.pdf/.png` |
 | `python src/plots.py all` | stand-alone working plots |
 | `python src/build_app.py` | `sfss_calculator.html` |
@@ -83,8 +83,9 @@ them are at the end of `run_all.sh`.
   prior sensitivity, specification curve, internal-external validation, recovery simulation.
 - **Lobule** (`src/fem/`). Finite elements of one hexagonal lobule: anisotropic Darcy flow, transport with
   haemoglobin binding, sinusoid-hepatocyte exchange, nitric oxide wall model.
-- **Patient level** (`src/ipd/`). Group events integrated over the within-group spread of $z_P$; Kaplan-Meier curve
-  reconstruction.
+- **Patient level** (`src/ipd/`). The series that print their recipients one by one; group events integrated over
+  the within-group spread of $z_P$. Kaplan-Meier curve reconstruction is implemented and tested on simulated cohorts,
+  and not applied to any series.
 
 ## Repository layout
 
@@ -96,15 +97,15 @@ src/
   audit.py              sampling intervals and checks of the extraction table
   model/                network model (network, network3d, scaling, liver, human, whole_graft,
                         distension, compartments, viscosity, hepatectomy, certify, graph_scaling,
-                        verify_campaigns)
+                        merge_campaigns, verify_campaigns)
   fem/                  lobule finite elements
   ipd/                  patient-level layer
   paper_figures.py      figures of the article; figstyle.py, their style
   plots.py              working plots
   cache.py, manifest.py fingerprints of cached fits; manifest of a run
   build_app.py          browser calculator
-data/                   series.tsv, interventions.tsv, patient_level/, hepatectomy.tsv, kamikado2004.tsv,
-                        cached network tables
+data/                   series.tsv, interventions.tsv, patients.tsv, patient_level/, hepatectomy.tsv,
+                        kamikado2004.tsv, cohort_template.tsv, curves/ (template), cached network tables
 results/                generated; the cached fits and predictions.json are kept
 tests/                  pytest suite
 docs/MANIFEST-release.json   record of the clean rebuild of the release
@@ -177,8 +178,9 @@ Making a release: rebuild with `bash run_all.sh --clean`, copy `results/MANIFEST
 
 [danpc11.github.io/LiPNet](https://danpc11.github.io/LiPNet/) (`sfss_calculator.html`, built by `src/build_app.py` from
 `src/app_template.html`) computes $z_F$, $z_P$ and $z_R$; places $z_R$ against the rigid network and the passive
-relations at the flow load entered, with normal blood and at the haematocrit entered; and gives the odds ratio for a change of gradient from the primary fit of
-`bayes.py`, converted to a risk only with a baseline rate the user supplies or the level of a published series.
+relations at the flow load entered, with normal blood and at the haematocrit entered; and gives the odds ratio for a
+change of gradient from the primary fit of `bayes.py`, converted to a risk only with a baseline rate the user supplies
+or the level of a published series.
 Everything runs in the browser. Research tool, not a medical device.
 
 ## Citation

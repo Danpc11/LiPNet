@@ -14,7 +14,7 @@ def _d():
 def test_the_viscosity_law_and_its_limits():
     assert abs(float(vs.relative_viscosity(1e4, 0.45)) - 3.2) < 2e-3 and abs(float(vs.relative_viscosity(1e4, 0.0)) - 1.0) < 2e-3     # large vessel: 3.2 at 45%, plasma at 0
     assert float(vs.relative_viscosity(8.0, 0.45)) > float(vs.relative_viscosity(40.0, 0.45)) < float(vs.relative_viscosity(1e3, 0.45))  # the minimum between capillaries and large vessels
-    for b in vs.B_HUMAN:
+    for b in vs.human.B_CALIBRATED:
         assert abs(vs.factor(0.42, 0.42, b) - 1) < 1e-12
         f = [vs.factor(H, 0.42, b) for H in (0.20, 0.25, 0.30, 0.35, 0.42, 0.50)]; assert all(x < y for x, y in zip(f, f[1:]))        # resistance rises with the haematocrit
     lo, hi = vs.factor_range(); assert 0.55 < lo < 0.65 and 0.85 < hi < 0.92

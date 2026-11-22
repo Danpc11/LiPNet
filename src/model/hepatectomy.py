@@ -32,18 +32,25 @@ from model import distension as ds, compartments as cm, viscosity
 ROOT = ds.ROOT
 BASELINE_GRADIENT = (3.0, 6.0)        # mmHg, where the outflow pressure is not reported
 MODELS = ('rigid network', 'cube law', 'compliance', 'pressure-flow')
+PRE_POST = (0.0, 0.5, 0.8)          # correlation between the group means before and after, where the papers give no paired difference
 
 
 def load():
     return pd.read_csv(os.path.join(ROOT, 'data', 'hepatectomy.tsv'), sep='\t')
 
 
-def rigid(zF, g, phi, a, geoms=None):
-    """zR of a remnant that keeps a fraction g of a rigid network: range over the networks of the rigid range."""
+def rigid_each(zF, g, phi, a, geoms=None):
+    """zR of a remnant that keeps a fraction g of a rigid network, for each network of the rigid range: the trunk stays
+    and carries g zF times its flow, the other generations zF, and the artery joins at the sinusoid."""
     out = []
     for _, w, k, rem in (geoms or cm.geometries()):
-        s_in = float(w[:k].sum()); out.append((1 - rem * (1 - g)) * (s_in * zF + (1 - s_in) * (zF + phi * a) / (1 + a)) / zF)
-    return float(min(out)), float(max(out))
+        s_in = float(w[:k].sum()); out.append(float((1 - rem * (1 - g)) * (s_in * zF + (1 - s_in) * (zF + phi * a) / (1 + a)) / zF))
+    return out
+
+
+def rigid(zF, g, phi, a, geoms=None):
+    """Range of `rigid_each` over the networks."""
+    z = rigid_each(zF, g, phi, a, geoms); return min(z), max(z)
 
 
 def predicted(zF, g, phi, a, g0, cvp, v=1.0, geoms=None):
@@ -51,9 +58,6 @@ def predicted(zF, g, phi, a, g0, cvp, v=1.0, geoms=None):
     for law, ps in ds.PARAMS.items():
         z = [ds.distensible(zF, zr, cvp, law, p, normal_gradient=g0)['zR'] for zr in (lo, hi) for p in ps]; out[law] = [min(z), max(z)]
     return out
-
-
-PRE_POST = (0.0, 0.5, 0.8)          # correlation between the group means before and after, where the papers give no paired difference
 
 
 def group_of(r):
@@ -70,8 +74,8 @@ def configurations(zF, g, phi, a, g0, cvp, v=1.0, geoms=None):
     """zR of each model in every admissible configuration, in a fixed order: network by network and, for the relations,
     parameter by parameter. The range of `predicted` is the span of these; none of them is a central prediction."""
     out = {m: [] for m in MODELS}
-    for _, w, k, rem in (geoms or cm.geometries()):
-        s_in = float(w[:k].sum()); zr = (1 - rem * (1 - g)) * (s_in * zF + (1 - s_in) * (zF + phi * a) / (1 + a)) / zF * v; out['rigid network'].append(float(zr))
+    for z in rigid_each(zF, g, phi, a, geoms):
+        zr = z * v; out['rigid network'].append(float(zr))
         for law, ps in ds.PARAMS.items(): out[law] += [float(ds.distensible(zF, zr, cvp, law, p, normal_gradient=g0)['zR']) for p in ps]
     return out
 

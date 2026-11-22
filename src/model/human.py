@@ -41,16 +41,18 @@ import json, os, sys
 import numpy as np
 from scipy.optimize import least_squares
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+import indices
 from model import liver as net
 from fem.params import LOBULE_DROP_MMHG, MMHG, Flow
 
 VISCOSITY = Flow().mu                        # Pa s, the same as the lobule layer
-PORTAL_PER_100G = 90.0                       # mL/min per 100 g, the manuscript's donor reference
-GRADIENT_MMHG = 5.0                          # portal vein to vena cava, the manuscript's reference
+PORTAL_PER_100G = indices.DEFAULT_DONOR_REF  # mL/min per 100 g, the donor reference of the loads
+GRADIENT_MMHG = indices.NORMAL_GRADIENT      # portal vein to vena cava, the reference of the pressure load
 DENSITY = 1.05                               # g/mL
 ADULT_LIVER_G, CAST_LIVER_G, NEWBORN_LIVER_G = 1500.0, 1900.0, 150.0
 BRANCH_LENGTH_FACTOR = 0.44
 B_HUMAN = 0.75                               # the portal tree of the cast: 0.73 from its radius law, 0.74 from its absolute radii (0.68 to 0.80)
+B_CALIBRATED = (0.6, 2 / 3, 0.75, 0.85, 0.93)  # the calibrated human livers of the rigid range (compartments.geometries)
 
 # One human liver cast, generation -> (mean radius mm, mean length mm, number of vessels).
 # Generations 1 to 5 or 6 were measured on the whole cast (Debbaut et al., IEEE Trans Biomed Eng 2011;58:25, Tables II-IV);
@@ -235,7 +237,7 @@ def regeneration(rho, zF0=1.0, zR0=1.0, b=B_HUMAN, calibre='unchanged', inflow=1
     return dict(rho=rho, zF=zF, zP=zP, zR=zP / zF, resistance=resistance, sinusoidal_velocity=zF0 * inflow * rho ** (-2 / 3), calibre=calibre, lobule_share=float(s_lob))
 
 
-def two_inflows_measured(bs=(0.6, 2 / 3, 0.75, 0.85, 0.93)):
+def two_inflows_measured(bs=B_CALIBRATED):
     """The two-inflow relation of liver.py with the arterial share and the arterial load measured, not assumed.
 
     a is the arterial-to-portal flow ratio of the donor tissue and phi the arterial flow per gram of the graft over
@@ -280,7 +282,7 @@ def summary():
     keep = ('share_inlet', 'share_sinusoid', 'share_outlet', 'trunks_removed', 'lobule_drop_mmHg', 'portal_trunk_radius_mm', 'portal_trunk_length_mm',
             'portal_trunk_velocity_cm_s', 'portal_trunk_shear_Pa', 'portal_terminal_shear_Pa', 'hepatic_trunk_radius_mm', 'tree_volume_mL', 'tree_volume_fraction')
     out['adult'] = []
-    for b in (0.6, 2 / 3, 0.75, 0.85, 0.93):
+    for b in B_CALIBRATED:
         for label, drop in (('imposed', LOBULE_DROP_MMHG), ('optimum', None)):
             c = liver(b, lobule_drop=drop); row = dict(b=float(b), lobule=label, zR_lobar_graft=1 - c['trunks_removed']); row.update({k: c[k] for k in keep})
             row['zR_two_inflows'] = [net.two_inflows(zF, c['share_inlet'], 1 - c['trunks_removed'], arterial_load=phi)['zR'] for zF in (3.3, 4.1) for phi in (0.0, 1.0)]

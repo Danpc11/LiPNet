@@ -109,17 +109,3 @@ def annulus_equivalent_resistance(mesh, geom, flow):
     conductance scale is fixed by the cost budget, not by physiology."""
     b = np.sqrt((mesh.cross_area + np.pi * geom.r_cv ** 2) / np.pi)
     return (flow.mu / flow.k_r) * np.log(b / geom.r_cv) / (2.0 * np.pi * geom.H)
-
-
-def calibrate(mesh, flow, Q_target, transit_target=None):
-    """Two observables, two knobs: the permeability sets the flow (Q is linear in k at
-    fixed dP) and the porosity sets the transit time. Returns a copy of `flow`."""
-    import copy
-    f = copy.deepcopy(flow)
-    sol = solve(mesh, f)
-    scale = Q_target / sol.Q
-    f.k_r *= scale
-    f.k_t *= scale
-    if transit_target is not None:
-        f.phi = Q_target * transit_target / mesh.volume()
-    return f

@@ -42,7 +42,6 @@ import indices
 series = lambda: indices.compute(pd.read_csv(f'{DATA}/series.tsv', sep='\t'))   # indices always recomputed from the raw columns
 def save(fig, name):
     os.makedirs(OUT, exist_ok=True); fig.savefig(f'{OUT}/{name}.pdf', bbox_inches='tight'); fig.savefig(f'{OUT}/{name}.png', dpi=300, bbox_inches='tight'); plt.close(fig); print('saved', name)
-import indices
 def fit():
     f = f'{OUT}/within_study_fit.json'
     if not os.path.exists(f): indices.main()
@@ -189,7 +188,7 @@ def centred():
 
 def risk_change():
     """Odds ratio and absolute risk implied by lowering the gradient, for several baseline rates.
-    Uses the stratified model, the same estimate the calculator applies."""
+    Uses the stratified model (indices.within_study_fit); the calculator uses the pooled slope of the primary analysis (bayes.py)."""
     L = fit(); fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.2))
     ax = axs[0]; dg = np.linspace(-12, 4, 100)
     OR = np.exp(L['beta'] * dg / L['normal_gradient_mmHg'])
@@ -268,7 +267,7 @@ def interventions():
     fig, ax = plt.subplots(figsize=(5.2, 2.8)); y = np.arange(len(items))[::-1]
     for yi, (n, dp, note) in zip(y, items):
         if not np.isnan(dp): ax.barh(yi, dp, 0.55, color=C_SIN, alpha=0.85)
-        ax.text(0.4, yi, n, fontsize=6.5, va='center'); 
+        ax.text(0.4, yi, n, fontsize=6.5, va='center')
         if note: ax.text((dp if not np.isnan(dp) else 0) - 0.3, yi, note, fontsize=6.5, ha='right', va='center', color=C_IN)
     ax.set_yticks([]); ax.axvline(0, color='k', lw=0.6); ax.spines['left'].set_visible(False); ax.set_xlim(-11, 13); ax.set_ylim(-0.7, len(items) - 0.3); ax.set_xticks([-10, -5, 0]); ax.set_xlabel('Change in final PVP (mmHg)'); save(fig, 'interventions')
 
@@ -277,7 +276,7 @@ def network_2d(R=4.5, b=0.75):
     from model import network as lc
     G = lc.build_liver_graph(R=R); gin, gout = lc.split_liver(G)
     tree = min((lc.best_sinusoid_tree(gin, b, seed=s) for s in range(3)), key=lambda s: s['D'])
-    fig, ax = plt.subplots(figsize=(4.5, 4.5)); xy = G['xy']; cen, cor, pairs, Lh = lc.hex_lobules(R, 1.0)
+    fig, ax = plt.subplots(figsize=(4.5, 4.5)); xy = G['xy']; cen, _, _, Lh = lc.hex_lobules(R, 1.0)
     for (x, y) in cen: th = np.pi / 6 + np.arange(7) * np.pi / 3; ax.plot(x + Lh * np.cos(th), y + Lh * np.sin(th), color='0.82', lw=0.4, zorder=0)
     w, keep = tree['w'], tree['keep']; r = np.zeros(gin.m); r[keep] = (w[keep] * gin.L[keep]) ** 0.25; rm = r[keep].max()
     for k in keep: i, j = gin.E[k]; ax.plot([xy[i, 0], xy[j, 0]], [xy[i, 1], xy[j, 1]], color=C_SIN if gin.kind[k] == 'sin' else C_IN, lw=0.3 + 3.2 * r[k] / rm, solid_capstyle='round', zorder=2)
@@ -334,7 +333,7 @@ def allometry():
 
 def shear_profile():
     fig, ax = plt.subplots(figsize=(4, 3.2))
-    for name, (rd, rl, n, g) in {'hepatic artery (0.74, n 2.76)': (0.74, 0.66, 2.76, 10), 'portal vein (0.70, n 2.80)': (0.70, 0.72, 2.80, 10), 'hepatic vein (0.59, n 3.22)': (0.59, 0.64, 3.22, 8)}.items():
+    for name, (rd, _, n, g) in {'hepatic artery (0.74, n 2.76)': (0.74, 0.66, 2.76, 10), 'portal vein (0.70, n 2.80)': (0.70, 0.72, 2.80, 10), 'hepatic vein (0.59, n 3.22)': (0.59, 0.64, 3.22, 8)}.items():
         per = (1 / n) / rd ** 3; i = np.arange(g + 1); ax.semilogy(i, per ** i, 'o-', ms=3, label=f'{name}: ×{per**g:.2f}')
     ax.axhline(1, color='k', lw=0.6); ax.set_xlabel('Branching generation'); ax.set_ylabel('Wall shear relative to trunk'); ax.legend(fontsize=6.5); ax.set_title('Measured diameter ratios (Debbaut), equal flow split', fontsize=8); save(fig, 'shear_profile')
 

@@ -1,6 +1,6 @@
 """The cached tables of the model are the ones the published code writes, and the manifest check knows about them
 and about the figures."""
-import json, os, subprocess, sys
+import json, os, sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, os.path.join(ROOT, 'src'))
 

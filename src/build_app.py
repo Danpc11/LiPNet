@@ -18,24 +18,23 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, os.path.join(ROOT, 'src'))
 from model import distension as ds, compartments as cm, viscosity as vs
 
-import indices; indices_gradient, indices_flow = indices.NORMAL_GRADIENT, indices.DEFAULT_DONOR_REF
+import indices
 B = json.load(open(f'{ROOT}/results/bayes_main.json'))['primary (SFSS or early dysfunction)']
-L = json.load(open(f'{ROOT}/results/within_study_fit.json'))
 C = json.load(open(f'{ROOT}/results/meta_slope.json'))['centred']
 lab = lambda st: st.replace(' / SFSS_or_dysfunction', ' (SFSS)').replace(' / mortality_or_graft_loss', ' (mortality)')
 
 refs = {lab(g): dict(alpha=round(B['alphas_pooled_slope'][g], 4), band=B['pred_band_pooled_slope'][g], n=B['group_counts'][g]['n'],
                      events=B['group_counts'][g]['events'], zmin=B['group_counts'][g]['zmin'], zmax=B['group_counts'][g]['zmax']) for g in B['strata']}
 centred = [dict(s=lab(p['stratum']), zc=round(p['zP_c'], 4), lc=round(p['log_odds_c'], 4), n=p['n']) for p in C['points']]
-net = dict(geoms=[[float(w[:k].sum()), float(rem)] for _, w, k, rem in cm.geometries()], a=cm.A_RATIO, g0=5.0, cube=ds.CUBE,
+net = dict(geoms=[[float(w[:k].sum()), float(rem)] for _, w, k, rem in cm.geometries()], a=cm.A_RATIO, g0=indices.NORMAL_GRADIENT, cube=ds.CUBE,
            doubling=list(ds.DOUBLING_MMHG), f=list(ds.FLOW_FIXED_SHARE), cvps=list(ds.CVPS), measured=max(ds.MEASURED_UP_TO.values()),
-           visc=[dict(D=[float(x) for x in D], w=[float(x) for x in w]) for D, w, _ in (vs._network(b) for b in vs.B_HUMAN)], href=list(vs.HCT_REFERENCE),
-           thr=dict(flow=vs.FLOW_THRESHOLD, gradient=vs.GRADIENT_THRESHOLD, zR=vs.GRADIENT_THRESHOLD / indices_gradient / (vs.FLOW_THRESHOLD / indices_flow)))
+           visc=[dict(D=[float(x) for x in D], w=[float(x) for x in w]) for D, w, _ in (vs._network(b) for b in vs.human.B_CALIBRATED)], href=list(vs.HCT_REFERENCE),
+           thr=dict(flow=vs.FLOW_THRESHOLD, gradient=vs.GRADIENT_THRESHOLD, zR=vs.GRADIENT_THRESHOLD / indices.NORMAL_GRADIENT / (vs.FLOW_THRESHOLD / indices.DEFAULT_DONOR_REF)))
 
 rep = {'__STUDIES__': json.dumps([lab(s) for s in B['strata']]), '__REFS__': json.dumps(refs), '__ZGRID__': json.dumps(B['zgrid']),
        '__CENTRED__': json.dumps(centred), '__NET__': json.dumps(net),
        '__BETA__': f"{B['mu_beta']:.4f}", '__BLO__': f"{B['mu_beta_ci'][0]:.4f}", '__BHI__': f"{B['mu_beta_ci'][1]:.4f}",
-       '__GN__': f"{L['normal_gradient_mmHg']:g}", '__CVP__': f"{L['default_cvp_mmHg']:g}",
+       '__GN__': f"{indices.NORMAL_GRADIENT:g}", '__CVP__': f"{indices.DEFAULT_CVP:g}",
        '__OR_ZP__': f"{B['OR_per_zP']:.2f}", '__OR_LO__': f"{B['OR_per_zP_ci'][0]:.2f}", '__OR_HI__': f"{B['OR_per_zP_ci'][1]:.2f}", '__OR_MM__': f"{B['OR_per_mmHg']:.2f}",
        '__REFOPTS__': ''.join(f'<option value="{k}">{k} — {100 * r["events"] / r["n"]:.0f}% overall</option>' for k, r in refs.items()),
        '__NSTUDIES__': str(len(B['strata'])), '__NGROUPS__': str(B['groups'])}

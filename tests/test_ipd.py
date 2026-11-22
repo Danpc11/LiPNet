@@ -121,7 +121,7 @@ def test_ogura_dispersions_are_standard_errors():
     sds = ec.corrected_sigma_mmHg()
     assert min(sds) > 2.0, 'after correction no series should look artificially tight: %s' % sds
     assert max(sds) < 6.0
-    assert 0.4 < ec.pooled_sigma(None if False else primary()) < 1.0
+    assert 0.4 < ec.pooled_sigma() < 1.0
 
 
 def test_chan_gives_an_outcome_contrast_with_no_pressure_separation():
@@ -159,6 +159,22 @@ def test_ogura_table_three_is_a_patient_level_outcome_record():
 
 
 # ------------------------------------------------------------------ ecological bias
+def test_the_dispersions_written_in_the_code_are_those_of_the_table_and_of_the_patient_tables():
+    """ecological.WITHIN_GROUP_SD repeats numbers that live elsewhere: the table, for the series that print a
+    dispersion, and the patient-level tables, for the two computed here. And the fit with the reported dispersions
+    gives each group its own, not the mean of its series."""
+    from ipd import patient_level as pl
+    d = indices.compute(pd.read_csv(os.path.join(ROOT, 'data', 'series.tsv'), sep='\t'))
+    for study, vals in ec.WITHIN_GROUP_SD.items():
+        tab = sorted(round(float(x), 2) for x in d[d.study == study].gradient_sd.dropna())
+        assert not tab or tab == sorted(vals), (study, tab, vals)
+    assert abs(pl.group_row()['gradient_sd'] - ec.WITHIN_GROUP_SD['Botha 2010'][0]) < 0.01
+    assert abs(pl.chan_outcome_contrast()['cohort_gradient_sd_est'] - ec.WITHIN_GROUP_SD['Chan 2011'][0]) < 0.01
+    p = primary(); s = ec.reported_sigma(p) * ec.MMHG_PER_ZP
+    assert np.allclose(s[(p.study == 'Uemura 2016').values], [4.1, 3.8, 3.1]) and np.allclose(s[(p.study == 'Botha 2010').values], [3.91])
+    assert np.isnan(s[(p.study == 'Wang 2014').values]).all()
+
+
 def test_the_sampler_reproduces_the_published_fit_at_zero_spread():
     """With sigma = 0 the integrated model collapses to the group-mean model of
     src/bayes.py. This is what licenses the rest: the NumPy sampler is checked against the
@@ -181,7 +197,7 @@ def test_every_series_agrees_on_the_size_of_the_within_group_spread():
     assert len(sds) == 9 and 2.6 < min(sds) and max(sds) == 4.5, 'every series with a dispersion should be represented: %s' % sds
     assert max(sds) / min(sds) < 2.0, \
         'after correction the dispersions should agree in magnitude: %s' % sds
-    assert 0.0 < ec.pooled_sigma(primary()) < 2.0
+    assert 0.0 < ec.pooled_sigma() < 2.0
 
 
 def test_within_group_spread_does_not_overturn_the_association():

@@ -175,7 +175,7 @@ def published_check():
                      'lower flow of each state, so a baseline doubled by ischaemia does not enter; what is tested is how resistance falls with flow')
 
 
-def sinusoidal_share(bs=(1.0, 0.75, 0.5), g=liver.HUMAN_GENERATIONS):
+def sinusoidal_share(bs=liver.B_CANOPY, g=liver.HUMAN_GENERATIONS):
     """Share of the pressure drop the sinusoids carry in the optimum, over the range of b."""
     return {b: float(liver.canopy(g, b)['share_sinusoid']) for b in bs}
 
@@ -184,7 +184,7 @@ def rigid_range(zF, alone=True):
     """The rigid network at flow load zF, over b in [0.5, 1] and the calibrated human liver: with the two inflows
     (arterial flow per lobule between none and the donor's) and, if `alone`, also the network by itself (arterial
     flow scaling with the portal one), which is its upper end."""
-    lob = [liver.lobar_graft(liver.HUMAN_GENERATIONS, b, 1) for b in (1.0, 0.75, 0.5)]; cal = [human.liver(b) for b in (0.6, 2 / 3, 0.75, 0.85, 0.93)]
+    lob = [liver.lobar_graft(liver.HUMAN_GENERATIONS, b, 1) for b in liver.B_CANOPY]; cal = [human.liver(b) for b in human.B_CALIBRATED]
     phis = (0.0, 1.0, zF) if alone else (0.0, 1.0)
     z = [liver.two_inflows(zF, l['share_inlet'], l['zR'], arterial_load=phi)['zR'] for l in lob for phi in phis]
     z += [liver.two_inflows(zF, c['share_inlet'], 1 - c['trunks_removed'], arterial_load=phi)['zR'] for c in cal for phi in phis]
@@ -210,26 +210,33 @@ def _place(value, ci, region):
                 interval='below' if ci[1] < lo else ('above' if ci[0] > hi else 'reaches'))
 
 
+def regions(g, viscosity=(1.0, 1.0), digits=3):
+    """The regions of the model for one group: the rigid network times the range of the viscosity factor, each relation
+    solved on its two ends over the central venous pressure and the parameter, and the two families of relations."""
+    lo, hi = rigid_range(g['zF']); lo, hi = lo * viscosity[0], hi * viscosity[1]; cvps = (g['cvp'],) if g['cvp'] is not None else CVPS; sol = {}
+    for law in LAWS:
+        z = [distensible(g['zF'], zr, c, law, p)['zR'] for zr in (lo, hi) for c in cvps for p in PARAMS[law]]; sol[law] = [round(min(z), digits), round(max(z), digits)]
+    fam = lambda which: [min(sol[l][0] for l in LAWS if FAMILY[l] == which), max(sol[l][1] for l in LAWS if FAMILY[l] == which)]
+    return sol, {'rigid network': [round(lo, digits), round(hi, digits)], 'keeps distending': fam('keeps distending'), 'stops distending': fam('stops distending'),
+                 'all relations': [min(v[0] for v in sol.values()), max(v[1] for v in sol.values())]}
+
+
 def bracket(d, viscosity=(1.0, 1.0)):
     """Each group against four regions of the model: the rigid network, the relations that keep distending, the one
     that stops, and the span of all three. For each region the point estimate and the sampling interval are placed
-    with the same rule (`_place`). `viscosity` is the range of the factor by which the blood of the
-    recipient changes the resistance of the rigid network (viscosity.factor_range); 1 is normal blood. This is a description: a sampling interval reaching a region is not a probability
-    that the mechanism of that region acts. `joint` gives the draws of every uncertainty together."""
+    with the same rule (`_place`). `viscosity` is the range of the factor by which the blood of the recipient changes
+    the resistance of the rigid network (viscosity.factor_range); 1 is normal blood. This is a description: a sampling
+    interval reaching a region is not a probability that the mechanism of that region acts. `joint` gives the draws of
+    every uncertainty together."""
     import audit
     CI = {(x['study'], x['group']): x['zR_ci_sampling'] for x in audit.paired(d, correlations=())['groups']}; rows = []
     for g in groups(d):
-        lo, hi = rigid_range(g['zF']); lo, hi = lo * viscosity[0], hi * viscosity[1]; cvps = (g['cvp'],) if g['cvp'] is not None else CVPS; sol = {}
-        for law in LAWS:
-            z = [distensible(g['zF'], zr, c, law, p)['zR'] for zr in (lo, hi) for c in cvps for p in PARAMS[law]]; sol[law] = [round(min(z), 3), round(max(z), 3)]
-        fam = lambda which: [min(sol[l][0] for l in LAWS if FAMILY[l] == which), max(sol[l][1] for l in LAWS if FAMILY[l] == which)]
-        regions = {'rigid network': [round(lo, 3), round(hi, 3)], 'keeps distending': fam('keeps distending'), 'stops distending': fam('stops distending'),
-                   'all relations': [min(v[0] for v in sol.values()), max(v[1] for v in sol.values())]}
+        sol, reg = regions(g, viscosity)
         ci = [round(float(CI[(g['study'], g['group'])][0]), 3), round(float(CI[(g['study'], g['group'])][1]), 3)]
-        place = {k: _place(g['zR'], ci, v) for k, v in regions.items()}
+        place = {k: _place(g['zR'], ci, v) for k, v in reg.items()}
         rows.append(dict(study=g['study'], group=g['group'], zF=round(g['zF'], 3), zR_observed=round(g['zR'], 3), cvp_mmHg=g['cvp'], cvp_basis=g['cvp_basis'],
-                         zR_rigid=regions['rigid network'], zR_distensible=sol, zR_distensible_all=regions['all relations'],
-                         zR_keeps_distending=regions['keeps distending'], zR_stops_distending=regions['stops distending'], zR_observed_ci=ci, placement=place,
+                         zR_rigid=reg['rigid network'], zR_distensible=sol, zR_distensible_all=reg['all relations'],
+                         zR_keeps_distending=reg['keeps distending'], zR_stops_distending=reg['stops distending'], zR_observed_ci=ci, placement=place,
                          position={'below': 'below the relations', 'above': 'above the relations', 'reaches': 'within the relations'}[place['all relations']['interval']],
                          relations_containing_the_value=[law for law, v in sol.items() if v[0] <= g['zR'] <= v[1]],
                          below_the_rigid_network=bool(place['rigid network']['interval'] == 'below')))
@@ -288,7 +295,7 @@ def heterogeneity(d, B=None):
     for law in LAWS:
         z = []
         for r in B['groups']:
-            g = gs[(r['study'], r['group'])]; lo, hi = rigid_range(g['zF'], alone=False); c = g['cvp'] if g['cvp'] is not None else 5.0
+            g = gs[(r['study'], r['group'])]; lo, hi = rigid_range(g['zF'], alone=False); c = g['cvp'] if g['cvp'] is not None else indices.DEFAULT_CVP
             z.append(distensible(g['zF'], 0.5 * (lo + hi), c, law, mid[law])['zR'])
         z = np.array(z); rho = spearmanr(obs, z)
         out[law] = dict(zR=[round(float(x), 3) for x in z], range=[round(float(z.min()), 3), round(float(z.max()), 3)], sd_log=round(float(np.std(np.log(z), ddof=1)), 3),
@@ -504,7 +511,7 @@ def summary():
                                    'compliance': f'blood volume linear in intrahepatic pressure, doubling over {DOUBLING_MMHG[0]:g} to {DOUBLING_MMHG[1]:g} mmHg; R proportional to volume^-2',
                                    'pressure-flow': f'gradient linear in flow, a share {FLOW_FIXED_SHARE[0]:g} to {FLOW_FIXED_SHARE[1]:g} of the control gradient independent of flow'},
                         family=FAMILY, published_check=published_check(), bracket=B, band_in_the_plane=band(),
-                        flow_doubled_from_the_donor={law: dict(rise_mmHg=[round(x - indices.NORMAL_GRADIENT, 2) for x in over(law, lambda p: distensible(2.0, 1.0, 5.0, law, p)['gradient_mmHg'])]) for law in LAWS},
+                        flow_doubled_from_the_donor={law: dict(rise_mmHg=[round(x - indices.NORMAL_GRADIENT, 2) for x in over(law, lambda p: distensible(2.0, 1.0, indices.DEFAULT_CVP, law, p)['gradient_mmHg'])]) for law in LAWS},
                         note='the relations were measured on whole livers of cats over the normal range of flow and pressure and are extrapolated; nothing is fitted to the six groups'),
         verdict='sinusoids and outlet cannot close the distance; the passive relations of the normal liver, extrapolated, span the observations of five groups, and one lies below them')
 

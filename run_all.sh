@@ -2,7 +2,7 @@
 # Rebuilds every result, every plot (one file each) and the calculator. Run from the repository root.
 set -e
 export PYTHONPATH=src
-# --clean: delete every generated result, ignore every cache and recompute the cached tables of the model. The run to do before quoting a number (about 20 minutes).
+# --clean: delete every generated result, ignore every cache and recompute the cached tables of the model. The run to do before quoting a number (about 30 minutes).
 if [ "$1" = "--clean" ]; then
   export LIPNET_REBUILD=1
   find results -maxdepth 1 -type f ! -name '.gitkeep' -delete

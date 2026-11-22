@@ -190,7 +190,7 @@ def conditional_iecv(d, by='centre_id', **kw):
     for held in sorted(d[by].dropna().unique()):
         train, test = d[d[by] != held], d[d[by] == held]
         tr, strata, S, z_c = _prep(train, kw.get('by_outcome', True), kw.get('by_centre', False))
-        te, strata_t, _, _ = _prep(test, kw.get('by_outcome', True), kw.get('by_centre', False))
+        te, _, _, _ = _prep(test, kw.get('by_outcome', True), kw.get('by_centre', False))
         if len(tr) < 4 or len(te) < 2: continue
         f = fit(train, warmup=800, samples=1200, chains=2, **kw); mu = f['mu_beta']
         rows = []
@@ -199,7 +199,6 @@ def conditional_iecv(d, by='centre_id', **kw):
             g = g.sort_values('zP'); dz = float(g.zP.iloc[1] - g.zP.iloc[0])
             ev, n = g.events.values[::-1], g.n.values[::-1]      # events of the higher-zP group first
             ll_m = _conditional_loglik(ev, n, dz, mu); ll_0 = _conditional_loglik(ev, n, dz, 0.0)
-            own = _prep(g, kw.get('by_outcome', True))
             rows.append(dict(stratum=st, dzP=dz, loglik_model=ll_m, loglik_null=ll_0, gain=ll_m - ll_0,
                              observed_high_zP_rate=float(g.pct.iloc[1]), observed_low_zP_rate=float(g.pct.iloc[0]),
                              direction_correct=bool(g.pct.iloc[1] >= g.pct.iloc[0])))

@@ -132,24 +132,6 @@ def sweep(load, share, inflow=(1.0, 1.5, 2.0, 3.0, 4.0), **kw):
     return out
 
 
-def share_vs_cost_exponent(radii=(3.0, 4.5, 6.5, 9.0), exponents=(0.5, 0.75, 1.0)):
-    """The sinusoidal share against liver size, for each cost exponent b.
-
-    This is the test that decides whether the share's drift with N is a problem or a
-    constraint. It is slow: the optimisation at R = 9 takes about half a minute per b.
-    """
-    out = []
-    for b in exponents:
-        rows = [sinusoidal_share(R=r, b=b) for r in radii]
-        n = np.array([r['n_lobules'] for r in rows], dtype=float)
-        sh = np.array([r['sinusoidal_share'] for r in rows])
-        slope = float(np.polyfit(np.log(n), np.log(sh), 1)[0])
-        out.append(dict(b=float(b), n_lobules=n.tolist(), share=sh.tolist(),
-                        log_slope=slope,
-                        extrapolated_1e6=float(sh[0] * (1e6 / n[0]) ** slope)))
-    return out
-
-
 def predict_series(load, share, root=None, **kw):
     """The prediction against the six published groups that report both indices.
 
