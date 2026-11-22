@@ -25,7 +25,8 @@ EXACT = bool(os.environ.get('LIPNET_EXACT'))
 # Results that are not kept in the repository and that this test needs. On a clone where run_all.sh has not been run
 # (the continuous integration, a first look) each is written by the script that owns it, so that the test checks the
 # article against the code and never fails for a missing file.
-BUILDERS = {'model_human': ['src/model/human.py'], 'model_distension': ['src/model/distension.py'], 'model_viscosity': ['src/model/viscosity.py'], 'model_hepatectomy': ['src/model/hepatectomy.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet']}
+BUILDERS = {'model_human': ['src/model/human.py'], 'model_distension': ['src/model/distension.py'], 'model_viscosity': ['src/model/viscosity.py'], 'model_hepatectomy': ['src/model/hepatectomy.py'], 'ipd_ecological': ['src/ipd/run_ipd.py', 'ecological', '--quiet'],
+            'ipd_patient_level': ['src/ipd/run_ipd.py', 'patients', '--quiet'], 'model_liver': ['src/model/liver.py']}
 
 
 def R(name):
@@ -161,6 +162,16 @@ def agrees(said, got, tol=0):
 def test_every_number_of_the_article_is_the_one_on_disk():
     wrong = [f'{c[0]}: the article says {c[1]}, the results give {c[2]}' + (f' (tolerance {c[3]})' if len(c) > 3 and not EXACT else '') for c in claims() if not agrees(*c[1:])]
     assert not wrong, '\n'.join(wrong)
+
+
+def test_every_result_the_claims_read_is_kept_or_can_be_built():
+    """On a clone where run_all.sh has not been run, a result is either one of those kept in the repository or has a
+    builder here; a claim that reads any other file fails on that clone and only there."""
+    import re
+    kept = {'bayes_extra', 'bayes_iecv', 'bayes_inputs', 'bayes_main', 'bayes_measurement', 'bayes_overlap', 'bayes_priors', 'bayes_recovery', 'cvp_scenarios', 'predictions', 'spec_curve'}
+    read = set(re.findall(r"R\('([a-z_]+)'\)", open(__file__).read()))
+    assert read and not read - kept - set(BUILDERS), sorted(read - kept - set(BUILDERS))
+    assert all(os.path.exists(os.path.join(ROOT, b[0])) for b in BUILDERS.values())
 
 
 def test_the_tolerance_is_only_for_sampled_numbers():

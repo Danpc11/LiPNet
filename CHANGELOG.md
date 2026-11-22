@@ -2,6 +2,9 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.1] – 2026-11-21
+- `test_article.py`: builders for `results/ipd_patient_level.json` and `results/model_liver.json`, which the claims added in 0.11.0 read and a clone without results does not have; a test that every result the claims read is kept in the repository or has a builder. No change to code, data or results.
+
 ## [0.11.0] – 2026-11-21
 - `hepatectomy.trend`: no P value for the seven states (five groups of animals); exact permutation P of Spearman's rho for every choice of one state per group (`exact_p`), and rho over the draws.
 - `hepatectomy.state(corr=, base=)`, `run`, `covariance_sensitivity`: correlation between the group means before and after (0, 0.5, 0.8); the state before is shared by the states of the same animals (`group_of`, `baseline`).
