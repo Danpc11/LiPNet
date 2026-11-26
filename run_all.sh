@@ -2,6 +2,9 @@
 # Rebuilds every result, every plot (one file each) and the calculator. Run from the repository root.
 set -e
 export PYTHONPATH=src
+# One thread for the linear algebra, so that the order of the sums, and with it the last digit of a few results, does not
+# depend on the number of cores. Set the variables before the call to override.
+export OMP_NUM_THREADS=${OMP_NUM_THREADS:-1} OPENBLAS_NUM_THREADS=${OPENBLAS_NUM_THREADS:-1} MKL_NUM_THREADS=${MKL_NUM_THREADS:-1}
 # --clean: delete every generated result, ignore every cache and recompute the cached tables of the model. The run to do before quoting a number (about 30 minutes).
 if [ "$1" = "--clean" ]; then
   export LIPNET_REBUILD=1

@@ -86,6 +86,13 @@ def draw(rng, n, recipient=HCT_RECIPIENT, reference=HCT_REFERENCE, bs=human.B_CA
     return out
 
 
+def kamikado_ratio(k, h, column='R_total'):
+    """Resistance of the perfused rat livers at haematocrit h over that at 30%, one value per flow (in order of flow),
+    unrounded. The mean of these is the observed value wherever the article or the code uses one."""
+    at = lambda x: k[np.isclose(k.haematocrit, x)].sort_values('flow_mL_min')[column].values
+    return at(h) / at(0.30)
+
+
 def published_check():
     """The law against the perfused rat livers of Kamikado et al. 2004: resistance at each haematocrit over that at
     30%, at each of the five flows, total and by segment; and what the law gives for a large vessel, for the human
@@ -93,13 +100,12 @@ def published_check():
     k = pd.read_csv(os.path.join(ROOT, 'data', 'kamikado2004.tsv'), sep='\t'); out = dict(states={}, source='Kamikado et al. 2004, Fig. 4, digitised')
     seg = {'total': 'R_total', 'portal': 'R_portal', 'sinusoidal': 'R_sinusoidal', 'hepatic_venous': 'R_hepatic_venous'}; err = []
     for H in (0.20, 0.10, 0.0):
-        obs = {name: [round(float(k[(k.flow_mL_min == f) & np.isclose(k.haematocrit, H)][col].iloc[0] / k[(k.flow_mL_min == f) & np.isclose(k.haematocrit, 0.30)][col].iloc[0]), 3)
-                      for f in sorted(k.flow_mL_min.unique())] for name, col in seg.items()}
+        raw = {name: kamikado_ratio(k, H, col) for name, col in seg.items()}; obs = {name: [round(float(x), 3) for x in v] for name, v in raw.items()}
         pred = {'large vessel': round(float(relative_viscosity(1e4, H) / relative_viscosity(1e4, 0.30)), 3),
                 'human network': {n: round(v, 3) for n, v in factor(H, 0.30, segments=True).items()},
                 'network at rat size': {n: round(v, 3) for n, v in factor(H, 0.30, scale=RAT_SCALE, segments=True).items()}}
-        out['states'][f'haematocrit {H:g} over 0.30'] = dict(observed_by_flow=obs, observed_mean={n: round(float(np.mean(v)), 3) for n, v in obs.items()}, predicted=pred)
-        err.append(np.mean(obs['total']) / pred['network at rat size']['total'])
+        out['states'][f'haematocrit {H:g} over 0.30'] = dict(observed_by_flow=obs, observed_mean={n: round(float(np.mean(v)), 4) for n, v in raw.items()}, predicted=pred)
+        err.append(np.mean(raw['total']) / pred['network at rat size']['total'])
     out['flows_mL_min'] = [int(f) for f in sorted(k.flow_mL_min.unique())]
     hs = np.round(np.linspace(0.0, 0.30, 31), 3); out['curve'] = dict(haematocrit=[float(h) for h in hs], total_at_rat_size=[round(factor(float(h), 0.30, scale=RAT_SCALE), 4) for h in hs])
     out['observed_over_predicted_total_at_rat_size'] = [round(float(e), 3) for e in err]
@@ -124,10 +130,10 @@ def microvascular(d):
     recipient and in the reference: the factor, the rigid network with the blood of the recipient, how many of the six
     groups it contains, and the law against the perfused livers."""
     from model import distension as ds
-    k = pd.read_csv(os.path.join(ROOT, 'data', 'kamikado2004.tsv'), sep='\t'); tot = lambda h: k[np.isclose(k.haematocrit, h)].sort_values('flow_mL_min').R_total.values; out = {}
+    k = pd.read_csv(os.path.join(ROOT, 'data', 'kamikado2004.tsv'), sep='\t'); out = {}
     for m in MICRO:
         v = factor_range(micro=m); B = ds.bracket(d, viscosity=v); gs = ds.groups(d); reg = [_regions(g, v)['rigid'] for g in gs]
-        chk = {f'{h:g}': dict(observed=round(float(np.mean(tot(h) / tot(0.30))), 3), law=round(factor(h, 0.30, scale=RAT_SCALE, micro=m), 3)) for h in (0.20, 0.10, 0.0)}
+        chk = {f'{h:g}': dict(observed=round(float(np.mean(kamikado_ratio(k, h))), 4), law=round(factor(h, 0.30, scale=RAT_SCALE, micro=m), 3)) for h in (0.20, 0.10, 0.0)}
         out[f'{m:g}'] = dict(factor=[round(v[0], 4), round(v[1], 4)], rigid_with_the_blood_of_the_recipient=[min(r[0] for r in reg), max(r[1] for r in reg)],
                              groups_inside_the_rigid_network=B['counts']['rigid network']['point_inside'], groups_reaching_the_relations=B['counts']['all relations']['interval_reaches'],
                              perfused_livers=chk)

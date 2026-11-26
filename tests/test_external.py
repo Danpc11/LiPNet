@@ -34,6 +34,18 @@ def test_the_law_holds_in_perfused_livers_it_was_not_derived_from():
     assert z['observed_mean']['sinusoidal'] < z['observed_mean']['portal'] and z['predicted']['human network']['sinusoidal'] < z['predicted']['human network']['portal']   # sinusoids change most, in the livers and in the law
 
 
+
+def test_the_observed_ratio_of_the_perfused_livers_has_one_definition():
+    """The observed resistance at each haematocrit over that at 30% is the mean of the unrounded ratios at the five flows,
+    in the check of the law and in the scenarios of small vessels alike, and is kept at four decimals so that the two
+    decimals printed are not a rounding of a rounding."""
+    k = pd.read_csv(os.path.join(ROOT, 'data', 'kamikado2004.tsv'), sep='\t'); c = vs.published_check()
+    m = vs.microvascular(_d())['scenarios']['1']['perfused_livers']
+    for h in (0.2, 0.1, 0.0):
+        raw = float(np.mean(vs.kamikado_ratio(k, h))); st = c['states'][f'haematocrit {h:g} over 0.30']['observed_mean']['total']
+        assert st == m[f'{h:g}']['observed'] == round(raw, 4) and f'{st:.2f}' == f'{raw:.2f}'
+
+
 def test_viscosity_enters_the_comparison_without_changing_the_one_without_it():
     d = _d(); a = ds.bracket(d); b = ds.bracket(d, viscosity=(1.0, 1.0)); assert a == b
     v = vs.factor_range(); c = ds.bracket(d, viscosity=v)

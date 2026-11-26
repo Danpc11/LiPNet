@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 [![Tests](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml/badge.svg)](https://github.com/Danpc11/LiPNet/actions/workflows/tests.yml)
 [![Calculator](https://img.shields.io/badge/Calculator-live-4285F4?logo=googlechrome&logoColor=white)](https://danpc11.github.io/LiPNet/)
-![Version](https://img.shields.io/badge/version-0.11.6-1f6feb)
+![Version](https://img.shields.io/badge/version-0.11.7-1f6feb)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22861276.svg)](https://doi.org/10.5281/zenodo.22861276)
 
 Code and data for the article *Vascular resistance decouples portal flow from pressure in small-for-size liver grafts*.
@@ -27,7 +27,7 @@ Python 3.11 or later.
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate    # inside the environment the interpreter is `python`
-pip install -r requirements-lock.txt     # exact environment of the release (reproduces every printed digit)
+pip install -r requirements-lock.txt     # exact environment of the release (see Tests and reproducibility)
 # or: pip install -r requirements.txt   # recent versions; sampled numbers may move in the second decimal
 ```
 
@@ -160,8 +160,13 @@ value without provenance. `data/cohort_template.tsv` is the format for a centre'
 | `test_figures.py` | figures and their provenance |
 | `test_article.py` | each number quoted in the article against `results/` |
 
-Sampled numbers are reproducible to the last digit on `requirements-lock.txt`; elsewhere `test_article.py` allows a
-stated Monte Carlo tolerance (`LIPNET_EXACT=1` removes it).
+On `requirements-lock.txt` every number the article prints is reproduced to its last digit (`LIPNET_EXACT=1`); with
+other versions `test_article.py` allows a stated Monte Carlo tolerance. Across processors the result files themselves
+can still differ: `run_all.sh` runs the linear algebra on one thread, which makes the deterministic results identical,
+but the short refits of the design-recovery study (`bayes_recovery.json`, and the copies of it in `predictions.json` and
+`figures_provenance.json`) depend on the code the compiler generates for each processor. On a Xeon Gold 6348 the mean
+estimate at a true slope of 0 was -0.0648 against -0.0654 in the release, for a Monte Carlo error of 0.08; the main fits
+(`bayes_main`, `bayes_iecv`, `bayes_priors`, `spec_curve`) were identical. `manifest.py compare` lists such files.
 
 Only the cached fits and `predictions.json` are kept in `results/`. The other result files (`model_*.json`,
 `ipd_*.json`, figures) are written by `run_all.sh`; those of the clean rebuild of a release are attached to its GitHub

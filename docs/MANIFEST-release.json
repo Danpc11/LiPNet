@@ -1,8 +1,8 @@
 {
  "python": "3.13.18",
- "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
- "commit": "fce874d8f1ac3da59e2c3e7c9df8884386d8d15c",
- "inputs_fingerprint": "d7ce904853866f868dc3dc781534c52120525c98645db53aa57728bc71dfa58b",
+ "platform": "Linux-6.18.44-fc-v880-x86_64-with-glibc2.39",
+ "commit": null,
+ "inputs_fingerprint": "2b7dc4ece1fcb3ab4138d8509670cb12bf8c2e562c89dd006166ca8eb70113aa",
  "rebuilt_from_scratch": true,
  "packages": {
   "numpy": "2.5.3",
@@ -31,7 +31,7 @@
   "data/series.tsv": "97e43a3e9ee026d2b29ffa49f65aec9956a7510a87ddb1e439b29f25f971b11f",
   "requirements-lock.txt": "28678298185bec5cc1331223bec1390f43488ea7205cf396828a7bfdedcab812",
   "requirements.txt": "67388506747659ab9895ef23abe56ea0d41e7c705100b6aa3f40713a1eb07a35",
-  "run_all.sh": "9326045ddd82a33716d24ecff8412eac455c3930a02c96e831b2cb8d4f27ab0a",
+  "run_all.sh": "2ccfffd32f36abece98f135f438f7aa6783dd5f09ae7fe2ea1b6c018557abd71",
   "src/app_template.html": "9e40a4f3c2994335107b4a806add498e3aaaea6cefe1d45476eb27fb6d02551c",
   "src/audit.py": "3625b49f22f12ba0baab3a16e60d6b8e100d190a0571a61626933c94ef995bce",
   "src/bayes.py": "a7e54e20ddf6b2e40f1da692035c8854286691e5c0df16b7758fd8a73852f0c2",
@@ -70,7 +70,7 @@
   "src/model/network3d.py": "25d8c53e33022ee2a5285a98fab9189b0ea297264eecbc9e1e62dca41f8c0f0d",
   "src/model/scaling.py": "02a98decf1f1aa784e49a16838507d551d1b5278cff7e144202ca3d06baae077",
   "src/model/verify_campaigns.py": "b117a58b318c3882aad4ca696d27f2f47f504618ce079ed8dabec9a575f9e600",
-  "src/model/viscosity.py": "05d69d1eb8ac9b2a8ebb617b5ea211581b2501749f2ad0e53a483f2c86eb51cd",
+  "src/model/viscosity.py": "ecf0d2f41e57d06081f119b44c8e2947174ef662d86f8e3be22cac9ffe73a48b",
   "src/model/whole_graft.py": "e8862dea3a5e7b835457f6fc0c230262bad8241c8dbb33f10454fb54ab138266",
   "src/paper_figures.py": "86363630d8bf221092c2eeeeb941449ee87cce82c84df6a252c9cfc14254e41d",
   "src/plots.py": "edfab67b6216a86e25901f6cff21e026dbdcc05cd40ab3a2d2121c30d0ba8a74",
@@ -95,7 +95,7 @@
   "results/fem_perfusion.json": "1ff6f2ec894c4da9b032def3aafc91b6984d6e20236e22c3b24ddb59a464b8a4",
   "results/fem_transport.json": "18de606ea153aac5285aafb721e73a693ee57e3229da9f6cb90d2a89975a38e6",
   "results/fem_two_phase.json": "bed0f13e4dd77256ab44bb2b0c8b66f94da4c9d42fc9745a17a1154fd49f7702",
-  "results/figures_provenance.json": "43290b53438e04d672f5e1b99ca6b43d5d2e3ec502fc6131c0ed2c8a63bd1109",
+  "results/figures_provenance.json": "4915ff1603179d50b39a154dd4da300dc657500959fe2c576136ed851073a064",
   "results/ipd_ecological.json": "f0930c52c514fa221a6c5f5983a90933f1fd28170bad8dd5603c3588debfda76",
   "results/ipd_patient_level.json": "ab4bdb30e2dd966fc30b18de1f69de7004684d342f40135468bc5676295536ad",
   "results/meta_slope.json": "ac4f44678bc1d865c7695fc2e36959be11f3a42d5f7ae5e06cdbaa09af47245e",
@@ -103,7 +103,7 @@
   "results/model_hepatectomy.json": "25d6cbb36683e69825e25914e1464cdaa7741ced17c415e1bde7a3601273c836",
   "results/model_human.json": "52da28b9eab7be43ffe798bd7e3d6b85b7845d7795aa26630a5f71d9aa5d3c83",
   "results/model_liver.json": "d0c148f82fd957e701de3b65a6301db07163db200412ca7d82a0730a96ac0d34",
-  "results/model_viscosity.json": "705a2db9ae149ef6f597793ea06e74f9fac3e940c009bc296d5289cc86a371f1",
+  "results/model_viscosity.json": "61c7d59975ee21c7af986f8a7cd78c4c8312e7b11942d40a67e14409bcd1a496",
   "results/pooled_fit.json": "9a30401dd1c0f98121bfb9028ebab3421f388dfd1241eaada12b4f0e0276cfe6",
   "results/prediction_allometry.tsv": "c27b94c70ccca90e13dd8fef522232defa5d708859e547466289e86ce494afc3",
   "results/predictions.json": "d29823afff92b75be26f5eed5c385ec37e8fb8f7d9320bf87cd3fef559be92b9",
@@ -111,6 +111,5 @@
   "results/series_with_indices.tsv": "c2626425fe16df44dc74dfdf063620ba540eae4c8f0b2d3014b919583ff1ca73",
   "results/spec_curve.json": "9479550ec84e769a2272430037cafdb404e8736e8e59234762f970bac6b4e687",
   "results/within_study_fit.json": "1dcd54d0e09dc5764a7c4fbcc3d49c088d7c54e631558a0bbc8a07b2252f200c"
- },
- "commit_note": "the commit holding the code and data that were rebuilt; the manifest itself is committed after it"
+ }
 }

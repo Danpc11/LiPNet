@@ -2,6 +2,12 @@
 
 Changes to the code and data. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.7] – 2026-11-25
+- `viscosity.kamikado_ratio`: one definition of the observed resistance of the perfused rat livers over that at 30%. `published_check` and `microvascular` both take the mean of the unrounded ratios at the five flows, at four decimals; before, the first averaged ratios already rounded to three decimals and the second rounded the mean to three, so the same observation printed as 0.53 and 0.54. Two segment means change in their second decimal (hepatic venous at 20%, 0.625 to 0.6253; sinusoidal at 10%, 0.455 to 0.4548); `observed_over_predicted_total_at_rat_size` at 10% goes from 0.880 to 0.881.
+- `run_all.sh` runs the linear algebra on one thread (`OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `MKL_NUM_THREADS`, each overridable), so that the order of the sums does not depend on the number of cores.
+- README: what is reproduced across processors and what is not (the short refits of `bayes_recovery.json`).
+- Test: the observed ratio of the perfused livers has one definition.
+
 ## [0.11.6] – 2026-11-22
 - `ipd.ecological`: the module states what its slope is. The data are group counts, so the slope of the integrated likelihood is the one an individual logistic curve would need under an assumed normal spread of the load inside each group; it is a sensitivity analysis of the between-group slope and identifies no association in recipients. The docstring no longer says that the spread can only flatten the slope: the sweep returns towards the prior beyond 5 mmHg, and `sweep` records `ratio_to_sigma0` (was `inflation_vs_sigma0`). `results/ipd_ecological.json` carries the reading.
 - `ipd.ecological.imputation`: the fit with the reported dispersions repeated over what is given to the series that report none, each varied on its own over 0, the smallest and the largest dispersion reported and their pooled median (16 fits for the primary outcome, where 4 of 7 groups report none). `fit(fill=)` takes one value or one per study; `usable` returns the rows a fit uses. The sweep and the fit with the pooled median are unchanged to the last digit.
